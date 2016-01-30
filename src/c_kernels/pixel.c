@@ -1029,8 +1029,7 @@ float ssim_end4_10b( int sum0[5][4], int sum1[5][4], int width )
     return ssim;
 }
 
-#if 0
-float x264_pixel_ssim_wxh( x264_pixel_function_t *pf,
+float x264_pixel_ssim_wxh( 
                            pixel *pix1, intptr_t stride1,
                            pixel *pix2, intptr_t stride2,
                            int width, int height, void *buf, int *cnt )
@@ -1047,17 +1046,43 @@ float x264_pixel_ssim_wxh( x264_pixel_function_t *pf,
         {
             XCHG( void*, sum0, sum1 );
             for( int x = 0; x < width; x+=2 )
-                pf->ssim_4x4x2_core( &pix1[4*(x+z*stride1)], stride1, &pix2[4*(x+z*stride2)], stride2, &sum0[x] );
+                ssim_4x4x2_core( &pix1[4*(x+z*stride1)], stride1, &pix2[4*(x+z*stride2)], stride2, &sum0[x] );
         }
         for( int x = 0; x < width-1; x += 4 )
-            ssim += pf->ssim_end4( sum0+x, sum1+x, X264_MIN(4,width-x-1) );
+            ssim += ssim_end4( sum0+x, sum1+x, MIN(4,width-x-1) );
+    }
+    *cnt = (height-1) * (width-1);
+    return ssim;
+}
+
+float x264_pixel_ssim_wxh_10b( 
+                               pixel_10b *pix1, intptr_t stride1,
+                               pixel_10b *pix2, intptr_t stride2,
+                               int width, int height, void *buf, int *cnt )
+{
+    int z = 0;
+    float ssim = 0.0;
+    int (*sum0)[4] = buf;
+    int (*sum1)[4] = sum0 + (width >> 2) + 3;
+    width >>= 2;
+    height >>= 2;
+    for( int y = 1; y < height; y++ )
+    {
+        for( ; z <= y; z++ )
+        {
+            XCHG( void*, sum0, sum1 );
+            for( int x = 0; x < width; x+=2 )
+                ssim_4x4x2_core_10b( &pix1[4*(x+z*stride1)], stride1, &pix2[4*(x+z*stride2)], stride2, &sum0[x] );
+        }
+        for( int x = 0; x < width-1; x += 4 )
+            ssim += ssim_end4_10b( sum0+x, sum1+x, MIN(4,width-x-1) );
     }
     *cnt = (height-1) * (width-1);
     return ssim;
 }
 
 /////////////////////////////////////////////////////////////////////
-static int pixel_vsad( pixel *src, intptr_t stride, int height )
+int pixel_vsad( pixel *src, intptr_t stride, int height )
 {
     int score = 0;
     for( int i = 1; i < height; i++, src += stride )
@@ -1066,29 +1091,25 @@ static int pixel_vsad( pixel *src, intptr_t stride, int height )
     return score;
 }
 
-int x264_field_vsad( x264_t *h, int mb_x, int mb_y )
+int pixel_vsad_10b( pixel *src, intptr_t stride, int height )
 {
-    int score_field, score_frame;
-    int stride = h->fenc->i_stride[0];
-    int mb_stride = h->mb.i_mb_stride;
-    pixel *fenc = h->fenc->plane[0] + 16 * (mb_x + mb_y * stride);
-    int mb_xy = mb_x + mb_y*mb_stride;
-
-    /* We don't want to analyze pixels outside the frame, as it gives inaccurate results. */
-    int mbpair_height = X264_MIN( h->param.i_height - mb_y * 16, 32 );
-    score_frame  = h->pixf.vsad( fenc,          stride, mbpair_height );
-    score_field  = h->pixf.vsad( fenc,        stride*2, mbpair_height >> 1 );
-    score_field += h->pixf.vsad( fenc+stride, stride*2, mbpair_height >> 1 );
-
-    if( mb_x > 0 )
-        score_field += 512 - h->mb.field[mb_xy        -1]*1024;
-    if( mb_y > 0 )
-        score_field += 512 - h->mb.field[mb_xy-mb_stride]*1024;
-
-    return (score_field < score_frame);
+    int score = 0;
+    for( int i = 1; i < height; i++, src += stride )
+        for( int j = 0; j < 16; j++ )
+            score += abs(src[j] - src[j+stride]);
+    return score;
 }
 
-static int pixel_asd8( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height )
+int pixel_asd8( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height )
+{
+    int sum = 0;
+    for( int y = 0; y < height; y++, pix1 += stride1, pix2 += stride2 )
+        for( int x = 0; x < 8; x++ )
+            sum += pix1[x] - pix2[x];
+    return abs( sum );
+}
+
+int pixel_asd8_10b( pixel_10b *pix1, intptr_t stride1, pixel_10b *pix2, intptr_t stride2, int height )
 {
     int sum = 0;
     for( int y = 0; y < height; y++, pix1 += stride1, pix2 += stride2 )
@@ -1100,7 +1121,7 @@ static int pixel_asd8( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stri
 /****************************************************************************
  * successive elimination
  ****************************************************************************/
-static int x264_pixel_ads4( int enc_dc[4], uint16_t *sums, int delta,
+int x264_pixel_ads4( int enc_dc[4], uint16_t *sums, int delta,
                             uint16_t *cost_mvx, int16_t *mvs, int width, int thresh )
 {
     int nmv = 0;
@@ -1117,7 +1138,7 @@ static int x264_pixel_ads4( int enc_dc[4], uint16_t *sums, int delta,
     return nmv;
 }
 
-static int x264_pixel_ads2( int enc_dc[2], uint16_t *sums, int delta,
+int x264_pixel_ads2( int enc_dc[2], uint16_t *sums, int delta,
                             uint16_t *cost_mvx, int16_t *mvs, int width, int thresh )
 {
     int nmv = 0;
@@ -1132,7 +1153,7 @@ static int x264_pixel_ads2( int enc_dc[2], uint16_t *sums, int delta,
     return nmv;
 }
 
-static int x264_pixel_ads1( int enc_dc[1], uint16_t *sums, int delta,
+int x264_pixel_ads1( int enc_dc[1], uint16_t *sums, int delta,
                             uint16_t *cost_mvx, int16_t *mvs, int width, int thresh )
 {
     int nmv = 0;
@@ -1145,6 +1166,8 @@ static int x264_pixel_ads1( int enc_dc[1], uint16_t *sums, int delta,
     }
     return nmv;
 }
-#endif
+
+
+
 
 
