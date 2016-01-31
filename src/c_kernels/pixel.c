@@ -964,6 +964,7 @@ float ssim_end1( int s1, int s2, int ss, int s12 )
  * s1*s1, s2*s2, and s1*s2 also obtain this value for edge cases: ((2^10-1)*16*4)^2 = 4286582784.
  * Maximum value for 9-bit is: ss*64 = (2^9-1)^2*16*4*64 = 1069551616, which will not overflow. */
 #define type int
+#undef PIXEL_MAX
 #define PIXEL_MAX  ((1<<8)-1)
     static const int ssim_c1 = (int)(.01*.01*PIXEL_MAX*PIXEL_MAX*64 + .5);
     static const int ssim_c2 = (int)(.03*.03*PIXEL_MAX*PIXEL_MAX*64*63 + .5);
@@ -988,6 +989,7 @@ static float ssim_end1_10b( int s1, int s2, int ss, int s12 )
  * s1*s1, s2*s2, and s1*s2 also obtain this value for edge cases: ((2^10-1)*16*4)^2 = 4286582784.
  * Maximum value for 9-bit is: ss*64 = (2^9-1)^2*16*4*64 = 1069551616, which will not overflow. */
 #define type float
+#undef PIXEL_MAX
 #define PIXEL_MAX  ((1<<10)-1)
     static const float ssim_c1 = .01*.01*PIXEL_MAX*PIXEL_MAX*64;
     static const float ssim_c2 = .03*.03*PIXEL_MAX*PIXEL_MAX*64*63;
