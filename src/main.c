@@ -153,132 +153,49 @@ static void print_bench(void)
                 continue;
             printf( "%s_%s%s: %ld\n", benchs[i].name,
 #if HAVE_MMX
-                    b->cpu&X264_CPU_AVX2 ? "avx2" :
-                    b->cpu&X264_CPU_FMA3 ? "fma3" :
-                    b->cpu&X264_CPU_FMA4 ? "fma4" :
-                    b->cpu&X264_CPU_XOP ? "xop" :
-                    b->cpu&X264_CPU_AVX ? "avx" :
-                    b->cpu&X264_CPU_SSE42 ? "sse42" :
-                    b->cpu&X264_CPU_SSE4 ? "sse4" :
-                    b->cpu&X264_CPU_SSSE3 ? "ssse3" :
-                    b->cpu&X264_CPU_SSE3 ? "sse3" :
+                    b->cpu&VSIMD_CPU_AVX2 ? "avx2" :
+                    b->cpu&VSIMD_CPU_FMA3 ? "fma3" :
+                    b->cpu&VSIMD_CPU_FMA4 ? "fma4" :
+                    b->cpu&VSIMD_CPU_XOP ? "xop" :
+                    b->cpu&VSIMD_CPU_AVX ? "avx" :
+                    b->cpu&VSIMD_CPU_SSE42 ? "sse42" :
+                    b->cpu&VSIMD_CPU_SSE4 ? "sse4" :
+                    b->cpu&VSIMD_CPU_SSSE3 ? "ssse3" :
+                    b->cpu&VSIMD_CPU_SSE3 ? "sse3" :
                     /* print sse2slow only if there's also a sse2fast version of the same func */
-                    b->cpu&X264_CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&X264_CPU_SSE2_IS_FAST && !(b[1].cpu&X264_CPU_SSE3) ? "sse2slow" :
-                    b->cpu&X264_CPU_SSE2 ? "sse2" :
-                    b->cpu&X264_CPU_SSE ? "sse" :
-                    b->cpu&X264_CPU_MMX ? "mmx" :
+                    b->cpu&VSIMD_CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&VSIMD_CPU_SSE2_IS_FAST && !(b[1].cpu&VSIMD_CPU_SSE3) ? "sse2slow" :
+                    b->cpu&VSIMD_CPU_SSE2 ? "sse2" :
+                    b->cpu&VSIMD_CPU_SSE ? "sse" :
+                    b->cpu&VSIMD_CPU_MMX ? "mmx" :
 #elif ARCH_PPC
-                    b->cpu&X264_CPU_ALTIVEC ? "altivec" :
+                    b->cpu&VSIMD_CPU_ALTIVEC ? "altivec" :
 #elif ARCH_ARM
-                    b->cpu&X264_CPU_NEON ? "neon" :
-                    b->cpu&X264_CPU_ARMV6 ? "armv6" :
+                    b->cpu&VSIMD_CPU_NEON ? "neon" :
+                    b->cpu&VSIMD_CPU_ARMV6 ? "armv6" :
 #elif ARCH_AARCH64
-                    b->cpu&X264_CPU_NEON ? "neon" :
-                    b->cpu&X264_CPU_ARMV8 ? "armv8" :
+                    b->cpu&VSIMD_CPU_NEON ? "neon" :
+                    b->cpu&VSIMD_CPU_ARMV8 ? "armv8" :
 #elif ARCH_MIPS
-                    b->cpu&X264_CPU_MSA ? "msa" :
+                    b->cpu&VSIMD_CPU_MSA ? "msa" :
 #endif
                     "c",
 #if HAVE_MMX
-                    b->cpu&X264_CPU_CACHELINE_32 ? "_c32" :
-                    b->cpu&X264_CPU_SLOW_ATOM && b->cpu&X264_CPU_CACHELINE_64 ? "_c64_atom" :
-                    b->cpu&X264_CPU_CACHELINE_64 ? "_c64" :
-                    b->cpu&X264_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
-                    b->cpu&X264_CPU_LZCNT ? "_lzcnt" :
-                    b->cpu&X264_CPU_BMI2 ? "_bmi2" :
-                    b->cpu&X264_CPU_BMI1 ? "_bmi1" :
-                    b->cpu&X264_CPU_SLOW_CTZ ? "_slow_ctz" :
-                    b->cpu&X264_CPU_SLOW_ATOM ? "_atom" :
+                    b->cpu&VSIMD_CPU_CACHELINE_32 ? "_c32" :
+                    b->cpu&VSIMD_CPU_SLOW_ATOM && b->cpu&VSIMD_CPU_CACHELINE_64 ? "_c64_atom" :
+                    b->cpu&VSIMD_CPU_CACHELINE_64 ? "_c64" :
+                    b->cpu&VSIMD_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
+                    b->cpu&VSIMD_CPU_LZCNT ? "_lzcnt" :
+                    b->cpu&VSIMD_CPU_BMI2 ? "_bmi2" :
+                    b->cpu&VSIMD_CPU_BMI1 ? "_bmi1" :
+                    b->cpu&VSIMD_CPU_SLOW_CTZ ? "_slow_ctz" :
+                    b->cpu&VSIMD_CPU_SLOW_ATOM ? "_atom" :
 #elif ARCH_ARM
-                    b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
+                    b->cpu&VSIMD_CPU_FAST_NEON_MRC ? "_fast_mrc" :
 #endif
                     "",
                     (int64_t)(10*b->cycles/b->den - nop_time)/4 );
         }
 }
-
-#if ARCH_X86 || ARCH_X86_64
-int x264_stack_pagealign( int (*func)(), int align );
-
-/* detect when callee-saved regs aren't saved
- * needs an explicit asm check because it only sometimes crashes in normal use. */
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#else
-#define x264_stack_pagealign( func, align ) func()
-#endif
-
-#if ARCH_AARCH64
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#endif
-
-#if ARCH_ARM
-intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
-intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
-intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
-#endif
-
-#define call_c1(func,...) func(__VA_ARGS__)
-
-#if ARCH_X86_64
-/* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
- * This is done by clobbering the stack with junk around the stack pointer and calling the
- * assembly function through x264_checkasm_call with added dummy arguments which forces all
- * real arguments to be passed on the stack and not in registers. For 32-bit argument the
- * upper half of the 64-bit register location on the stack will now contain junk. Note that
- * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
- * overwrite the junk written to the stack so there's no guarantee that it will always
- * detect all functions that assumes zero-extension.
- */
-void x264_checkasm_stack_clobber( uint64_t clobber, ... );
-#define call_a1(func,...) ({ \
-    uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
-    x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
-    x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
-#define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1 call_c1
-#endif
-
-#if ARCH_ARM
-#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1_64 call_a1
-#endif
-
-#define call_bench(func,cpu,...)\
-    if( do_bench && !strncmp(func_name, bench_pattern, bench_pattern_len) )\
-    {\
-        uint64_t tsum = 0;\
-        int tcount = 0;\
-        call_a1(func, __VA_ARGS__);\
-        for( int ti = 0; ti < (cpu?BENCH_RUNS:BENCH_RUNS/4); ti++ )\
-        {\
-            uint32_t t = read_time();\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            t = read_time() - t;\
-            if( (uint64_t)t*tcount <= tsum*4 && ti > 0 )\
-            {\
-                tsum += t;\
-                tcount++;\
-            }\
-        }\
-        bench_t *b = get_bench( func_name, cpu );\
-        b->cycles += tsum;\
-        b->den += tcount;\
-        b->pointer = func;\
-    }
-
-/* for most functions, run benchmark and correctness test at the same time.
- * for those that modify their inputs, run the above macros separately */
-#define call_a(func,...) ({ call_a2(func,__VA_ARGS__); call_a1(func,__VA_ARGS__); })
-#define call_c(func,...) ({ call_c2(func,__VA_ARGS__); call_c1(func,__VA_ARGS__); })
-#define call_a2(func,...) ({ call_bench(func,cpu_new,__VA_ARGS__); })
-#define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
-#define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
 
 
 int64_t mdate( void )
@@ -295,6 +212,7 @@ int64_t mdate( void )
 }
 
 
+int run_benchmarks(int i){ return 1;}
 
 int main(int argc, char *argv[])
 {
