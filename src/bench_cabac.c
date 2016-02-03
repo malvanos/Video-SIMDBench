@@ -46,11 +46,7 @@
 #include "common.h"
 #include "osdep.h"
 
-// GCC doesn't align stack variables on ARM, so use .bss
-#if ARCH_ARM
-#undef ALIGNED_16
-#define ALIGNED_16( var ) DECLARE_ALIGNED( static var, 16 )
-#endif
+
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
 uint8_t *buf1, *buf2;

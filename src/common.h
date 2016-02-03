@@ -25,6 +25,13 @@ typedef int16_t  dctcoef;
 typedef uint16_t udctcoef;
 
 
+// GCC doesn't align stack variables on ARM, so use .bss
+#if ARCH_ARM
+#undef ALIGNED_16
+#define ALIGNED_16( var ) DECLARE_ALIGNED( static var, 16 )
+#endif
+
+
 #   define PIXEL_SPLAT_X4_10b(x) ((x)*0x0001000100010001ULL)
 #   define MPIXEL_X4_10b(src) M64(src)
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
