@@ -123,6 +123,12 @@ intptr_t benchmark_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
 
+/* Calls for the benchmarks */
+
+
+int check_pixel( int cpu_ref, int cpu_new );
+
+
 
 
 #endif // COMMON_H

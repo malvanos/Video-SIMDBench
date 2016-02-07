@@ -60,10 +60,9 @@ pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
 pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm  ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
@@ -212,7 +211,6 @@ int64_t mdate( void )
 }
 
 
-int run_benchmarks(int i){ return 1;}
 
 int main(int argc, char *argv[])
 {
@@ -268,7 +266,6 @@ int main(int argc, char *argv[])
             ret |=  run_benchmarks(i);
             buf1 += 32;
             pbuf1 += 32;
-            quiet = 1;
             fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
         }
     else

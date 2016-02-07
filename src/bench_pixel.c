@@ -68,6 +68,7 @@ int quiet = 0;
 #define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
 #define MAX_CPUS 30     // number of different combinations of cpu flags
 
+#if 0
 typedef struct
 {
     void *pointer; // just for detecting duplicates
@@ -236,13 +237,11 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_a2(func,...) ({ call_bench(func,cpu_new,__VA_ARGS__); })
 #define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
 #define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
+#endif
 
-
-static int check_pixel( int cpu_ref, int cpu_new )
+int check_pixel( int cpu_ref, int cpu_new )
 {
-    x264_pixel_function_t pixel_c;
-    x264_pixel_function_t pixel_ref;
-    x264_pixel_function_t pixel_asm;
+
     x264_predict_t predict_4x4[12];
     x264_predict8x8_t predict_8x8[12];
     x264_predict_8x8_filter_t predict_8x8_filter;
@@ -250,6 +249,7 @@ static int check_pixel( int cpu_ref, int cpu_new )
     uint16_t cost_mv[32];
     int ret = 0, ok, used_asm;
 
+#if 0
     x264_pixel_init( 0, &pixel_c );
     x264_pixel_init( cpu_ref, &pixel_ref );
     x264_pixel_init( cpu_new, &pixel_asm );
@@ -742,15 +742,9 @@ static int check_pixel( int cpu_ref, int cpu_new )
             }
         }
     report( "esa ads:" );
-
+#endif
     return ret;
 }
 
 
-
-int run_benchmarks(int i){
-    /* 32-byte alignment is guaranteed whenever it's useful, 
-     * but some functions also vary in speed depending on %64 */
-    return x264_stack_pagealign(check_all_flags, i*32 );
-}
 

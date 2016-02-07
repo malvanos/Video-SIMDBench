@@ -43,6 +43,7 @@
 
 
 #include <ctype.h>
+#include <string.h>
 #include "common.h"
 #include "osdep.h"
 
@@ -55,10 +56,9 @@ pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
 pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
@@ -241,7 +241,8 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 
 static int check_all_funcs( int cpu_ref, int cpu_new )
 {
-    return check_pixel( cpu_ref, cpu_new )
+    return check_pixel( cpu_ref, cpu_new );
+#if 0
          + check_dct( cpu_ref, cpu_new )
          + check_mc( cpu_ref, cpu_new )
          + check_intra( cpu_ref, cpu_new )
@@ -249,6 +250,7 @@ static int check_all_funcs( int cpu_ref, int cpu_new )
          + check_quant( cpu_ref, cpu_new )
          + check_cabac( cpu_ref, cpu_new )
          + check_bitstream( cpu_ref, cpu_new );
+#endif
 }
 
 static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
@@ -260,8 +262,7 @@ static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
 #endif
     if( *cpu_new & VSIMD_CPU_SSE2_IS_FAST )
         *cpu_new &= ~VSIMD_CPU_SSE2_IS_SLOW;
-    if( !quiet )
-        fprintf( stderr, "x264: %s\n", name );
+    fprintf( stderr, "x264: %s\n", name );
     return check_all_funcs( *cpu_ref, *cpu_new );
 }
 
@@ -397,6 +398,7 @@ static int check_all_flags( void )
 int run_benchmarks(int i){
     /* 32-byte alignment is guaranteed whenever it's useful, 
      * but some functions also vary in speed depending on %64 */
-    return x264_stack_pagealign(check_all_flags, i*32 );
+    //return x264_stack_pagealign(check_all_flags, i*32 );
+    check_all_flags();
 }
 
