@@ -35,7 +35,7 @@
 ; to x264-devel@videolan.org .
 
 %ifndef private_prefix
-    %define private_prefix x264
+    %define private_prefix _
 %endif
 
 %ifndef public_prefix
@@ -686,7 +686,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
         %xdefine %%VISIBILITY
     %endif
     %ifndef cglobaled_%2
-        %xdefine %2 mangle(%%FUNCTION_PREFIX %+ _ %+ %2)
+        %xdefine %2 mangle(%%FUNCTION_PREFIX %+ %2)
         %xdefine %2.skip_prologue %2 %+ .skip_prologue
         CAT_XDEFINE cglobaled_, %2, 1
     %endif
@@ -711,7 +711,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
 %endmacro
 
 %macro cextern 1
-    %xdefine %1 mangle(private_prefix %+ _ %+ %1)
+    %xdefine %1 mangle(private_prefix %+ %1)
     CAT_XDEFINE cglobaled_, %1, 1
     extern %1
 %endmacro
@@ -726,7 +726,7 @@ BRANCH_INSTR jz, je, jnz, jne, jl, jle, jnl, jnle, jg, jge, jng, jnge, ja, jae, 
 %endmacro
 
 %macro const 1-2+
-    %xdefine %1 mangle(private_prefix %+ _ %+ %1)
+    %xdefine %1 mangle(private_prefix %+ %1)
     %if FORMAT_ELF
         global %1:data hidden
     %else

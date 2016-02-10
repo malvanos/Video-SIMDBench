@@ -242,14 +242,14 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 int check_pixel( int cpu_ref, int cpu_new )
 {
 
+    int ret = 0, ok, used_asm;
+#if 0
     x264_predict_t predict_4x4[12];
     x264_predict8x8_t predict_8x8[12];
     x264_predict_8x8_filter_t predict_8x8_filter;
     ALIGNED_16( pixel edge[36] );
     uint16_t cost_mv[32];
-    int ret = 0, ok, used_asm;
 
-#if 0
     x264_pixel_init( 0, &pixel_c );
     x264_pixel_init( cpu_ref, &pixel_ref );
     x264_pixel_init( cpu_new, &pixel_asm );

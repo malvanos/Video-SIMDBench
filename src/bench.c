@@ -82,9 +82,9 @@ typedef struct
     bench_t vers[MAX_CPUS];
 } bench_func_t;
 
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int do_bench;
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
 static bench_func_t benchs[MAX_FUNCS];
 
@@ -270,9 +270,9 @@ static int check_all_flags( void )
 {
     int ret = 0;
     int cpu0 = 0, cpu1 = 0;
-    uint32_t cpu_detect = x264_cpu_detect();
+    uint32_t cpu_detect_rs = cpu_detect();
 #if HAVE_MMX
-    if( cpu_detect & VSIMD_CPU_MMX2 )
+    if( cpu_detect_rs & VSIMD_CPU_MMX2 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_MMX | VSIMD_CPU_MMX2, "MMX" );
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_CACHELINE_64, "MMX Cache64" );
@@ -281,7 +281,7 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_CACHELINE_32, "MMX Cache32" );
         cpu1 &= ~VSIMD_CPU_CACHELINE_32;
 #endif
-        if( cpu_detect & VSIMD_CPU_LZCNT )
+        if( cpu_detect_rs & VSIMD_CPU_LZCNT )
         {
             ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_LZCNT, "MMX LZCNT" );
             cpu1 &= ~VSIMD_CPU_LZCNT;
@@ -289,9 +289,9 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SLOW_CTZ, "MMX SlowCTZ" );
         cpu1 &= ~VSIMD_CPU_SLOW_CTZ;
     }
-    if( cpu_detect & VSIMD_CPU_SSE )
+    if( cpu_detect_rs & VSIMD_CPU_SSE )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE, "SSE" );
-    if( cpu_detect & VSIMD_CPU_SSE2 )
+    if( cpu_detect_rs & VSIMD_CPU_SSE2 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE2 | VSIMD_CPU_SSE2_IS_SLOW, "SSE2Slow" );
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE2_IS_FAST, "SSE2Fast" );
@@ -301,18 +301,18 @@ static int check_all_flags( void )
         cpu1 &= ~VSIMD_CPU_SLOW_SHUFFLE;
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SLOW_CTZ, "SSE2 SlowCTZ" );
         cpu1 &= ~VSIMD_CPU_SLOW_CTZ;
-        if( cpu_detect & VSIMD_CPU_LZCNT )
+        if( cpu_detect_rs & VSIMD_CPU_LZCNT )
         {
             ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_LZCNT, "SSE2 LZCNT" );
             cpu1 &= ~VSIMD_CPU_LZCNT;
         }
     }
-    if( cpu_detect & VSIMD_CPU_SSE3 )
+    if( cpu_detect_rs & VSIMD_CPU_SSE3 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE3 | VSIMD_CPU_CACHELINE_64, "SSE3" );
         cpu1 &= ~VSIMD_CPU_CACHELINE_64;
     }
-    if( cpu_detect & VSIMD_CPU_SSSE3 )
+    if( cpu_detect_rs & VSIMD_CPU_SSSE3 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSSE3, "SSSE3" );
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_CACHELINE_64, "SSSE3 Cache64" );
@@ -325,71 +325,71 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_CACHELINE_64, "SSSE3 Cache64 SlowAtom" );
         cpu1 &= ~VSIMD_CPU_CACHELINE_64;
         cpu1 &= ~VSIMD_CPU_SLOW_ATOM;
-        if( cpu_detect & VSIMD_CPU_LZCNT )
+        if( cpu_detect_rs & VSIMD_CPU_LZCNT )
         {
             ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_LZCNT, "SSSE3 LZCNT" );
             cpu1 &= ~VSIMD_CPU_LZCNT;
         }
     }
-    if( cpu_detect & VSIMD_CPU_SSE4 )
+    if( cpu_detect_rs & VSIMD_CPU_SSE4 )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE4, "SSE4" );
-    if( cpu_detect & VSIMD_CPU_SSE42 )
+    if( cpu_detect_rs & VSIMD_CPU_SSE42 )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_SSE42, "SSE4.2" );
-    if( cpu_detect & VSIMD_CPU_AVX )
+    if( cpu_detect_rs & VSIMD_CPU_AVX )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_AVX, "AVX" );
-    if( cpu_detect & VSIMD_CPU_XOP )
+    if( cpu_detect_rs & VSIMD_CPU_XOP )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_XOP, "XOP" );
-    if( cpu_detect & VSIMD_CPU_FMA4 )
+    if( cpu_detect_rs & VSIMD_CPU_FMA4 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_FMA4, "FMA4" );
         cpu1 &= ~VSIMD_CPU_FMA4;
     }
-    if( cpu_detect & VSIMD_CPU_FMA3 )
+    if( cpu_detect_rs & VSIMD_CPU_FMA3 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_FMA3, "FMA3" );
         cpu1 &= ~VSIMD_CPU_FMA3;
     }
-    if( cpu_detect & VSIMD_CPU_AVX2 )
+    if( cpu_detect_rs & VSIMD_CPU_AVX2 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_FMA3 | VSIMD_CPU_AVX2, "AVX2" );
-        if( cpu_detect & VSIMD_CPU_LZCNT )
+        if( cpu_detect_rs & VSIMD_CPU_LZCNT )
         {
             ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_LZCNT, "AVX2 LZCNT" );
             cpu1 &= ~VSIMD_CPU_LZCNT;
         }
     }
-    if( cpu_detect & VSIMD_CPU_BMI1 )
+    if( cpu_detect_rs & VSIMD_CPU_BMI1 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_BMI1, "BMI1" );
         cpu1 &= ~VSIMD_CPU_BMI1;
     }
-    if( cpu_detect & VSIMD_CPU_BMI2 )
+    if( cpu_detect_rs & VSIMD_CPU_BMI2 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_BMI1|VSIMD_CPU_BMI2, "BMI2" );
         cpu1 &= ~(VSIMD_CPU_BMI1|VSIMD_CPU_BMI2);
     }
 #elif ARCH_PPC
-    if( cpu_detect & VSIMD_CPU_ALTIVEC )
+    if( cpu_detect_rs & VSIMD_CPU_ALTIVEC )
     {
         fprintf( stderr, "x264: ALTIVEC against C\n" );
         ret = check_all_funcs( 0, VSIMD_CPU_ALTIVEC );
     }
 #elif ARCH_ARM
-    if( cpu_detect & VSIMD_CPU_NEON )
+    if( cpu_detect_rs & VSIMD_CPU_NEON )
         x264_checkasm_call = x264_checkasm_call_neon;
-    if( cpu_detect & VSIMD_CPU_ARMV6 )
+    if( cpu_detect_rs & VSIMD_CPU_ARMV6 )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_ARMV6, "ARMv6" );
-    if( cpu_detect & VSIMD_CPU_NEON )
+    if( cpu_detect_rs & VSIMD_CPU_NEON )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_NEON, "NEON" );
-    if( cpu_detect & VSIMD_CPU_FAST_NEON_MRC )
+    if( cpu_detect_rs & VSIMD_CPU_FAST_NEON_MRC )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_FAST_NEON_MRC, "Fast NEON MRC" );
 #elif ARCH_AARCH64
-    if( cpu_detect & VSIMD_CPU_ARMV8 )
+    if( cpu_detect_rs & VSIMD_CPU_ARMV8 )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_ARMV8, "ARMv8" );
-    if( cpu_detect & VSIMD_CPU_NEON )
+    if( cpu_detect_rs & VSIMD_CPU_NEON )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_NEON, "NEON" );
 #elif ARCH_MIPS
-    if( cpu_detect & VSIMD_CPU_MSA )
+    if( cpu_detect_rs & VSIMD_CPU_MSA )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_MSA, "MSA" );
 #endif
     return ret;
