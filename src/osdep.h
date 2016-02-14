@@ -111,6 +111,15 @@
 #endif
 
 
+
+// GCC doesn't align stack variables on ARM, so use .bss
+#if ARCH_ARM
+    #undef ALIGNED_16
+    #define ALIGNED_16( var ) DECLARE_ALIGNED( static var, 16 )
+#endif
+
+
+
 #define WORD_SIZE sizeof(void*)
 
 #define asm __asm__

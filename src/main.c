@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     }
 
     int seed = ( argc > 1 ) ? atoi(argv[1]) : mdate();
-    fprintf( stderr, "x264: using random seed %u\n", seed );
+    fprintf( stderr, "VideoBench: using random seed %u\n", seed );
     srand( seed );
 
     buf1 = memalign(32, 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );
@@ -273,10 +273,10 @@ int main(int argc, char *argv[])
 
     if( ret )
     {
-        fprintf( stderr, "x264: at least one test has failed. Go and fix that Right Now!\n" );
+        fprintf( stderr, "VideoBench: at least one test has failed. Go and fix that Right Now!\n" );
         return -1;
     }
-    fprintf( stderr, "x264: All tests passed Yeah :)\n" );
+    fprintf( stderr, "VideoBench: All tests passed Yeah :)\n" );
     if( do_bench )
         print_bench();
     return 0;

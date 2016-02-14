@@ -51,8 +51,8 @@ typedef uint16_t udctcoef;
 
 #define BENCH_RUNS 100  // tradeoff between accuracy and speed
 #define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
+#define MAX_FUNCS 2048  // just has to be big enough to hold all the existing functions
+#define MAX_CPUS 64     // number of different combinations of cpu flags
 
 
 
@@ -186,12 +186,10 @@ intptr_t benchmark_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
 
+
+
 /* Calls for the benchmarks */
-
-
 int check_pixel( int cpu_ref, int cpu_new );
-
-
 
 
 

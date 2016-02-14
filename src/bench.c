@@ -262,7 +262,7 @@ static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
 #endif
     if( *cpu_new & VSIMD_CPU_SSE2_IS_FAST )
         *cpu_new &= ~VSIMD_CPU_SSE2_IS_SLOW;
-    fprintf( stderr, "x264: %s\n", name );
+    fprintf( stderr, "VideoBench: %s\n", name );
     return check_all_funcs( *cpu_ref, *cpu_new );
 }
 
