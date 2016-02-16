@@ -63,11 +63,6 @@ pixel *pbuf3, *pbuf4;
     if( !ok ) ret = -1; \
 }
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
-
 typedef struct
 {
     void *pointer; // just for detecting duplicates
