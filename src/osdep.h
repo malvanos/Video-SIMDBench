@@ -32,6 +32,10 @@
 #include <math.h>
 #endif
 
+#include <stdint.h>
+#include <limits.h>
+
+
 
 #if !defined(va_copy) && defined(__INTEL_COMPILER)
 #define va_copy(dst, src) ((dst) = (src))
@@ -122,6 +126,10 @@
 
 #define WORD_SIZE sizeof(void*)
 
+
 #define asm __asm__
+
+
+
 
 

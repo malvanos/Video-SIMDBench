@@ -192,6 +192,20 @@ intptr_t benchmark_call( intptr_t (*func)(), int *ok, ... );
 int check_pixel( int cpu_ref, int cpu_new );
 
 
+enum macroblock_position_e
+{
+    MB_LEFT     = 0x01,
+    MB_TOP      = 0x02,
+    MB_TOPRIGHT = 0x04,
+    MB_TOPLEFT  = 0x08,
+
+    MB_PRIVATE  = 0x10,
+
+    ALL_NEIGHBORS = 0xf,
+};
+
+
+
 
 #endif // COMMON_H
 

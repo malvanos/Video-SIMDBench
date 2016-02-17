@@ -142,14 +142,12 @@ SATD_XD_DECL7()
 
 #if HAVE_MMX
 SATD_XD_DECL7( _mmx2 )
-#if !HIGH_BIT_DEPTH
 SATD_XD_DECL6( _sse2 )
 SATD_XD_DECL7( _ssse3 )
 SATD_XD_DECL6( _ssse3_atom )
 SATD_XD_DECL7( _sse4 )
 SATD_XD_DECL7( _avx )
 SATD_XD_DECL7( _xop )
-#endif // !HIGH_BIT_DEPTH
 #endif
 
 
@@ -219,6 +217,54 @@ int name( pixel_10b *pix1, intptr_t i_stride1, pixel_10b *pix2, intptr_t i_strid
 
 PIXEL_VAR2_CD_10B( pixel_var2_8x16_10b, 8, 16, 7 )
 PIXEL_VAR2_CD_10B( pixel_var2_8x8_10b,  8,  8, 6 )
+
+
+#define SATD_XD( size, cpu ) \
+void pixel_satd_x3_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
+                                            intptr_t i_stride, int scores[3] );\
+void pixel_satd_x4_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2, pixel *pix3,\
+                                            intptr_t i_stride, int scores[4] );
+
+
+#define SATD_X_DECL6D( cpu )\
+SATD_XD( 16x16, cpu )\
+SATD_XD( 16x8, cpu )\
+SATD_XD( 8x16, cpu )\
+SATD_XD( 8x8, cpu )\
+SATD_XD( 8x4, cpu )\
+SATD_XD( 4x8, cpu )
+
+#define SATD_X_DECL7D( cpu )\
+SATD_X_DECL6D( cpu )\
+SATD_XD( 4x4, cpu )
+
+SATD_X_DECL7D()
+
+
+
+
+#define SATD_X_10BD( size, cpu ) \
+void pixel_satd_x3_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2,\
+                                            intptr_t i_stride, int scores[3] );\
+void pixel_satd_x4_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2, pixel_10b *pix3,\
+                                            intptr_t i_stride, int scores[4] );
+
+#define SATD_X_DECL6_10BD( cpu )\
+SATD_X_10BD( 16x16, cpu )\
+SATD_X_10BD( 16x8, cpu )\
+SATD_X_10BD( 8x16, cpu )\
+SATD_X_10BD( 8x8, cpu )\
+SATD_X_10BD( 8x4, cpu )\
+SATD_X_10BD( 4x8, cpu )
+
+#define SATD_X_DECL7_10BD( cpu )\
+SATD_X_DECL6_10BD( cpu )\
+SATD_X_10BD( 4x4, cpu )
+
+SATD_X_DECL7_10BD()
+
+
+
 
 
 
@@ -304,19 +350,42 @@ DECL_PIXELS( void, name##_x4, suffix, ( pixel *, pixel *, pixel *, pixel *, pixe
     void intra_sad_x3_4x4( uint8_t *fenc, uint8_t *fdec, int res[3] );
     void intra_sad_x3_8x8( uint8_t *fenc, uint8_t edge[36], int res[3]);
     void intra_sad_x3_8x8c( uint8_t *fenc, uint8_t *fdec, int res[3] );
+    void intra_sad_x3_8x16c( uint8_t *fenc, uint8_t *fdec, int res[3] );
     void intra_sad_x3_16x16( uint8_t *fenc, uint8_t *fdec, int res[3] );
 
+    void intra_satd_x3_4x4        ( pixel   *, pixel   *, int * );
     void intra_satd_x3_4x4_mmx2   ( pixel   *, pixel   *, int * );
     void intra_sad_x3_4x4_mmx2    ( pixel   *, pixel   *, int * );
     void intra_sad_x3_4x4_sse2    ( pixel   *, pixel   *, int * );
     void intra_sad_x3_4x4_ssse3   ( pixel   *, pixel   *, int * );
     void intra_sad_x3_4x4_avx     ( pixel   *, pixel   *, int * );
+    void intra_satd_x3_8x8c       ( pixel   *, pixel   *, int * );
     void intra_satd_x3_8x8c_mmx2  ( pixel   *, pixel   *, int * );
     void intra_satd_x3_8x8c_ssse3 ( uint8_t *, uint8_t *, int * );
     void intra_sad_x3_8x8c_mmx2   ( pixel   *, pixel   *, int * );
     void intra_sad_x3_8x8c_sse2   ( pixel   *, pixel   *, int * );
     void intra_sad_x3_8x8c_ssse3  ( pixel   *, pixel   *, int * );
-    void intra_sad_x3_8x8c_avx2   ( pixel   *, pixel   *, int * );
+    void intra_sad_x3_8x16c_avx2   ( pixel   *, pixel   *, int * );
+    void intra_sad_x3_8x16c_mmx2   ( pixel   *, pixel   *, int * );
+    void intra_sad_x3_8x16c_sse2   ( pixel   *, pixel   *, int * );
+    void intra_sad_x3_8x16c_ssse3  ( pixel   *, pixel   *, int * );
+    void intra_sad_x3_8x16c_avx2   ( pixel   *, pixel   *, int * );
+
+
+    void intra_satd_x3_8x16c      ( pixel   *, pixel   *, int * );
+    void intra_satd_x3_8x16c_mmx2 ( pixel   *, pixel   *, int * );
+    void intra_satd_x3_8x16c_ssse3( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x16c_sse2 ( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x16c_sse4 ( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x16c_avx  ( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x16c_avx2 ( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x8c_avx2 ( uint8_t *, uint8_t *, int * );
+    void intra_satd_x3_8x16c_xop  ( uint8_t *, uint8_t *, int * );
+    void intra_sad_x3_8x8c_avx2 ( uint8_t *, uint8_t *, int * );
+
+
+
+    void intra_satd_x3_16x16      ( pixel   *, pixel   *, int * );
     void intra_satd_x3_16x16_mmx2 ( pixel   *, pixel   *, int * );
     void intra_satd_x3_16x16_ssse3( uint8_t *, uint8_t *, int * );
     void intra_sad_x3_16x16_mmx2  ( pixel   *, pixel   *, int * );
@@ -325,6 +394,7 @@ DECL_PIXELS( void, name##_x4, suffix, ( pixel *, pixel *, pixel *, pixel *, pixe
     void intra_sad_x3_16x16_avx2  ( pixel   *, pixel   *, int * );
     void intra_sa8d_x3_8x8_mmx2   ( uint8_t *, uint8_t *, int * );
     void intra_sa8d_x3_8x8_sse2   ( pixel   *, pixel   *, int * );
+    void intra_sa8d_x3_8x8( uint8_t *fenc, uint8_t edge[36], int *res );
     void intra_sad_x3_8x8_mmx2    ( pixel   *, pixel   *, int * );
     void intra_sad_x3_8x8_sse2    ( pixel   *, pixel   *, int * );
     void intra_sad_x3_8x8_ssse3   ( pixel   *, pixel   *, int * );
@@ -346,6 +416,7 @@ DECL_PIXELS( void, name##_x4, suffix, ( pixel *, pixel *, pixel *, pixel *, pixe
 
 
 
+int pixel_asd8( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
 
 void pixel_ssd_nv12_core( pixel *pixuv1, intptr_t stride1, pixel *pixuv2, intptr_t stride2,
                                  int width, int height, uint64_t *ssd_u, uint64_t *ssd_v );
@@ -393,6 +464,9 @@ void pixel_ssim_4x4x2_core_sse2( const pixel *pix1, intptr_t stride1,
         const pixel *pix2, intptr_t stride2, int sums[2][4] );
 void pixel_ssim_4x4x2_core_avx ( const pixel *pix1, intptr_t stride1,
         const pixel *pix2, intptr_t stride2, int sums[2][4] );
+
+float ssim_end4( int sum0[5][4], int sum1[5][4], int width );
+float ssim_end4_10b( int sum0[5][4], int sum1[5][4], int width );
 float pixel_ssim_end4_sse2( int sum0[5][4], int sum1[5][4], int width );
 float pixel_ssim_end4_avx ( int sum0[5][4], int sum1[5][4], int width );
 int  pixel_var2_8x8_mmx2  ( pixel *,   intptr_t, pixel *,   intptr_t, int * );
@@ -421,6 +495,11 @@ uint64_t pixel_sa8d_satd_16x16_avx       ( pixel *pix1, intptr_t stride1, pixel 
 uint64_t pixel_sa8d_satd_16x16_xop       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 uint64_t pixel_sa8d_satd_16x16_avx2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
+
+
+
+int pixel_vsad( pixel *src, intptr_t stride, int height );
+int pixel_vsad_10b( pixel *src, intptr_t stride, int height );
 
 #define DECL_ADS( size, suffix ) \
     int pixel_ads##size##_##suffix( int enc_dc[size], uint16_t *sums, int delta,\

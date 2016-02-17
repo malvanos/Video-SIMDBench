@@ -655,6 +655,83 @@ PIXEL_SATD_C_10B( 8,  8,  pixel_satd_8x4_10b )
 PIXEL_SATD_C_10B( 4,  16, pixel_satd_4x4_10b )
 PIXEL_SATD_C_10B( 4,  8,  pixel_satd_4x4_10b )
 
+/****************************************************************************
+ * pixel_satd_x4
+ * no faster than single satd, but needed for satd to be a drop-in replacement for sad
+ ****************************************************************************/
+
+#define SATD_X( size, cpu ) \
+void pixel_satd_x3_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
+                                            intptr_t i_stride, int scores[3] )\
+{\
+    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+}\
+void pixel_satd_x4_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2, pixel *pix3,\
+                                            intptr_t i_stride, int scores[4] )\
+{\
+    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[3] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
+}
+#define SATD_X_DECL6( cpu )\
+SATD_X( 16x16, cpu )\
+SATD_X( 16x8, cpu )\
+SATD_X( 8x16, cpu )\
+SATD_X( 8x8, cpu )\
+SATD_X( 8x4, cpu )\
+SATD_X( 4x8, cpu )
+#define SATD_X_DECL7( cpu )\
+SATD_X_DECL6( cpu )\
+SATD_X( 4x4, cpu )
+
+SATD_X_DECL7()
+#if HAVE_MMX
+SATD_X_DECL7( _mmx2 )
+SATD_X_DECL6( _sse2 )
+SATD_X_DECL7( _ssse3 )
+SATD_X_DECL6( _ssse3_atom )
+SATD_X_DECL7( _sse4 )
+SATD_X_DECL7( _avx )
+SATD_X_DECL7( _xop )
+#endif
+
+#if HAVE_ARMV6 || ARCH_AARCH64
+SATD_X_DECL7( _neon )
+#endif
+
+
+#define SATD_X_10B( size, cpu ) \
+void pixel_satd_x3_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2,\
+                                            intptr_t i_stride, int scores[3] )\
+{\
+    scores[0] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+}\
+void pixel_satd_x4_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2, pixel_10b *pix3,\
+                                            intptr_t i_stride, int scores[4] )\
+{\
+    scores[0] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[3] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
+}
+#define SATD_X_DECL6_10B( cpu )\
+SATD_X_10B( 16x16, cpu )\
+SATD_X_10B( 16x8, cpu )\
+SATD_X_10B( 8x16, cpu )\
+SATD_X_10B( 8x8, cpu )\
+SATD_X_10B( 8x4, cpu )\
+SATD_X_10B( 4x8, cpu )
+#define SATD_X_DECL7_10B( cpu )\
+SATD_X_DECL6_10B( cpu )\
+SATD_X_10B( 4x4, cpu )
+
+SATD_X_DECL7_10B()
+
 
 
 
@@ -764,39 +841,6 @@ int pixel_sa8d_16x16_10b( pixel_10b *pix1, intptr_t i_pix1, pixel_10b *pix2, int
 }
 
 
-
-/****************************************************************************
- * pixel_satd_x4
- * no faster than single satd, but needed for satd to be a drop-in replacement for sad
- ****************************************************************************/
-
-#define SATD_X( size, cpu ) \
-void pixel_satd_x3_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
-                                            intptr_t i_stride, int scores[3] )\
-{\
-    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
-}\
-void pixel_satd_x4_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2, pixel *pix3,\
-                                            intptr_t i_stride, int scores[4] )\
-{\
-    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
-    scores[3] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
-}
-#define SATD_X_DECL6( cpu )\
-SATD_X( 16x16, cpu )\
-SATD_X( 16x8, cpu )\
-SATD_X( 8x16, cpu )\
-SATD_X( 8x8, cpu )\
-SATD_X( 8x4, cpu )\
-SATD_X( 4x8, cpu )
-#define SATD_X_DECL7( cpu )\
-SATD_X_DECL6( cpu )\
-SATD_X( 4x4, cpu )
-SATD_X_DECL7()
 
 
 

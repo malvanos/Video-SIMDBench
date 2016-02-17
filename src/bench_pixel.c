@@ -66,20 +66,7 @@ int quiet = 0;
     if( !ok ) ret = -1; \
 }
 
-#if 0
-typedef struct
-{
-    void *pointer; // just for detecting duplicates
-    uint32_t cpu;
-    uint64_t cycles;
-    uint32_t den;
-} bench_t;
 
-typedef struct
-{
-    char *name;
-    bench_t vers[MAX_CPUS];
-} bench_func_t;
 
 int do_bench = 0;
 int bench_pattern_len = 0;
@@ -175,7 +162,6 @@ intptr_t (*vbench_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = vbench_ch
 
 #define call_c1(func,...) func(__VA_ARGS__)
 
-#endif
 
 /****************************************************************************
  * vbench_pixel_init:
@@ -240,6 +226,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     pixf->vsad = pixel_vsad;
     pixf->asd8 = pixel_asd8;
 
+#if 0
     pixf->intra_sad_x3_4x4    = intra_sad_x3_4x4;
     pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4;
     pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8;
@@ -250,6 +237,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c;
     pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16;
     pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16;
+#endif
 
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
@@ -1324,7 +1312,7 @@ int check_pixel( int cpu_ref, int cpu_new )
             if( res_u_c != res_u_a || res_v_c != res_v_a )
             {
                 ok = 0;
-                fprintf( stderr, "ssd_nv12: %"PRIu64",%"PRIu64" != %"PRIu64",%"PRIu64"\n",
+                fprintf( stderr, "ssd_nv12: %llu,%llu != %llu,%llu\n",
                          res_u_c, res_v_c, res_u_a, res_v_a );
             }
         }
