@@ -32,13 +32,41 @@ typedef uint16_t udctcoef;
 #endif
 
 
-#   define PIXEL_SPLAT_X4_10b(x) ((x)*0x0001000100010001ULL)
-#   define MPIXEL_X4_10b(src) M64(src)
+#define CHROMA_SIZE(s) ((s)>>(CHROMA_H_SHIFT+CHROMA_V_SHIFT))
+#define FRAME_SIZE(s) ((s)+2*CHROMA_SIZE(s))
+#define CHROMA444 (CHROMA_FORMAT == CHROMA_444)
+
+/* Unions for type-punning.
+ *  * Mn: load or store n bits, aligned, native-endian
+ *   * CPn: copy n bits, aligned, native-endian
+ *    * we don't use memcpy for CPn because memcpy's args aren't assumed to be aligned */
+typedef union { uint16_t i; uint8_t  c[2]; }  vbench_union16_t;
+typedef union { uint32_t i; uint16_t b[2]; uint8_t  c[4]; } vbench_union32_t;
+typedef union { uint64_t i; uint32_t a[2]; uint16_t b[4]; uint8_t c[8]; } vbench_union64_t;
+typedef struct { uint64_t i[2]; } vbench_uint128_t;
+typedef union { vbench_uint128_t i; uint64_t a[2]; uint32_t b[4]; uint16_t c[8]; uint8_t d[16]; } vbench_union128_t;
+#define M16(src) (((vbench_union16_t*)(src))->i)
+#define M32(src) (((vbench_union32_t*)(src))->i)
+#define M64(src) (((vbench_union64_t*)(src))->i)
+#define M128(src) (((vbench_union128_t*)(src))->i)
+#define M128_ZERO ((vbench_uint128_t){{0,0}})
+#define CP16(dst,src) M16(dst) = M16(src)
+#define CP32(dst,src) M32(dst) = M32(src)
+#define CP64(dst,src) M64(dst) = M64(src)
+#define CP128(dst,src) M128(dst) = M128(src)
+
+
+
+#   define PIXEL_SPLAT_X4_10B(x) ((x)*0x0001000100010001ULL)
+#   define MPIXEL_X4_10B(src) M64(src)
 #   define PIXEL_SPLAT_X4(x) ((x)*0x01010101U)
 #   define MPIXEL_X4(src) M32(src)
 
 
-#define PIXEL_MAX ((1 << 10)-1)
+#define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
+
+#define PIXEL_MAX ((1 << 8)-1)
+#define PIXEL_MAX_10B ((1 << 10)-1)
 
 #define XCHG(type,a,b) do{ type t = a; a = b; b = t; } while(0)
 #define MIN(a,b) ( (a)<(b) ? (a) : (b) )
@@ -188,6 +216,9 @@ intptr_t benchmark_call( intptr_t (*func)(), int *ok, ... );
 
 
 
+#define CPPIXEL_X4(dst,src) MPIXEL_X4(dst) = MPIXEL_X4(src)
+
+
 /* Calls for the benchmarks */
 int check_pixel( int cpu_ref, int cpu_new );
 
@@ -205,6 +236,36 @@ enum macroblock_position_e
 };
 
 
+
+static pixel vbench_clip_pixel( int x )
+{
+    return ( (x & ~PIXEL_MAX) ? (-x)>>31 & PIXEL_MAX : x );
+}
+
+static pixel_10b vbench_clip_pixel_10b( int x )
+{
+    return ( (x & ~PIXEL_MAX_10B) ? (-x)>>31 & PIXEL_MAX_10B : x );
+}
+
+static int vbench_clip3( int v, int i_min, int i_max )
+{
+    return ( (v < i_min) ? i_min : (v > i_max) ? i_max : v );
+}
+
+static double vbench_clip3f( double v, double f_min, double f_max )
+{
+    return ( (v < f_min) ? f_min : (v > f_max) ? f_max : v );
+}
+
+static int vbench_median( int a, int b, int c )
+{
+    int t = (a-b)&((a-b)>>31);
+    a -= t;
+    b += t;
+    b -= (b-c)&((b-c)>>31);
+    b += (a-b)&((a-b)>>31);
+    return b;
+}
 
 
 #endif // COMMON_H

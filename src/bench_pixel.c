@@ -48,6 +48,7 @@
 #include "bench.h"
 
 #include "c_kernels/pixel.h"
+#include "c_kernels/predict.h"
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
 uint8_t *buf1, *buf2;
@@ -573,28 +574,28 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
             pixf->intra_sa8d_x9_8x8 = asm_intra_sa8d_x9_8x8_ssse3;
 #endif
         }
-        INIT_ADS( _ssse3 );
+        INIT_ADS( _ssse3, asm_ );
         if( cpu&CPU_SLOW_ATOM )
         {
             pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_ssse3_atom;
             pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_ssse3_atom;
-            INIT6( satd, _ssse3_atom );
+            INIT6( satd, _ssse3_atom, asm_ );
             pixf->satd[PIXEL_4x16]  = asm_pixel_satd_4x16_ssse3_atom;
-            INIT6( satd_x3, _ssse3_atom );
-            INIT6( satd_x4, _ssse3_atom );
-            INIT4( hadamard_ac, _ssse3_atom );
+            INIT6( satd_x3, _ssse3_atom, asm_ );
+            INIT6( satd_x4, _ssse3_atom, asm_ );
+            INIT4( hadamard_ac, _ssse3_atom, asm_ );
 #if ARCH_X86_64
             pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_ssse3_atom;
 #endif
         }
         else
         {
-            INIT8( ssd, _ssse3 );
+            INIT8( ssd, _ssse3, asm_ );
             pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_ssse3;
             pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_ssse3;
-            INIT8( satd, _ssse3 );
-            INIT7( satd_x3, _ssse3 );
-            INIT7( satd_x4, _ssse3 );
+            INIT8( satd, _ssse3, asm_ );
+            INIT7( satd_x3, _ssse3, asm_ );
+            INIT7( satd_x4, _ssse3, asm_ );
 #if ARCH_X86_64
             pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_ssse3;
 #endif
@@ -610,27 +611,27 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         pixf->asd8 = asm_pixel_asd8_ssse3;
         if( cpu&CPU_CACHELINE_64 )
         {
-            INIT2( sad, _cache64_ssse3 );
-            INIT2( sad_x3, _cache64_ssse3 );
-            INIT2( sad_x4, _cache64_ssse3 );
+            INIT2( sad, _cache64_ssse3, asm_ );
+            INIT2( sad_x3, _cache64_ssse3, asm_ );
+            INIT2( sad_x4, _cache64_ssse3, asm_ );
         }
         else
         {
-            INIT2( sad_x3, _ssse3 );
-            INIT5( sad_x4, _ssse3 );
+            INIT2( sad_x3, _ssse3, asm_ );
+            INIT5( sad_x4, _ssse3, asm_ );
         }
         if( (cpu&CPU_SLOW_ATOM) || (cpu&CPU_SLOW_SHUFFLE) )
         {
-            INIT5( ssd, _sse2 ); /* on conroe, sse2 is faster for width8/16 */
+            INIT5( ssd, _sse2, asm_ ); /* on conroe, sse2 is faster for width8/16 */
         }
     }
 
     if( cpu&CPU_SSE4 )
     {
-        INIT8( satd, _sse4 );
-        INIT7( satd_x3, _sse4 );
-        INIT7( satd_x4, _sse4 );
-        INIT4( hadamard_ac, _sse4 );
+        INIT8( satd, _sse4, asm_ );
+        INIT7( satd_x3, _sse4, asm_ );
+        INIT7( satd_x4, _sse4, asm_ );
+        INIT4( hadamard_ac, _sse4, asm_ );
         if( !(cpu&CPU_STACK_MOD4) )
         {
             pixf->intra_sad_x9_4x4  = asm_intra_sad_x9_4x4_sse4;
@@ -650,14 +651,14 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 
     if( cpu&CPU_AVX )
     {
-        INIT2_NAME( sad_aligned, sad, _sse2 ); /* AVX-capable CPUs doesn't benefit from an aligned version */
-        INIT2( sad_x3, _avx );
-        INIT2( sad_x4, _avx );
-        INIT8( satd, _avx );
-        INIT7( satd_x3, _avx );
-        INIT7( satd_x4, _avx );
-        INIT_ADS( _avx );
-        INIT4( hadamard_ac, _avx );
+        INIT2_NAME( sad_aligned, sad, _sse2, asm_ ); /* AVX-capable CPUs doesn't benefit from an aligned version */
+        INIT2( sad_x3, _avx, asm_ );
+        INIT2( sad_x4, _avx, asm_ );
+        INIT8( satd, _avx, asm_ );
+        INIT7( satd_x3, _avx, asm_ );
+        INIT7( satd_x4, _avx, asm_ );
+        INIT_ADS( _avx, asm_ );
+        INIT4( hadamard_ac, _avx, asm_ );
         if( !(cpu&CPU_STACK_MOD4) )
         {
             pixf->intra_sad_x9_4x4  = asm_intra_sad_x9_4x4_avx;
@@ -667,7 +668,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
             pixf->intra_sa8d_x9_8x8 = asm_intra_sa8d_x9_8x8_avx;
 #endif
         }
-        INIT5( ssd, _avx );
+        INIT5( ssd, _avx, asm_ );
         pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_avx;
         pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_avx;
         pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_avx;
@@ -678,7 +679,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         pixf->ssim_4x4x2_core  = asm_pixel_ssim_4x4x2_core_avx;
         pixf->ssim_end4        = asm_pixel_ssim_end4_avx;
 #if ARCH_X86_64
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_avx;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_avx;
 #endif
     }
 
@@ -690,9 +691,9 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         INIT4( hadamard_ac, _xop, asm_ );
         if( !(cpu&CPU_STACK_MOD4) )
         {
-            pixf->intra_satd_x9_4x4 = intra_satd_x9_4x4_xop;
+            pixf->intra_satd_x9_4x4 = asm_intra_satd_x9_4x4_xop;
         }
-        INIT5( ssd, _xop );
+        INIT5( ssd, _xop, asm_ );
         pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_xop;
         pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_xop;
         pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_xop;
@@ -791,16 +792,16 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #if ARCH_AARCH64
     if( cpu&CPU_NEON )
     {
-        INIT8( sad, _neon );
+        INIT8( sad, _neon, asm_ );
         // AArch64 has no distinct instructions for aligned load/store
-        INIT8_NAME( sad_aligned, sad, _neon );
-        INIT7( sad_x3, _neon );
-        INIT7( sad_x4, _neon );
-        INIT8( ssd, _neon );
-        INIT8( satd, _neon );
-        INIT7( satd_x3, _neon );
-        INIT7( satd_x4, _neon );
-        INIT4( hadamard_ac, _neon );
+        INIT8_NAME( sad_aligned, sad, _neon, asm_ );
+        INIT7( sad_x3, _neon, asm_ );
+        INIT7( sad_x4, _neon, asm_ );
+        INIT8( ssd, _neon, asm_ );
+        INIT8( satd, _neon, asm_ );
+        INIT7( satd_x3, _neon, asm_ );
+        INIT7( satd_x4, _neon, asm_ );
+        INIT4( hadamard_ac, _neon, asm_ );
 
         pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_neon;
         pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_neon;
@@ -834,13 +835,13 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #if HAVE_MSA
     if( cpu&CPU_MSA )
     {
-        INIT8( sad, _msa );
-        INIT8_NAME( sad_aligned, sad, _msa );
-        INIT8( ssd, _msa );
-        INIT7( sad_x3, _msa );
-        INIT7( sad_x4, _msa );
-        INIT8( satd, _msa );
-        INIT4( hadamard_ac, _msa );
+        INIT8( sad, _msa, asm_ );
+        INIT8_NAME( sad_aligned, sad, _msa, asm_ );
+        INIT8( ssd, _msa, asm_ );
+        INIT7( sad_x3, _msa, asm_ );
+        INIT7( sad_x4, _msa, asm_ );
+        INIT8( satd, _msa, asm_ );
+        INIT4( hadamard_ac, _msa, asm_ );
 
         pixf->intra_sad_x3_4x4   = intra_sad_x3_4x4_msa;
         pixf->intra_sad_x3_8x8   = intra_sad_x3_8x8_msa;
@@ -876,7 +877,6 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     pixf->ads[PIXEL_4x8] = pixf->ads[PIXEL_16x8];
     pixf->ads[PIXEL_4x4] = pixf->ads[PIXEL_8x8];
 }
-
 
 
 int check_pixel( int cpu_ref, int cpu_new )

@@ -459,21 +459,21 @@ int  asm_pixel_var2_8x16_sse2 ( pixel *,   intptr_t, pixel *,   intptr_t, int * 
 int  asm_pixel_var2_8x16_ssse3( uint8_t *, intptr_t, uint8_t *, intptr_t, int * );
 int  asm_pixel_var2_8x16_xop  ( uint8_t *, intptr_t, uint8_t *, intptr_t, int * );
 int  asm_pixel_var2_8x16_avx2 ( uint8_t *, intptr_t, uint8_t *, intptr_t, int * );
-int  pixel_vsad_mmx2 ( pixel *src, intptr_t stride, int height );
-int  pixel_vsad_sse2 ( pixel *src, intptr_t stride, int height );
-int  pixel_vsad_ssse3( pixel *src, intptr_t stride, int height );
-int  pixel_vsad_xop  ( pixel *src, intptr_t stride, int height );
-int  pixel_vsad_avx2 ( uint16_t *src, intptr_t stride, int height );
-int pixel_asd8_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
-int pixel_asd8_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
-int pixel_asd8_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
-uint64_t pixel_sa8d_satd_16x16_sse2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_ssse3     ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_ssse3_atom( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_sse4      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_avx       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_xop       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
-uint64_t pixel_sa8d_satd_16x16_avx2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+int asm_pixel_vsad_mmx2 ( pixel *src, intptr_t stride, int height );
+int asm_pixel_vsad_sse2 ( pixel *src, intptr_t stride, int height );
+int asm_pixel_vsad_ssse3( pixel *src, intptr_t stride, int height );
+int asm_pixel_vsad_xop  ( pixel *src, intptr_t stride, int height );
+int asm_pixel_vsad_avx2 ( uint16_t *src, intptr_t stride, int height );
+int asm_pixel_asd8_sse2 ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
+int asm_pixel_asd8_ssse3( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
+int asm_pixel_asd8_xop  ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2, int height );
+uint64_t asm_pixel_sa8d_satd_16x16_sse2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_ssse3     ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_ssse3_atom( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_sse4      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_avx       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_xop       ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
+uint64_t asm_pixel_sa8d_satd_16x16_avx2      ( pixel *pix1, intptr_t stride1, pixel *pix2, intptr_t stride2 );
 
 
 
