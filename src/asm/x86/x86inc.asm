@@ -35,7 +35,7 @@
 ; to x264-devel@videolan.org .
 
 %ifndef private_prefix
-    %define private_prefix _
+    %define private_prefix asm_
 %endif
 
 %ifndef public_prefix

@@ -94,26 +94,26 @@ static const struct { uint8_t w, h; } vbech_pixel_size[12] =
 #if ARCH_X86_64
 /* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
  * This is done by clobbering the stack with junk around the stack pointer and calling the
- * assembly function through x264_checkasm_call with added dummy arguments which forces all
+ * assembly function through checkasm_call with added dummy arguments which forces all
  * real arguments to be passed on the stack and not in registers. For 32-bit argument the
  * upper half of the 64-bit register location on the stack will now contain junk. Note that
  * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
  * overwrite the junk written to the stack so there's no guarantee that it will always
  * detect all functions that assumes zero-extension.
  */
-void x264_checkasm_stack_clobber( uint64_t clobber, ... );
+void checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_a1(func,...) ({ \
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
-    x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
-    x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
+    asm_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
+    asm_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
 #elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
-#define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
+#define call_a1(func,...) checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1 call_c1
 #endif
 
 #if ARCH_ARM
-#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
+#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
 #define call_a1_64 call_a1
 #endif

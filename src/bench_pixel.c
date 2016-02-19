@@ -170,47 +170,52 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 {
     memset( pixf, 0, sizeof(*pixf) );
 
-#define INIT2_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_16x16] = pixel_##name2##_16x16##cpu;\
-    pixf->name1[PIXEL_16x8]  = pixel_##name2##_16x8##cpu;
-#define INIT4_NAME( name1, name2, cpu ) \
-    INIT2_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_8x16]  = pixel_##name2##_8x16##cpu;\
-    pixf->name1[PIXEL_8x8]   = pixel_##name2##_8x8##cpu;
-#define INIT5_NAME( name1, name2, cpu ) \
-    INIT4_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_8x4]   = pixel_##name2##_8x4##cpu;
-#define INIT6_NAME( name1, name2, cpu ) \
-    INIT5_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_4x8]   = pixel_##name2##_4x8##cpu;
-#define INIT7_NAME( name1, name2, cpu ) \
-    INIT6_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_4x4]   = pixel_##name2##_4x4##cpu;
-#define INIT8_NAME( name1, name2, cpu ) \
-    INIT7_NAME( name1, name2, cpu ) \
-    pixf->name1[PIXEL_4x16]  = pixel_##name2##_4x16##cpu;
-#define INIT2( name, cpu ) INIT2_NAME( name, name, cpu )
-#define INIT4( name, cpu ) INIT4_NAME( name, name, cpu )
-#define INIT5( name, cpu ) INIT5_NAME( name, name, cpu )
-#define INIT6( name, cpu ) INIT6_NAME( name, name, cpu )
-#define INIT7( name, cpu ) INIT7_NAME( name, name, cpu )
-#define INIT8( name, cpu ) INIT8_NAME( name, name, cpu )
+#define INIT2_NAME( name1, name2, cpu, prefix ) \
+    pixf->name1[PIXEL_16x16] = prefix##pixel_##name2##_16x16##cpu;\
+    pixf->name1[PIXEL_16x8]  = prefix##pixel_##name2##_16x8##cpu;
+#define INIT4_NAME( name1, name2, cpu, prefix  ) \
+    INIT2_NAME( name1, name2, cpu, prefix  ) \
+    pixf->name1[PIXEL_8x16]  = prefix##pixel_##name2##_8x16##cpu;\
+    pixf->name1[PIXEL_8x8]   = prefix##pixel_##name2##_8x8##cpu;
 
-#define INIT_ADS( cpu ) \
-    pixf->ads[PIXEL_16x16] = pixel_ads4##cpu;\
-    pixf->ads[PIXEL_16x8] = pixel_ads2##cpu;\
-    pixf->ads[PIXEL_8x8] = pixel_ads1##cpu;
+#define INIT5_NAME( name1, name2, cpu, prefix  ) \
+    INIT4_NAME( name1, name2, cpu, prefix ) \
+    pixf->name1[PIXEL_8x4]   = prefix##pixel_##name2##_8x4##cpu;
 
-    INIT8( sad, );
-    INIT8_NAME( sad_aligned, sad, );
-    INIT7( sad_x3, );
-    INIT7( sad_x4, );
-    INIT8( ssd, );
-    INIT8( satd, );
-    INIT7( satd_x3, );
-    INIT7( satd_x4, );
-    INIT4( hadamard_ac, );
-    INIT_ADS( );
+#define INIT6_NAME( name1, name2, cpu, prefix  ) \
+    INIT5_NAME( name1, name2, cpu, prefix  ) \
+    pixf->name1[PIXEL_4x8]   = prefix##pixel_##name2##_4x8##cpu;
+
+#define INIT7_NAME( name1, name2, cpu, prefix  ) \
+    INIT6_NAME( name1, name2, cpu, prefix  ) \
+    pixf->name1[PIXEL_4x4]   = prefix##pixel_##name2##_4x4##cpu;
+
+#define INIT8_NAME( name1, name2, cpu, prefix  ) \
+    INIT7_NAME( name1, name2, cpu, prefix ) \
+    pixf->name1[PIXEL_4x16]  = prefix##pixel_##name2##_4x16##cpu;
+
+#define INIT2( name, cpu, prefix ) INIT2_NAME( name, name, cpu, prefix )
+#define INIT4( name, cpu, prefix ) INIT4_NAME( name, name, cpu, prefix )
+#define INIT5( name, cpu, prefix ) INIT5_NAME( name, name, cpu, prefix )
+#define INIT6( name, cpu, prefix ) INIT6_NAME( name, name, cpu, prefix )
+#define INIT7( name, cpu, prefix ) INIT7_NAME( name, name, cpu, prefix )
+#define INIT8( name, cpu, prefix ) INIT8_NAME( name, name, cpu, prefix )
+
+#define INIT_ADS( cpu, prefix ) \
+    pixf->ads[PIXEL_16x16] = prefix##pixel_ads4##cpu;\
+    pixf->ads[PIXEL_16x8] = prefix##pixel_ads2##cpu;\
+    pixf->ads[PIXEL_8x8] = prefix##pixel_ads1##cpu;
+
+    INIT8( sad, , );
+    INIT8_NAME( sad_aligned, sad, , );
+    INIT7( sad_x3, , );
+    INIT7( sad_x4, , );
+    INIT8( ssd, , );
+    INIT8( satd, , );
+    INIT7( satd_x3, , );
+    INIT7( satd_x4, , );
+    INIT4( hadamard_ac, , );
+    INIT_ADS( , );
 
     pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16;
     pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8;
@@ -243,16 +248,16 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #if HAVE_MMX
     if( cpu&CPU_MMX2 )
     {
-        INIT7( sad, _mmx2 );
-        INIT7_NAME( sad_aligned, sad, _mmx2 );
-        INIT7( sad_x3, _mmx2 );
-        INIT7( sad_x4, _mmx2 );
-        INIT8( satd, _mmx2 );
-        INIT7( satd_x3, _mmx2 );
-        INIT7( satd_x4, _mmx2 );
-        INIT4( hadamard_ac, _mmx2 );
-        INIT8( ssd, _mmx2 );
-        INIT_ADS( _mmx2 );
+        INIT7( sad, _mmx2, asm_ );
+        INIT7_NAME( sad_aligned, sad, _mmx2, asm_  );
+        INIT7( sad_x3, _mmx2, asm_  );
+        INIT7( sad_x4, _mmx2, asm_  );
+        INIT8( satd, _mmx2, asm_  );
+        INIT7( satd_x3, _mmx2, asm_  );
+        INIT7( satd_x4, _mmx2, asm_  );
+        INIT4( hadamard_ac, _mmx2, asm_  );
+        INIT8( ssd, _mmx2, asm_  );
+        INIT_ADS( _mmx2, asm_  );
 
         pixf->ssd_nv12_core = pixel_ssd_nv12_core_mmx2;
         pixf->var[PIXEL_16x16] = pixel_var_16x16_mmx2;
@@ -423,32 +428,32 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #if HAVE_MMX
     if( cpu&CPU_MMX )
     {
-        INIT8( ssd, _mmx );
+        INIT8( ssd, _mmx, asm_ );
     }
 
     if( cpu&CPU_MMX2 )
     {
-        INIT8( sad, _mmx2 );
-        INIT8_NAME( sad_aligned, sad, _mmx2 );
-        INIT7( sad_x3, _mmx2 );
-        INIT7( sad_x4, _mmx2 );
-        INIT8( satd, _mmx2 );
-        INIT7( satd_x3, _mmx2 );
-        INIT7( satd_x4, _mmx2 );
-        INIT4( hadamard_ac, _mmx2 );
-        INIT_ADS( _mmx2 );
-        pixf->var[PIXEL_16x16] = pixel_var_16x16_mmx2;
-        pixf->var[PIXEL_8x16]  = pixel_var_8x16_mmx2;
-        pixf->var[PIXEL_8x8]   = pixel_var_8x8_mmx2;
-        pixf->ssd_nv12_core    = pixel_ssd_nv12_core_mmx2;
+        INIT8( sad, _mmx2, asm_ );
+        INIT8_NAME( sad_aligned, sad, _mmx2, asm_ );
+        INIT7( sad_x3, _mmx2, asm_ );
+        INIT7( sad_x4, _mmx2, asm_ );
+        INIT8( satd, _mmx2, asm_ );
+        INIT7( satd_x3, _mmx2, asm_ );
+        INIT7( satd_x4, _mmx2, asm_ );
+        INIT4( hadamard_ac, _mmx2, asm_ );
+        INIT_ADS( _mmx2, asm_ );
+        pixf->var[PIXEL_16x16] = asm_pixel_var_16x16_mmx2;
+        pixf->var[PIXEL_8x16]  = asm_pixel_var_8x16_mmx2;
+        pixf->var[PIXEL_8x8]   = asm_pixel_var_8x8_mmx2;
+        pixf->ssd_nv12_core    = asm_pixel_ssd_nv12_core_mmx2;
 #if ARCH_X86
-        pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_mmx2;
-        pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_mmx2;
-        pixf->intra_sa8d_x3_8x8 = intra_sa8d_x3_8x8_mmx2;
-        pixf->ssim_4x4x2_core = pixel_ssim_4x4x2_core_mmx2;
-        pixf->var2[PIXEL_8x8] = pixel_var2_8x8_mmx2;
-        pixf->var2[PIXEL_8x16] = pixel_var2_8x16_mmx2;
-        pixf->vsad = pixel_vsad_mmx2;
+        pixf->sa8d[PIXEL_16x16] = asm_pixel_sa8d_16x16_mmx2;
+        pixf->sa8d[PIXEL_8x8]   = asm_pixel_sa8d_8x8_mmx2;
+        pixf->intra_sa8d_x3_8x8 = asm_intra_sa8d_x3_8x8_mmx2;
+        pixf->ssim_4x4x2_core = asm_pixel_ssim_4x4x2_core_mmx2;
+        pixf->var2[PIXEL_8x8] = asm_pixel_var2_8x8_mmx2;
+        pixf->var2[PIXEL_8x16] = asm_pixel_var2_8x16_mmx2;
+        pixf->vsad = asm_pixel_vsad_mmx2;
 
         if( cpu&CPU_CACHELINE_32 )
         {
@@ -465,144 +470,144 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #else
         if( cpu&CPU_CACHELINE_64 && !(cpu&CPU_SLOW_ATOM) )
         {
-            pixf->sad[PIXEL_8x16] = pixel_sad_8x16_cache64_mmx2;
-            pixf->sad[PIXEL_8x8]  = pixel_sad_8x8_cache64_mmx2;
-            pixf->sad[PIXEL_8x4]  = pixel_sad_8x4_cache64_mmx2;
-            pixf->sad_x3[PIXEL_8x16] = pixel_sad_x3_8x16_cache64_mmx2;
-            pixf->sad_x3[PIXEL_8x8]  = pixel_sad_x3_8x8_cache64_mmx2;
-            pixf->sad_x4[PIXEL_8x16] = pixel_sad_x4_8x16_cache64_mmx2;
-            pixf->sad_x4[PIXEL_8x8]  = pixel_sad_x4_8x8_cache64_mmx2;
+            pixf->sad[PIXEL_8x16] = asm_pixel_sad_8x16_cache64_mmx2;
+            pixf->sad[PIXEL_8x8]  = asm_pixel_sad_8x8_cache64_mmx2;
+            pixf->sad[PIXEL_8x4]  = asm_pixel_sad_8x4_cache64_mmx2;
+            pixf->sad_x3[PIXEL_8x16] = asm_pixel_sad_x3_8x16_cache64_mmx2;
+            pixf->sad_x3[PIXEL_8x8]  = asm_pixel_sad_x3_8x8_cache64_mmx2;
+            pixf->sad_x4[PIXEL_8x16] = asm_pixel_sad_x4_8x16_cache64_mmx2;
+            pixf->sad_x4[PIXEL_8x8]  = asm_pixel_sad_x4_8x8_cache64_mmx2;
         }
 #endif
-        pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_mmx2;
-        pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_mmx2;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_mmx2;
-        pixf->intra_sad_x3_8x16c  = intra_sad_x3_8x16c_mmx2;
-        pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_mmx2;
-        pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_mmx2;
-        pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_mmx2;
-        pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4_mmx2;
-        pixf->intra_sad_x3_4x4    = intra_sad_x3_4x4_mmx2;
+        pixf->intra_satd_x3_16x16 = asm_intra_satd_x3_16x16_mmx2;
+        pixf->intra_sad_x3_16x16  = asm_intra_sad_x3_16x16_mmx2;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_mmx2;
+        pixf->intra_sad_x3_8x16c  = asm_intra_sad_x3_8x16c_mmx2;
+        pixf->intra_satd_x3_8x8c  = asm_intra_satd_x3_8x8c_mmx2;
+        pixf->intra_sad_x3_8x8c   = asm_intra_sad_x3_8x8c_mmx2;
+        pixf->intra_sad_x3_8x8    = asm_intra_sad_x3_8x8_mmx2;
+        pixf->intra_satd_x3_4x4   = asm_intra_satd_x3_4x4_mmx2;
+        pixf->intra_sad_x3_4x4    = asm_intra_sad_x3_4x4_mmx2;
     }
 
     if( cpu&CPU_SSE2 )
     {
-        INIT5( ssd, _sse2slow );
-        INIT2_NAME( sad_aligned, sad, _sse2_aligned );
-        pixf->var[PIXEL_16x16] = pixel_var_16x16_sse2;
-        pixf->ssd_nv12_core    = pixel_ssd_nv12_core_sse2;
-        pixf->ssim_4x4x2_core  = pixel_ssim_4x4x2_core_sse2;
-        pixf->ssim_end4        = pixel_ssim_end4_sse2;
-        pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_sse2;
-        pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_sse2;
+        INIT5( ssd, _sse2slow, asm_ );
+        INIT2_NAME( sad_aligned, sad, _sse2_aligned, asm_ );
+        pixf->var[PIXEL_16x16] = asm_pixel_var_16x16_sse2;
+        pixf->ssd_nv12_core    = asm_pixel_ssd_nv12_core_sse2;
+        pixf->ssim_4x4x2_core  = asm_pixel_ssim_4x4x2_core_sse2;
+        pixf->ssim_end4        = asm_pixel_ssim_end4_sse2;
+        pixf->sa8d[PIXEL_16x16] = asm_pixel_sa8d_16x16_sse2;
+        pixf->sa8d[PIXEL_8x8]   = asm_pixel_sa8d_8x8_sse2;
 #if ARCH_X86_64
-        pixf->intra_sa8d_x3_8x8 = intra_sa8d_x3_8x8_sse2;
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_sse2;
+        pixf->intra_sa8d_x3_8x8 = asm_intra_sa8d_x3_8x8_sse2;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_sse2;
 #endif
-        pixf->var2[PIXEL_8x8]   = pixel_var2_8x8_sse2;
-        pixf->var2[PIXEL_8x16]  = pixel_var2_8x16_sse2;
-        pixf->vsad = pixel_vsad_sse2;
-        pixf->asd8 = pixel_asd8_sse2;
+        pixf->var2[PIXEL_8x8]   = asm_pixel_var2_8x8_sse2;
+        pixf->var2[PIXEL_8x16]  = asm_pixel_var2_8x16_sse2;
+        pixf->vsad = asm_pixel_vsad_sse2;
+        pixf->asd8 = asm_pixel_asd8_sse2;
     }
 
     if( (cpu&CPU_SSE2) && !(cpu&CPU_SSE2_IS_SLOW) )
     {
-        INIT2( sad, _sse2 );
-        INIT2( sad_x3, _sse2 );
-        INIT2( sad_x4, _sse2 );
-        INIT6( satd, _sse2 );
-        pixf->satd[PIXEL_4x16]   = pixel_satd_4x16_sse2;
-        INIT6( satd_x3, _sse2 );
-        INIT6( satd_x4, _sse2 );
-        INIT4( hadamard_ac, _sse2 );
-        INIT_ADS( _sse2 );
-        pixf->var[PIXEL_8x8] = pixel_var_8x8_sse2;
-        pixf->var[PIXEL_8x16] = pixel_var_8x16_sse2;
-        pixf->intra_sad_x3_16x16 = intra_sad_x3_16x16_sse2;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_sse2;
-        pixf->intra_sad_x3_8x16c  = intra_sad_x3_8x16c_sse2;
+        INIT2( sad, _sse2, asm_ );
+        INIT2( sad_x3, _sse2, asm_  );
+        INIT2( sad_x4, _sse2, asm_  );
+        INIT6( satd, _sse2, asm_  );
+        pixf->satd[PIXEL_4x16]   = asm_pixel_satd_4x16_sse2;
+        INIT6( satd_x3, _sse2, asm_  );
+        INIT6( satd_x4, _sse2, asm_  );
+        INIT4( hadamard_ac, _sse2, asm_  );
+        INIT_ADS( _sse2, asm_  );
+        pixf->var[PIXEL_8x8] = asm_pixel_var_8x8_sse2;
+        pixf->var[PIXEL_8x16] = asm_pixel_var_8x16_sse2;
+        pixf->intra_sad_x3_16x16 = asm_intra_sad_x3_16x16_sse2;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_sse2;
+        pixf->intra_sad_x3_8x16c  = asm_intra_sad_x3_8x16c_sse2;
         if( cpu&CPU_CACHELINE_64 )
         {
-            INIT2( ssd, _sse2); /* faster for width 16 on p4 */
+            INIT2( ssd, _sse2, asm_); /* faster for width 16 on p4 */
 #if ARCH_X86
-            INIT2( sad, _cache64_sse2 );
-            INIT2( sad_x3, _cache64_sse2 );
-            INIT2( sad_x4, _cache64_sse2 );
+            INIT2( sad, _cache64_sse2, asm_ );
+            INIT2( sad_x3, _cache64_sse2, asm_ );
+            INIT2( sad_x4, _cache64_sse2, asm_ );
 #endif
            if( cpu&CPU_SSE2_IS_FAST )
            {
-               pixf->sad_x3[PIXEL_8x16] = pixel_sad_x3_8x16_cache64_sse2;
-               pixf->sad_x4[PIXEL_8x16] = pixel_sad_x4_8x16_cache64_sse2;
+               pixf->sad_x3[PIXEL_8x16] = asm_pixel_sad_x3_8x16_cache64_sse2;
+               pixf->sad_x4[PIXEL_8x16] = asm_pixel_sad_x4_8x16_cache64_sse2;
            }
         }
     }
 
     if( cpu&CPU_SSE2_IS_FAST && !(cpu&CPU_CACHELINE_64) )
     {
-        pixf->sad_aligned[PIXEL_8x16] = pixel_sad_8x16_sse2;
-        pixf->sad[PIXEL_8x16] = pixel_sad_8x16_sse2;
-        pixf->sad_x3[PIXEL_8x16] = pixel_sad_x3_8x16_sse2;
-        pixf->sad_x3[PIXEL_8x8] = pixel_sad_x3_8x8_sse2;
-        pixf->sad_x3[PIXEL_8x4] = pixel_sad_x3_8x4_sse2;
-        pixf->sad_x4[PIXEL_8x16] = pixel_sad_x4_8x16_sse2;
-        pixf->sad_x4[PIXEL_8x8] = pixel_sad_x4_8x8_sse2;
-        pixf->sad_x4[PIXEL_8x4] = pixel_sad_x4_8x4_sse2;
+        pixf->sad_aligned[PIXEL_8x16] = asm_pixel_sad_8x16_sse2;
+        pixf->sad[PIXEL_8x16] = asm_pixel_sad_8x16_sse2;
+        pixf->sad_x3[PIXEL_8x16] = asm_pixel_sad_x3_8x16_sse2;
+        pixf->sad_x3[PIXEL_8x8] = asm_pixel_sad_x3_8x8_sse2;
+        pixf->sad_x3[PIXEL_8x4] = asm_pixel_sad_x3_8x4_sse2;
+        pixf->sad_x4[PIXEL_8x16] = asm_pixel_sad_x4_8x16_sse2;
+        pixf->sad_x4[PIXEL_8x8] = asm_pixel_sad_x4_8x8_sse2;
+        pixf->sad_x4[PIXEL_8x4] = asm_pixel_sad_x4_8x4_sse2;
     }
 
     if( (cpu&CPU_SSE3) && (cpu&CPU_CACHELINE_64) )
     {
-        INIT2( sad, _sse3 );
-        INIT2( sad_x3, _sse3 );
-        INIT2( sad_x4, _sse3 );
+        INIT2( sad, _sse3, asm_ );
+        INIT2( sad_x3, _sse3, asm_ );
+        INIT2( sad_x4, _sse3, asm_ );
     }
 
     if( cpu&CPU_SSSE3 )
     {
-        INIT4( hadamard_ac, _ssse3 );
+        INIT4( hadamard_ac, _ssse3, asm_ );
         if( !(cpu&CPU_STACK_MOD4) )
         {
-            pixf->intra_sad_x9_4x4  = intra_sad_x9_4x4_ssse3;
-            pixf->intra_satd_x9_4x4 = intra_satd_x9_4x4_ssse3;
-            pixf->intra_sad_x9_8x8  = intra_sad_x9_8x8_ssse3;
+            pixf->intra_sad_x9_4x4  = asm_intra_sad_x9_4x4_ssse3;
+            pixf->intra_satd_x9_4x4 = asm_intra_satd_x9_4x4_ssse3;
+            pixf->intra_sad_x9_8x8  = asm_intra_sad_x9_8x8_ssse3;
 #if ARCH_X86_64
-            pixf->intra_sa8d_x9_8x8 = intra_sa8d_x9_8x8_ssse3;
+            pixf->intra_sa8d_x9_8x8 = asm_intra_sa8d_x9_8x8_ssse3;
 #endif
         }
         INIT_ADS( _ssse3 );
         if( cpu&CPU_SLOW_ATOM )
         {
-            pixf->sa8d[PIXEL_16x16]= pixel_sa8d_16x16_ssse3_atom;
-            pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_ssse3_atom;
+            pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_ssse3_atom;
+            pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_ssse3_atom;
             INIT6( satd, _ssse3_atom );
-            pixf->satd[PIXEL_4x16]  = pixel_satd_4x16_ssse3_atom;
+            pixf->satd[PIXEL_4x16]  = asm_pixel_satd_4x16_ssse3_atom;
             INIT6( satd_x3, _ssse3_atom );
             INIT6( satd_x4, _ssse3_atom );
             INIT4( hadamard_ac, _ssse3_atom );
 #if ARCH_X86_64
-            pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_ssse3_atom;
+            pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_ssse3_atom;
 #endif
         }
         else
         {
             INIT8( ssd, _ssse3 );
-            pixf->sa8d[PIXEL_16x16]= pixel_sa8d_16x16_ssse3;
-            pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_ssse3;
+            pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_ssse3;
+            pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_ssse3;
             INIT8( satd, _ssse3 );
             INIT7( satd_x3, _ssse3 );
             INIT7( satd_x4, _ssse3 );
 #if ARCH_X86_64
-            pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_ssse3;
+            pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_ssse3;
 #endif
         }
-        pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_ssse3;
+        pixf->intra_satd_x3_16x16 = asm_intra_satd_x3_16x16_ssse3;
         if( !(cpu&CPU_SLOW_PSHUFB) )
-            pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_ssse3;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_ssse3;
-        pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_ssse3;
-        pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_ssse3;
-        pixf->var2[PIXEL_8x8] = pixel_var2_8x8_ssse3;
-        pixf->var2[PIXEL_8x16] = pixel_var2_8x16_ssse3;
-        pixf->asd8 = pixel_asd8_ssse3;
+            pixf->intra_sad_x3_16x16  = asm_intra_sad_x3_16x16_ssse3;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_ssse3;
+        pixf->intra_satd_x3_8x8c  = asm_intra_satd_x3_8x8c_ssse3;
+        pixf->intra_sad_x3_8x8c   = asm_intra_sad_x3_8x8c_ssse3;
+        pixf->var2[PIXEL_8x8] = asm_pixel_var2_8x8_ssse3;
+        pixf->var2[PIXEL_8x16] = asm_pixel_var2_8x16_ssse3;
+        pixf->asd8 = asm_pixel_asd8_ssse3;
         if( cpu&CPU_CACHELINE_64 )
         {
             INIT2( sad, _cache64_ssse3 );
@@ -628,18 +633,18 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         INIT4( hadamard_ac, _sse4 );
         if( !(cpu&CPU_STACK_MOD4) )
         {
-            pixf->intra_sad_x9_4x4  = intra_sad_x9_4x4_sse4;
-            pixf->intra_satd_x9_4x4 = intra_satd_x9_4x4_sse4;
-            pixf->intra_sad_x9_8x8  = intra_sad_x9_8x8_sse4;
+            pixf->intra_sad_x9_4x4  = asm_intra_sad_x9_4x4_sse4;
+            pixf->intra_satd_x9_4x4 = asm_intra_satd_x9_4x4_sse4;
+            pixf->intra_sad_x9_8x8  = asm_intra_sad_x9_8x8_sse4;
 #if ARCH_X86_64
-            pixf->intra_sa8d_x9_8x8 = intra_sa8d_x9_8x8_sse4;
+            pixf->intra_sa8d_x9_8x8 = asm_intra_sa8d_x9_8x8_sse4;
 #endif
         }
-        pixf->sa8d[PIXEL_16x16]= pixel_sa8d_16x16_sse4;
-        pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_sse4;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_sse4;
+        pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_sse4;
+        pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_sse4;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_sse4;
 #if ARCH_X86_64
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_sse4;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_sse4;
 #endif
     }
 
@@ -655,23 +660,23 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         INIT4( hadamard_ac, _avx );
         if( !(cpu&CPU_STACK_MOD4) )
         {
-            pixf->intra_sad_x9_4x4  = intra_sad_x9_4x4_avx;
-            pixf->intra_satd_x9_4x4 = intra_satd_x9_4x4_avx;
-            pixf->intra_sad_x9_8x8  = intra_sad_x9_8x8_avx;
+            pixf->intra_sad_x9_4x4  = asm_intra_sad_x9_4x4_avx;
+            pixf->intra_satd_x9_4x4 = asm_intra_satd_x9_4x4_avx;
+            pixf->intra_sad_x9_8x8  = asm_intra_sad_x9_8x8_avx;
 #if ARCH_X86_64
-            pixf->intra_sa8d_x9_8x8 = intra_sa8d_x9_8x8_avx;
+            pixf->intra_sa8d_x9_8x8 = asm_intra_sa8d_x9_8x8_avx;
 #endif
         }
         INIT5( ssd, _avx );
-        pixf->sa8d[PIXEL_16x16]= pixel_sa8d_16x16_avx;
-        pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_avx;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_avx;
-        pixf->ssd_nv12_core    = pixel_ssd_nv12_core_avx;
-        pixf->var[PIXEL_16x16] = pixel_var_16x16_avx;
-        pixf->var[PIXEL_8x16]  = pixel_var_8x16_avx;
-        pixf->var[PIXEL_8x8]   = pixel_var_8x8_avx;
-        pixf->ssim_4x4x2_core  = pixel_ssim_4x4x2_core_avx;
-        pixf->ssim_end4        = pixel_ssim_end4_avx;
+        pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_avx;
+        pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_avx;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_avx;
+        pixf->ssd_nv12_core    = asm_pixel_ssd_nv12_core_avx;
+        pixf->var[PIXEL_16x16] = asm_pixel_var_16x16_avx;
+        pixf->var[PIXEL_8x16]  = asm_pixel_var_8x16_avx;
+        pixf->var[PIXEL_8x8]   = asm_pixel_var_8x8_avx;
+        pixf->ssim_4x4x2_core  = asm_pixel_ssim_4x4x2_core_avx;
+        pixf->ssim_end4        = asm_pixel_ssim_end4_avx;
 #if ARCH_X86_64
         pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_avx;
 #endif
@@ -679,47 +684,47 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 
     if( cpu&CPU_XOP )
     {
-        INIT7( satd, _xop );
-        INIT7( satd_x3, _xop );
-        INIT7( satd_x4, _xop );
-        INIT4( hadamard_ac, _xop );
+        INIT7( satd, _xop, asm_ );
+        INIT7( satd_x3, _xop, asm_ );
+        INIT7( satd_x4, _xop, asm_ );
+        INIT4( hadamard_ac, _xop, asm_ );
         if( !(cpu&CPU_STACK_MOD4) )
         {
             pixf->intra_satd_x9_4x4 = intra_satd_x9_4x4_xop;
         }
         INIT5( ssd, _xop );
-        pixf->sa8d[PIXEL_16x16]= pixel_sa8d_16x16_xop;
-        pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_xop;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_xop;
-        pixf->ssd_nv12_core    = pixel_ssd_nv12_core_xop;
-        pixf->var[PIXEL_16x16] = pixel_var_16x16_xop;
-        pixf->var[PIXEL_8x16]  = pixel_var_8x16_xop;
-        pixf->var[PIXEL_8x8]   = pixel_var_8x8_xop;
-        pixf->var2[PIXEL_8x8] = pixel_var2_8x8_xop;
-        pixf->var2[PIXEL_8x16] = pixel_var2_8x16_xop;
+        pixf->sa8d[PIXEL_16x16]= asm_pixel_sa8d_16x16_xop;
+        pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_xop;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_xop;
+        pixf->ssd_nv12_core    = asm_pixel_ssd_nv12_core_xop;
+        pixf->var[PIXEL_16x16] = asm_pixel_var_16x16_xop;
+        pixf->var[PIXEL_8x16]  = asm_pixel_var_8x16_xop;
+        pixf->var[PIXEL_8x8]   = asm_pixel_var_8x8_xop;
+        pixf->var2[PIXEL_8x8] = asm_pixel_var2_8x8_xop;
+        pixf->var2[PIXEL_8x16] = asm_pixel_var2_8x16_xop;
 #if ARCH_X86_64
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_xop;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_xop;
 #endif
     }
 
     if( cpu&CPU_AVX2 )
     {
-        INIT2( ssd, _avx2 );
-        INIT2( sad_x3, _avx2 );
-        INIT2( sad_x4, _avx2 );
-        INIT4( satd, _avx2 );
-        INIT2( hadamard_ac, _avx2 );
-        INIT_ADS( _avx2 );
-        pixf->sa8d[PIXEL_8x8]  = pixel_sa8d_8x8_avx2;
-        pixf->var[PIXEL_16x16] = pixel_var_16x16_avx2;
-        pixf->var2[PIXEL_8x16]  = pixel_var2_8x16_avx2;
-        pixf->var2[PIXEL_8x8]   = pixel_var2_8x8_avx2;
-        pixf->intra_sad_x3_16x16 = intra_sad_x3_16x16_avx2;
-        pixf->intra_sad_x9_8x8  = intra_sad_x9_8x8_avx2;
-        pixf->intra_sad_x3_8x8c = intra_sad_x3_8x8c_avx2;
-        pixf->ssd_nv12_core = pixel_ssd_nv12_core_avx2;
+        INIT2( ssd, _avx2, asm_ );
+        INIT2( sad_x3, _avx2, asm_ );
+        INIT2( sad_x4, _avx2, asm_ );
+        INIT4( satd, _avx2, asm_ );
+        INIT2( hadamard_ac, _avx2, asm_ );
+        INIT_ADS( _avx2, asm_ );
+        pixf->sa8d[PIXEL_8x8]  = asm_pixel_sa8d_8x8_avx2;
+        pixf->var[PIXEL_16x16] = asm_pixel_var_16x16_avx2;
+        pixf->var2[PIXEL_8x16]  = asm_pixel_var2_8x16_avx2;
+        pixf->var2[PIXEL_8x8]   = asm_pixel_var2_8x8_avx2;
+        pixf->intra_sad_x3_16x16 = asm_intra_sad_x3_16x16_avx2;
+        pixf->intra_sad_x9_8x8  = asm_intra_sad_x9_8x8_avx2;
+        pixf->intra_sad_x3_8x8c = asm_intra_sad_x3_8x8c_avx2;
+        pixf->ssd_nv12_core = asm_pixel_ssd_nv12_core_avx2;
 #if ARCH_X86_64
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_avx2;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_avx2;
 #endif
     }
 #endif //HAVE_MMX
@@ -727,54 +732,54 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
 #if HAVE_ARMV6
     if( cpu&CPU_ARMV6 )
     {
-        pixf->sad[PIXEL_4x8] = pixel_sad_4x8_armv6;
-        pixf->sad[PIXEL_4x4] = pixel_sad_4x4_armv6;
-        pixf->sad_aligned[PIXEL_4x8] = pixel_sad_4x8_armv6;
-        pixf->sad_aligned[PIXEL_4x4] = pixel_sad_4x4_armv6;
+        pixf->sad[PIXEL_4x8] = asm_pixel_sad_4x8_armv6;
+        pixf->sad[PIXEL_4x4] = asm_pixel_sad_4x4_armv6;
+        pixf->sad_aligned[PIXEL_4x8] = asm_pixel_sad_4x8_armv6;
+        pixf->sad_aligned[PIXEL_4x4] = asm_pixel_sad_4x4_armv6;
     }
     if( cpu&CPU_NEON )
     {
-        INIT5( sad, _neon );
-        INIT5( sad_aligned, _neon );
-        INIT7( sad_x3, _neon );
-        INIT7( sad_x4, _neon );
-        INIT7( ssd, _neon );
-        INIT7( satd, _neon );
-        INIT7( satd_x3, _neon );
-        INIT7( satd_x4, _neon );
-        INIT4( hadamard_ac, _neon );
-        pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_neon;
-        pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_neon;
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_neon;
-        pixf->var[PIXEL_8x8]    = pixel_var_8x8_neon;
-        pixf->var[PIXEL_8x16]   = pixel_var_8x16_neon;
-        pixf->var[PIXEL_16x16]  = pixel_var_16x16_neon;
-        pixf->var2[PIXEL_8x8]   = pixel_var2_8x8_neon;
-        pixf->var2[PIXEL_8x16]  = pixel_var2_8x16_neon;
+        INIT5( sad, _neon, asm_ );
+        INIT5( sad_aligned, _neon, asm_ );
+        INIT7( sad_x3, _neon, asm_ );
+        INIT7( sad_x4, _neon, asm_ );
+        INIT7( ssd, _neon, asm_ );
+        INIT7( satd, _neon, asm_ );
+        INIT7( satd_x3, _neon, asm_ );
+        INIT7( satd_x4, _neon, asm_ );
+        INIT4( hadamard_ac, _neon, asm_ );
+        pixf->sa8d[PIXEL_8x8]   = asm_pixel_sa8d_8x8_neon;
+        pixf->sa8d[PIXEL_16x16] = asm_pixel_sa8d_16x16_neon;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_neon;
+        pixf->var[PIXEL_8x8]    = asm_pixel_var_8x8_neon;
+        pixf->var[PIXEL_8x16]   = asm_pixel_var_8x16_neon;
+        pixf->var[PIXEL_16x16]  = asm_pixel_var_16x16_neon;
+        pixf->var2[PIXEL_8x8]   = asm_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]  = asm_pixel_var2_8x16_neon;
         pixf->vsad = pixel_vsad_neon;
         pixf->asd8 = pixel_asd8_neon;
 
-        pixf->intra_sad_x3_4x4    = intra_sad_x3_4x4_neon;
-        pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4_neon;
-        pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_neon;
-        pixf->intra_sa8d_x3_8x8   = intra_sa8d_x3_8x8_neon;
-        pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_neon;
-        pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_neon;
-        pixf->intra_sad_x3_8x16c  = intra_sad_x3_8x16c_neon;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_neon;
-        pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_neon;
-        pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_neon;
+        pixf->intra_sad_x3_4x4    = asm_intra_sad_x3_4x4_neon;
+        pixf->intra_satd_x3_4x4   = asm_intra_satd_x3_4x4_neon;
+        pixf->intra_sad_x3_8x8    = asm_intra_sad_x3_8x8_neon;
+        pixf->intra_sa8d_x3_8x8   = asm_intra_sa8d_x3_8x8_neon;
+        pixf->intra_sad_x3_8x8c   = asm_intra_sad_x3_8x8c_neon;
+        pixf->intra_satd_x3_8x8c  = asm_intra_satd_x3_8x8c_neon;
+        pixf->intra_sad_x3_8x16c  = asm_intra_sad_x3_8x16c_neon;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_neon;
+        pixf->intra_sad_x3_16x16  = asm_intra_sad_x3_16x16_neon;
+        pixf->intra_satd_x3_16x16 = asm_intra_satd_x3_16x16_neon;
 
-        pixf->ssd_nv12_core     = pixel_ssd_nv12_core_neon;
-        pixf->ssim_4x4x2_core   = pixel_ssim_4x4x2_core_neon;
-        pixf->ssim_end4         = pixel_ssim_end4_neon;
+        pixf->ssd_nv12_core     = asm_pixel_ssd_nv12_core_neon;
+        pixf->ssim_4x4x2_core   = asm_pixel_ssim_4x4x2_core_neon;
+        pixf->ssim_end4         = asm_pixel_ssim_end4_neon;
 
         if( cpu&CPU_FAST_NEON_MRC )
         {
-            pixf->sad[PIXEL_4x8] = pixel_sad_4x8_neon;
-            pixf->sad[PIXEL_4x4] = pixel_sad_4x4_neon;
-            pixf->sad_aligned[PIXEL_4x8] = pixel_sad_aligned_4x8_neon;
-            pixf->sad_aligned[PIXEL_4x4] = pixel_sad_aligned_4x4_neon;
+            pixf->sad[PIXEL_4x8] = asm_pixel_sad_4x8_neon;
+            pixf->sad[PIXEL_4x4] = asm_pixel_sad_4x4_neon;
+            pixf->sad_aligned[PIXEL_4x8] = asm_pixel_sad_aligned_4x8_neon;
+            pixf->sad_aligned[PIXEL_4x4] = asm_pixel_sad_aligned_4x4_neon;
         }
         else    // really just scheduled for dual issue / A8
         {

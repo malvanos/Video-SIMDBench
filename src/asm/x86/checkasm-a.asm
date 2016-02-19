@@ -1,10 +1,13 @@
 ;*****************************************************************************
 ;* checkasm-a.asm: assembly check tool
 ;*****************************************************************************
+;* Copyright (C) 2016 Michail Alvanos
 ;* Copyright (C) 2008-2016 x264 project
 ;*
 ;* Authors: Loren Merritt <lorenm@u.washington.edu>
 ;*          Henrik Gramner <henrik@gramner.com>
+;*
+;* Author of Video SIMD-Benchmark: Michail Alvanos <malvanos@gmail.com>
 ;*
 ;* This program is free software; you can redistribute it and/or modify
 ;* it under the terms of the GNU General Public License as published by
@@ -64,7 +67,7 @@ cextern_naked puts
 %if ARCH_X86_64
 
 ;-----------------------------------------------------------------------------
-; void x264_checkasm_stack_clobber( uint64_t clobber, ... )
+; void checkasm_stack_clobber( uint64_t clobber, ... )
 ;-----------------------------------------------------------------------------
 cglobal checkasm_stack_clobber, 1,2
     ; Clobber the stack with junk below the stack pointer
@@ -85,7 +88,7 @@ cglobal checkasm_stack_clobber, 1,2
 %endif
 
 ;-----------------------------------------------------------------------------
-; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
+; intptr_t checkasm_call( intptr_t (*func)(), int *ok, ... )
 ;-----------------------------------------------------------------------------
 INIT_XMM
 cglobal checkasm_call, 2,15,16,max_args*8+8
@@ -170,7 +173,7 @@ cglobal checkasm_call, 2,15,16,max_args*8+8
 %define n6 dword 0x33627ba7
 
 ;-----------------------------------------------------------------------------
-; intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... )
+; intptr_t checkasm_call( intptr_t (*func)(), int *ok, ... )
 ;-----------------------------------------------------------------------------
 cglobal checkasm_call, 1,7
     mov  r3, n3

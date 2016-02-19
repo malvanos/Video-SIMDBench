@@ -127,9 +127,9 @@ static void sigill_handler( int sig )
 
 #if HAVE_MMX
 int pu_cpuid_test( void );
-void _cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx );
-void cpu_xgetbv( uint32_t op, uint32_t *eax, uint32_t *edx );
-int _cpu_cpuid_test();
+void asm_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx );
+void asm_cpu_xgetbv( uint32_t op, uint32_t *eax, uint32_t *edx );
+int asm_cpu_cpuid_test();
 
 uint32_t cpu_detect( void )
 {
@@ -140,16 +140,16 @@ uint32_t cpu_detect( void )
     int cache;
 
 #if !ARCH_X86_64
-    if( !_cpu_cpuid_test() )
+    if( !asm_cpu_cpuid_test() )
         return 0;
 #endif
 
-    _cpu_cpuid( 0, &eax, vendor+0, vendor+2, vendor+1 );
+    asm_cpu_cpuid( 0, &eax, vendor+0, vendor+2, vendor+1 );
     max_basic_cap = eax;
     if( max_basic_cap == 0 )
         return 0;
 
-    _cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
+    asm_cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
     if( edx&0x00800000 )
         cpu |= CPU_MMX;
     else
@@ -174,7 +174,7 @@ uint32_t cpu_detect( void )
     if( (ecx&0x18000000) == 0x18000000 )
     {
         /* Check for OS support */
-        _cpu_xgetbv( 0, &eax, &edx );
+        asm_cpu_xgetbv( 0, &eax, &edx );
         if( (eax&0x6) == 0x6 )
         {
             cpu |= CPU_AVX;
@@ -185,7 +185,7 @@ uint32_t cpu_detect( void )
 
     if( max_basic_cap >= 7 )
     {
-        _cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
+        asm_cpu_cpuid( 7, &eax, &ebx, &ecx, &edx );
         /* AVX2 requires OS support, but BMI1/2 don't. */
         if( (cpu&CPU_AVX) && (ebx&0x00000020) )
             cpu |= CPU_AVX2;
@@ -200,12 +200,12 @@ uint32_t cpu_detect( void )
     if( cpu & CPU_SSSE3 )
         cpu |= CPU_SSE2_IS_FAST;
 
-    _cpu_cpuid( 0x80000000, &eax, &ebx, &ecx, &edx );
+    asm_cpu_cpuid( 0x80000000, &eax, &ebx, &ecx, &edx );
     max_extended_cap = eax;
 
     if( max_extended_cap >= 0x80000001 )
     {
-        _cpu_cpuid( 0x80000001, &eax, &ebx, &ecx, &edx );
+        asm_cpu_cpuid( 0x80000001, &eax, &ebx, &ecx, &edx );
 
         if( ecx&0x00000020 )
             cpu |= CPU_LZCNT;             /* Supported by Intel chips starting with Haswell */
@@ -248,7 +248,7 @@ uint32_t cpu_detect( void )
 
     if( !strcmp((char*)vendor, "GenuineIntel") )
     {
-        _cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
+        asm_cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
         int family = ((eax>>8)&0xf) + ((eax>>20)&0xff);
         int model  = ((eax>>4)&0xf) + ((eax>>12)&0xf0);
         if( family == 6 )
@@ -278,11 +278,11 @@ uint32_t cpu_detect( void )
     if( (!strcmp((char*)vendor, "GenuineIntel") || !strcmp((char*)vendor, "CyrixInstead")) && !(cpu&CPU_SSE42))
     {
         /* cacheline size is specified in 3 places, any of which may be missing */
-        _cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
+        asm_cpu_cpuid( 1, &eax, &ebx, &ecx, &edx );
         cache = (ebx&0xff00)>>5; // cflush size
         if( !cache && max_extended_cap >= 0x80000006 )
         {
-            _cpu_cpuid( 0x80000006, &eax, &ebx, &ecx, &edx );
+            asm_cpu_cpuid( 0x80000006, &eax, &ebx, &ecx, &edx );
             cache = ecx&0xff; // cacheline size
         }
         if( !cache && max_basic_cap >= 2 )
@@ -294,7 +294,7 @@ uint32_t cpu_detect( void )
             uint32_t buf[4];
             int max, i = 0;
             do {
-                _cpu_cpuid( 2, buf+0, buf+1, buf+2, buf+3 );
+                asm_cpu_cpuid( 2, buf+0, buf+1, buf+2, buf+3 );
                 max = buf[0]&0xff;
                 buf[0] &= ~0xff;
                 for( int j = 0; j < 4; j++ )

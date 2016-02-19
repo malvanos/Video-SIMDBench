@@ -688,19 +688,7 @@ SATD_X_DECL6( cpu )\
 SATD_X( 4x4, cpu )
 
 SATD_X_DECL7()
-#if HAVE_MMX
-SATD_X_DECL7( _mmx2 )
-SATD_X_DECL6( _sse2 )
-SATD_X_DECL7( _ssse3 )
-SATD_X_DECL6( _ssse3_atom )
-SATD_X_DECL7( _sse4 )
-SATD_X_DECL7( _avx )
-SATD_X_DECL7( _xop )
-#endif
 
-#if HAVE_ARMV6 || ARCH_AARCH64
-SATD_X_DECL7( _neon )
-#endif
 
 
 #define SATD_X_10B( size, cpu ) \
