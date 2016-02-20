@@ -42,7 +42,7 @@ void vbench_predict_16x16_dc_##name( pixel *src )\
         dc += src[-1 + i * FDEC_STRIDE];\
         dc += src[-1 + (i+1) * FDEC_STRIDE];\
     }\
-    vbench_predict_16x16_dc_core_##name( src, dc );\
+    asm_predict_16x16_dc_core_##name( src, dc );\
 }
 
 PREDICT_16x16_DC( mmx2 )
@@ -58,7 +58,7 @@ static void vbench_predict_16x16_dc_left_##name( pixel *src )\
         dc += src[-1 + i * FDEC_STRIDE];\
         dc += src[-1 + (i+1) * FDEC_STRIDE];\
     }\
-    vbench_predict_16x16_dc_left_core_##name( src, dc>>4 );\
+    asm_predict_16x16_dc_left_core_##name( src, dc>>4 );\
 }
 
 PREDICT_16x16_DC_LEFT( mmx2 )
@@ -103,7 +103,7 @@ ALIGNED_8( static const int8_t pb_m32101234[8] ) = {-3,-2,-1,0,1,2,3,4};
     if( BIT_DEPTH > 8 && (i00 > 0x7fff || abs(b) > 1092 || abs(c) > 1092) )\
         vbench_predict_16x16_p_c( src );\
     else\
-        vbench_predict_16x16_p_core_##name( src, i00, b, c );
+        asm_predict_16x16_p_core_##name( src, i00, b, c );
 
 #define PREDICT_16x16_P(name, name2)\
 static void vbench_predict_16x16_p_##name( pixel *src )\
@@ -199,14 +199,14 @@ PREDICT_16x16_P_INLINE( avx2, avx2 )
     int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[7 - FDEC_STRIDE] );\
     int b = ( 17 * H + 16 ) >> 5;\
     int c = ( 5 * V + 32 ) >> 6;\
-    vbench_predict_8x16c_p_core_##name( src, a, b, c );
+    asm_predict_8x16c_p_core_##name( src, a, b, c );
 #else // !HIGH_BIT_DEPTH
 #define PREDICT_8x16C_P_END(name)\
     int a = 16 * ( src[-1 + 15*FDEC_STRIDE] + src[7 - FDEC_STRIDE] );\
     int b = ( 17 * H + 16 ) >> 5;\
     int c = ( 5 * V + 32 ) >> 6;\
     int i00 = a -3*b -7*c + 16;\
-    vbench_predict_8x16c_p_core_##name( src, i00, b, c );
+    asm_predict_8x16c_p_core_##name( src, i00, b, c );
 #endif // HIGH_BIT_DEPTH
 
 #define PREDICT_8x16C_P(name)\
@@ -236,14 +236,14 @@ PREDICT_8x16C_P( avx2 )
     int a = 16 * ( src[7*FDEC_STRIDE -1] + src[7 - FDEC_STRIDE] );\
     int b = ( 17 * H + 16 ) >> 5;\
     int c = ( 17 * V + 16 ) >> 5;\
-    vbench_predict_8x8c_p_core_##name( src, a, b, c );
+    asm_predict_8x8c_p_core_##name( src, a, b, c );
 #else // !HIGH_BIT_DEPTH
 #define PREDICT_8x8C_P_END(name)\
     int a = 16 * ( src[7*FDEC_STRIDE -1] + src[7 - FDEC_STRIDE] );\
     int b = ( 17 * H + 16 ) >> 5;\
     int c = ( 17 * V + 16 ) >> 5;\
     int i00 = a -3*b -3*c + 16;\
-    vbench_predict_8x8c_p_core_##name( src, i00, b, c );
+    asm_predict_8x8c_p_core_##name( src, i00, b, c );
 #endif // HIGH_BIT_DEPTH
 
 #define PREDICT_8x8C_P(name, name2)\
@@ -351,49 +351,49 @@ void vbench_predict_16x16_init_mmx( int cpu, vbench_predict_t pf[7] )
 {
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_mmx2;
-    pf[I_PRED_16x16_DC_TOP]  = vbench_predict_16x16_dc_top_mmx2;
+    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_mmx2;
+    pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_mmx2;
     pf[I_PRED_16x16_DC_LEFT] = vbench_predict_16x16_dc_left_mmx2;
-    pf[I_PRED_16x16_V]       = vbench_predict_16x16_v_mmx2;
-    pf[I_PRED_16x16_H]       = vbench_predict_16x16_h_mmx2;
+    pf[I_PRED_16x16_V]       = asm_predict_16x16_v_mmx2;
+    pf[I_PRED_16x16_H]       = asm_predict_16x16_h_mmx2;
 #if HIGH_BIT_DEPTH
     if( !(cpu & CPU_SSE) )
         return;
     pf[I_PRED_16x16_V]       = vbench_predict_16x16_v_sse;
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_sse2;
-    pf[I_PRED_16x16_DC_TOP]  = vbench_predict_16x16_dc_top_sse2;
-    pf[I_PRED_16x16_DC_LEFT] = vbench_predict_16x16_dc_left_sse2;
-    pf[I_PRED_16x16_H]       = vbench_predict_16x16_h_sse2;
-    pf[I_PRED_16x16_P]       = vbench_predict_16x16_p_sse2;
+    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_sse2;
+    pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_sse2;
+    pf[I_PRED_16x16_DC_LEFT] = asm_predict_16x16_dc_left_sse2;
+    pf[I_PRED_16x16_H]       = asm_predict_16x16_h_sse2;
+    pf[I_PRED_16x16_P]       = asm_predict_16x16_p_sse2;
     if( !(cpu & CPU_AVX) )
         return;
-    pf[I_PRED_16x16_V]       = vbench_predict_16x16_v_avx;
+    pf[I_PRED_16x16_V]       = asm_predict_16x16_v_avx;
     if( !(cpu & CPU_AVX2) )
         return;
-    pf[I_PRED_16x16_H]       = vbench_predict_16x16_h_avx2;
+    pf[I_PRED_16x16_H]       = asm_predict_16x16_h_avx2;
 #else
 #if !ARCH_X86_64
-    pf[I_PRED_16x16_P]       = vbench_predict_16x16_p_mmx2;
+    pf[I_PRED_16x16_P]       = asm_predict_16x16_p_mmx2;
 #endif
     if( !(cpu & CPU_SSE) )
         return;
-    pf[I_PRED_16x16_V]       = vbench_predict_16x16_v_sse;
+    pf[I_PRED_16x16_V]       = asm_predict_16x16_v_sse;
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_sse2;
+    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_sse2;
     if( cpu & CPU_SSE2_IS_SLOW )
         return;
-    pf[I_PRED_16x16_DC_TOP]  = vbench_predict_16x16_dc_top_sse2;
+    pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_sse2;
     pf[I_PRED_16x16_DC_LEFT] = vbench_predict_16x16_dc_left_sse2;
     pf[I_PRED_16x16_P]       = vbench_predict_16x16_p_sse2;
     if( !(cpu & CPU_SSSE3) )
         return;
     if( !(cpu & CPU_SLOW_PSHUFB) )
-        pf[I_PRED_16x16_H]       = vbench_predict_16x16_h_ssse3;
+        pf[I_PRED_16x16_H]       = asm_predict_16x16_h_ssse3;
 #if HAVE_X86_INLINE_ASM
-    pf[I_PRED_16x16_P]       = vbench_predict_16x16_p_ssse3;
+    pf[I_PRED_16x16_P]       = asm_predict_16x16_p_ssse3;
 #endif
     if( !(cpu & CPU_AVX) )
         return;
@@ -404,7 +404,7 @@ void vbench_predict_16x16_init_mmx( int cpu, vbench_predict_t pf[7] )
     {
         pf[I_PRED_16x16_P]       = vbench_predict_16x16_p_avx2;
         pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_avx2;
-        pf[I_PRED_16x16_DC_TOP]  = vbench_predict_16x16_dc_top_avx2;
+        pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_avx2;
         pf[I_PRED_16x16_DC_LEFT] = vbench_predict_16x16_dc_left_avx2;
     }
 }
@@ -414,47 +414,47 @@ void vbench_predict_8x8c_init_mmx( int cpu, vbench_predict_t pf[7] )
     if( !(cpu & CPU_MMX) )
         return;
 #if HIGH_BIT_DEPTH
-    pf[I_PRED_CHROMA_V]       = vbench_predict_8x8c_v_mmx;
+    pf[I_PRED_CHROMA_V]       = asm_predict_8x8c_v_mmx;
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_CHROMA_DC]      = vbench_predict_8x8c_dc_mmx2;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x8c_h_mmx2;
+    pf[I_PRED_CHROMA_DC]      = asm_predict_8x8c_dc_mmx2;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x8c_h_mmx2;
     if( !(cpu & CPU_SSE) )
         return;
-    pf[I_PRED_CHROMA_V]       = vbench_predict_8x8c_v_sse;
+    pf[I_PRED_CHROMA_V]       = asm_predict_8x8c_v_sse;
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_CHROMA_DC]      = vbench_predict_8x8c_dc_sse2;
-    pf[I_PRED_CHROMA_DC_TOP]  = vbench_predict_8x8c_dc_top_sse2;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x8c_h_sse2;
-    pf[I_PRED_CHROMA_P]       = vbench_predict_8x8c_p_sse2;
+    pf[I_PRED_CHROMA_DC]      = asm_predict_8x8c_dc_sse2;
+    pf[I_PRED_CHROMA_DC_TOP]  = asm_predict_8x8c_dc_top_sse2;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x8c_h_sse2;
+    pf[I_PRED_CHROMA_P]       = asm_predict_8x8c_p_sse2;
     if( !(cpu & CPU_AVX) )
         return;
-    pf[I_PRED_CHROMA_P]       = vbench_predict_8x8c_p_avx;
+    pf[I_PRED_CHROMA_P]       = asm_predict_8x8c_p_avx;
     if( !(cpu & CPU_AVX2) )
         return;
-    pf[I_PRED_CHROMA_H]   = vbench_predict_8x8c_h_avx2;
+    pf[I_PRED_CHROMA_H]   = asm_predict_8x8c_h_avx2;
 #else
 #if ARCH_X86_64
     pf[I_PRED_CHROMA_DC_LEFT] = vbench_predict_8x8c_dc_left;
 #endif
-    pf[I_PRED_CHROMA_V]       = vbench_predict_8x8c_v_mmx;
+    pf[I_PRED_CHROMA_V]       = asm_predict_8x8c_v_mmx;
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_CHROMA_DC_TOP]  = vbench_predict_8x8c_dc_top_mmx2;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x8c_h_mmx2;
+    pf[I_PRED_CHROMA_DC_TOP]  = asm_predict_8x8c_dc_top_mmx2;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x8c_h_mmx2;
 #if !ARCH_X86_64
-    pf[I_PRED_CHROMA_P]       = vbench_predict_8x8c_p_mmx2;
+    pf[I_PRED_CHROMA_P]       = asm_predict_8x8c_p_mmx2;
 #endif
-    pf[I_PRED_CHROMA_DC]      = vbench_predict_8x8c_dc_mmx2;
+    pf[I_PRED_CHROMA_DC]      = asm_predict_8x8c_dc_mmx2;
     if( !(cpu & CPU_SSE2) )
         return;
     pf[I_PRED_CHROMA_P]       = vbench_predict_8x8c_p_sse2;
     if( !(cpu & CPU_SSSE3) )
         return;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x8c_h_ssse3;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x8c_h_ssse3;
 #if HAVE_X86_INLINE_ASM
-    pf[I_PRED_CHROMA_P]       = vbench_predict_8x8c_p_ssse3;
+    pf[I_PRED_CHROMA_P]       = asm_predict_8x8c_p_ssse3;
 #endif
     if( !(cpu & CPU_AVX) )
         return;
@@ -492,21 +492,21 @@ void vbench_predict_8x16c_init_mmx( int cpu, vbench_predict_t pf[7] )
         return;
     pf[I_PRED_CHROMA_H]   = vbench_predict_8x16c_h_avx2;
 #else
-    pf[I_PRED_CHROMA_V]       = vbench_predict_8x16c_v_mmx;
+    pf[I_PRED_CHROMA_V]       = asm_predict_8x16c_v_mmx;
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_CHROMA_DC_TOP]  = vbench_predict_8x16c_dc_top_mmx2;
-    pf[I_PRED_CHROMA_DC]      = vbench_predict_8x16c_dc_mmx2;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x16c_h_mmx2;
+    pf[I_PRED_CHROMA_DC_TOP]  = asm_predict_8x16c_dc_top_mmx2;
+    pf[I_PRED_CHROMA_DC]      = asm_predict_8x16c_dc_mmx2;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x16c_h_mmx2;
 #if !ARCH_X86_64
-    pf[I_PRED_CHROMA_P]       = vbench_predict_8x16c_p_mmx2;
+    pf[I_PRED_CHROMA_P]       = asm_predict_8x16c_p_mmx2;
 #endif
     if( !(cpu & CPU_SSE2) )
         return;
     pf[I_PRED_CHROMA_P]       = vbench_predict_8x16c_p_sse2;
     if( !(cpu & CPU_SSSE3) )
         return;
-    pf[I_PRED_CHROMA_H]       = vbench_predict_8x16c_h_ssse3;
+    pf[I_PRED_CHROMA_H]       = asm_predict_8x16c_h_ssse3;
     if( !(cpu & CPU_AVX) )
         return;
     pf[I_PRED_CHROMA_P]       = vbench_predict_8x16c_p_avx;
@@ -561,14 +561,14 @@ void vbench_predict_8x8_init_mmx( int cpu, vbench_predict8x8_t pf[12], vbench_pr
     pf[I_PRED_8x8_VR]     = vbench_predict_8x8_vr_avx;
     *predict_8x8_filter   = vbench_predict_8x8_filter_avx;
 #else
-    pf[I_PRED_8x8_V]      = vbench_predict_8x8_v_mmx2;
-    pf[I_PRED_8x8_H]      = vbench_predict_8x8_h_mmx2;
-    pf[I_PRED_8x8_DC]     = vbench_predict_8x8_dc_mmx2;
-    pf[I_PRED_8x8_DC_TOP] = vbench_predict_8x8_dc_top_mmx2;
-    pf[I_PRED_8x8_DC_LEFT]= vbench_predict_8x8_dc_left_mmx2;
-    pf[I_PRED_8x8_HD]     = vbench_predict_8x8_hd_mmx2;
-    pf[I_PRED_8x8_VL]     = vbench_predict_8x8_vl_mmx2;
-    *predict_8x8_filter   = vbench_predict_8x8_filter_mmx2;
+    pf[I_PRED_8x8_V]      = asm_predict_8x8_v_mmx2;
+    pf[I_PRED_8x8_H]      = asm_predict_8x8_h_mmx2;
+    pf[I_PRED_8x8_DC]     = asm_predict_8x8_dc_mmx2;
+    pf[I_PRED_8x8_DC_TOP] = asm_predict_8x8_dc_top_mmx2;
+    pf[I_PRED_8x8_DC_LEFT]= asm_predict_8x8_dc_left_mmx2;
+    pf[I_PRED_8x8_HD]     = asm_predict_8x8_hd_mmx2;
+    pf[I_PRED_8x8_VL]     = asm_predict_8x8_vl_mmx2;
+    *predict_8x8_filter   = asm_predict_8x8_filter_mmx2;
 #if ARCH_X86
     pf[I_PRED_8x8_DDL]  = vbench_predict_8x8_ddl_mmx2;
     pf[I_PRED_8x8_DDR]  = vbench_predict_8x8_ddr_mmx2;
@@ -577,28 +577,28 @@ void vbench_predict_8x8_init_mmx( int cpu, vbench_predict8x8_t pf[12], vbench_pr
 #endif
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_8x8_DDL]  = vbench_predict_8x8_ddl_sse2;
-    pf[I_PRED_8x8_VL]   = vbench_predict_8x8_vl_sse2;
-    pf[I_PRED_8x8_VR]   = vbench_predict_8x8_vr_sse2;
-    pf[I_PRED_8x8_DDR]  = vbench_predict_8x8_ddr_sse2;
-    pf[I_PRED_8x8_HD]   = vbench_predict_8x8_hd_sse2;
-    pf[I_PRED_8x8_HU]   = vbench_predict_8x8_hu_sse2;
+    pf[I_PRED_8x8_DDL]  = asm_predict_8x8_ddl_sse2;
+    pf[I_PRED_8x8_VL]   = asm_predict_8x8_vl_sse2;
+    pf[I_PRED_8x8_VR]   = asm_predict_8x8_vr_sse2;
+    pf[I_PRED_8x8_DDR]  = asm_predict_8x8_ddr_sse2;
+    pf[I_PRED_8x8_HD]   = asm_predict_8x8_hd_sse2;
+    pf[I_PRED_8x8_HU]   = asm_predict_8x8_hu_sse2;
     if( !(cpu & CPU_SSSE3) )
         return;
     if( !(cpu & CPU_SLOW_PALIGNR) )
     {
-        pf[I_PRED_8x8_DDL]  = vbench_predict_8x8_ddl_ssse3;
-        pf[I_PRED_8x8_VR]   = vbench_predict_8x8_vr_ssse3;
+        pf[I_PRED_8x8_DDL]  = asm_predict_8x8_ddl_ssse3;
+        pf[I_PRED_8x8_VR]   = asm_predict_8x8_vr_ssse3;
     }
-    pf[I_PRED_8x8_HU]   = vbench_predict_8x8_hu_ssse3;
-    *predict_8x8_filter = vbench_predict_8x8_filter_ssse3;
+    pf[I_PRED_8x8_HU]   = asm_predict_8x8_hu_ssse3;
+    *predict_8x8_filter = asm_predict_8x8_filter_ssse3;
     if( !(cpu & CPU_AVX) )
         return;
-    pf[I_PRED_8x8_DDL]  = vbench_predict_8x8_ddl_avx;
-    pf[I_PRED_8x8_DDR]  = vbench_predict_8x8_ddr_avx;
-    pf[I_PRED_8x8_VL]   = vbench_predict_8x8_vl_avx;
-    pf[I_PRED_8x8_VR]   = vbench_predict_8x8_vr_avx;
-    pf[I_PRED_8x8_HD]   = vbench_predict_8x8_hd_avx;
+    pf[I_PRED_8x8_DDL]  = asm_predict_8x8_ddl_avx;
+    pf[I_PRED_8x8_DDR]  = asm_predict_8x8_ddr_avx;
+    pf[I_PRED_8x8_VL]   = asm_predict_8x8_vl_avx;
+    pf[I_PRED_8x8_VR]   = asm_predict_8x8_vr_avx;
+    pf[I_PRED_8x8_HD]   = asm_predict_8x8_hd_avx;
 #endif // HIGH_BIT_DEPTH
 }
 
@@ -606,43 +606,43 @@ void vbench_predict_4x4_init_mmx( int cpu, vbench_predict_t pf[12] )
 {
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_4x4_DC]  = vbench_predict_4x4_dc_mmx2;
-    pf[I_PRED_4x4_DDL] = vbench_predict_4x4_ddl_mmx2;
-    pf[I_PRED_4x4_DDR] = vbench_predict_4x4_ddr_mmx2;
-    pf[I_PRED_4x4_VL]  = vbench_predict_4x4_vl_mmx2;
-    pf[I_PRED_4x4_HD]  = vbench_predict_4x4_hd_mmx2;
-    pf[I_PRED_4x4_HU]  = vbench_predict_4x4_hu_mmx2;
+    pf[I_PRED_4x4_DC]  = asm_predict_4x4_dc_mmx2;
+    pf[I_PRED_4x4_DDL] = asm_predict_4x4_ddl_mmx2;
+    pf[I_PRED_4x4_DDR] = asm_predict_4x4_ddr_mmx2;
+    pf[I_PRED_4x4_VL]  = asm_predict_4x4_vl_mmx2;
+    pf[I_PRED_4x4_HD]  = asm_predict_4x4_hd_mmx2;
+    pf[I_PRED_4x4_HU]  = asm_predict_4x4_hu_mmx2;
 #if HIGH_BIT_DEPTH
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_4x4_DDL] = vbench_predict_4x4_ddl_sse2;
-    pf[I_PRED_4x4_DDR] = vbench_predict_4x4_ddr_sse2;
-    pf[I_PRED_4x4_HD]  = vbench_predict_4x4_hd_sse2;
-    pf[I_PRED_4x4_VL]  = vbench_predict_4x4_vl_sse2;
-    pf[I_PRED_4x4_VR]  = vbench_predict_4x4_vr_sse2;
+    pf[I_PRED_4x4_DDL] = asm_predict_4x4_ddl_sse2;
+    pf[I_PRED_4x4_DDR] = asm_predict_4x4_ddr_sse2;
+    pf[I_PRED_4x4_HD]  = asm_predict_4x4_hd_sse2;
+    pf[I_PRED_4x4_VL]  = asm_predict_4x4_vl_sse2;
+    pf[I_PRED_4x4_VR]  = asm_predict_4x4_vr_sse2;
     if( !(cpu & CPU_SSSE3) )
         return;
-    pf[I_PRED_4x4_DDR] = vbench_predict_4x4_ddr_ssse3;
-    pf[I_PRED_4x4_VR]  = vbench_predict_4x4_vr_ssse3;
-    pf[I_PRED_4x4_HD]  = vbench_predict_4x4_hd_ssse3;
+    pf[I_PRED_4x4_DDR] = asm_predict_4x4_ddr_ssse3;
+    pf[I_PRED_4x4_VR]  = asm_predict_4x4_vr_ssse3;
+    pf[I_PRED_4x4_HD]  = asm_predict_4x4_hd_ssse3;
     if( !(cpu & CPU_AVX) )
         return;
-    pf[I_PRED_4x4_DDL] = vbench_predict_4x4_ddl_avx;
-    pf[I_PRED_4x4_DDR] = vbench_predict_4x4_ddr_avx;
-    pf[I_PRED_4x4_HD]  = vbench_predict_4x4_hd_avx;
-    pf[I_PRED_4x4_VL]  = vbench_predict_4x4_vl_avx;
-    pf[I_PRED_4x4_VR]  = vbench_predict_4x4_vr_avx;
+    pf[I_PRED_4x4_DDL] = asm_predict_4x4_ddl_avx;
+    pf[I_PRED_4x4_DDR] = asm_predict_4x4_ddr_avx;
+    pf[I_PRED_4x4_HD]  = asm_predict_4x4_hd_avx;
+    pf[I_PRED_4x4_VL]  = asm_predict_4x4_vl_avx;
+    pf[I_PRED_4x4_VR]  = asm_predict_4x4_vr_avx;
     if( !(cpu & CPU_AVX2) )
         return;
-    pf[I_PRED_4x4_H]  = vbench_predict_4x4_h_avx2;
+    pf[I_PRED_4x4_H]  = asm_predict_4x4_h_avx2;
 #else
-    pf[I_PRED_4x4_VR]  = vbench_predict_4x4_vr_mmx2;
+    pf[I_PRED_4x4_VR]  = asm_predict_4x4_vr_mmx2;
     if( !(cpu & CPU_SSSE3) )
         return;
-    pf[I_PRED_4x4_DDR] = vbench_predict_4x4_ddr_ssse3;
-    pf[I_PRED_4x4_VR]  = vbench_predict_4x4_vr_ssse3;
-    pf[I_PRED_4x4_HD]  = vbench_predict_4x4_hd_ssse3;
+    pf[I_PRED_4x4_DDR] = asm_predict_4x4_ddr_ssse3;
+    pf[I_PRED_4x4_VR]  = asm_predict_4x4_vr_ssse3;
+    pf[I_PRED_4x4_HD]  = asm_predict_4x4_hd_ssse3;
     if( cpu & CPU_CACHELINE_64 )
-        pf[I_PRED_4x4_VR] = vbench_predict_4x4_vr_ssse3_cache64;
+        pf[I_PRED_4x4_VR] = asm_predict_4x4_vr_ssse3_cache64;
 #endif // HIGH_BIT_DEPTH
 }
