@@ -660,34 +660,49 @@ PIXEL_SATD_C_10B( 4,  8,  pixel_satd_4x4_10b )
  * no faster than single satd, but needed for satd to be a drop-in replacement for sad
  ****************************************************************************/
 
-#define SATD_X( size, cpu ) \
-void pixel_satd_x3_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
+#define SATD_X( size, cpu, prefix ) \
+void prefix##pixel_satd_x3_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
                                             intptr_t i_stride, int scores[3] )\
 {\
-    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[0] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride  );\
+    scores[1] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride  );\
+    scores[2] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride  );\
 }\
-void pixel_satd_x4_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2, pixel *pix3,\
+void prefix##pixel_satd_x4_##size##cpu( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2, pixel *pix3,\
                                             intptr_t i_stride, int scores[4] )\
 {\
-    scores[0] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
-    scores[3] = pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
+    scores[0] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[3] = prefix##pixel_satd_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
 }
-#define SATD_X_DECL6( cpu )\
-SATD_X( 16x16, cpu )\
-SATD_X( 16x8, cpu )\
-SATD_X( 8x16, cpu )\
-SATD_X( 8x8, cpu )\
-SATD_X( 8x4, cpu )\
-SATD_X( 4x8, cpu )
-#define SATD_X_DECL7( cpu )\
-SATD_X_DECL6( cpu )\
-SATD_X( 4x4, cpu )
 
-SATD_X_DECL7()
+#define SATD_X_DECL6( cpu, prefix )\
+SATD_X( 16x16, cpu, prefix )\
+SATD_X( 16x8, cpu, prefix )\
+SATD_X( 8x16, cpu, prefix )\
+SATD_X( 8x8, cpu, prefix )\
+SATD_X( 8x4, cpu, prefix )\
+SATD_X( 4x8, cpu, prefix )
+
+#define SATD_X_DECL7( cpu, prefix )\
+SATD_X_DECL6( cpu, prefix )\
+SATD_X( 4x4, cpu, prefix )
+
+SATD_X_DECL7(,)
+
+#if HAVE_MMX
+SATD_X_DECL7( _mmx2, asm_ )
+#if !HIGH_BIT_DEPTH
+SATD_X_DECL6( _sse2, asm_ )
+SATD_X_DECL7( _ssse3, asm_ )
+SATD_X_DECL6( _ssse3_atom, asm_ )
+SATD_X_DECL7( _sse4, asm_ )
+SATD_X_DECL7( _avx, asm_ )
+SATD_X_DECL7( _xop, asm_ )
+#endif // !HIGH_BIT_DEPTH
+#endif
+
 
 
 
@@ -945,6 +960,174 @@ HADAMARD_AC_10B( 8, 16 )
 HADAMARD_AC_10B( 8, 8 )
 
 /////////////////////////////////////////////////////////////////////////////////
+#define SAD_X( size ) \
+void vbench_pixel_sad_x3_##size( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
+                                      intptr_t i_stride, int scores[3] )\
+{\
+    scores[0] = pixel_sad_##size( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_sad_##size( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_sad_##size( fenc, FENC_STRIDE, pix2, i_stride );\
+}\
+void vbench_pixel_sad_x4_##size( pixel *fenc, pixel *pix0, pixel *pix1,pixel *pix2, pixel *pix3,\
+                                      intptr_t i_stride, int scores[4] )\
+{\
+    scores[0] = pixel_sad_##size( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_sad_##size( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_sad_##size( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[3] = pixel_sad_##size( fenc, FENC_STRIDE, pix3, i_stride );\
+}
+
+SAD_X( 16x16 )
+SAD_X( 16x8 )
+SAD_X( 8x16 )
+SAD_X( 8x8 )
+SAD_X( 8x4 )
+SAD_X( 4x8 )
+SAD_X( 4x4 )
+
+
+// FIXME: merge these twos: must rename all pixel funcs
+#define INTRA_MBCMP_8x8_C( mbcmp, cpu, cpu2, prefix )\
+void intra_##mbcmp##_x3_8x8##cpu( pixel *fenc, pixel edge[36], int res[3] )\
+{\
+    ALIGNED_ARRAY_16( pixel, pix, [8*FDEC_STRIDE] );\
+    prefix##predict_8x8_v##cpu2( pix, edge );\
+    res[0] = pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_8x8_h##cpu2( pix, edge );\
+    res[1] = pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_8x8_dc##cpu2( pix, edge );\
+    res[2] = pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+}
+
+
+
+#define INTRA_MBCMP_8x8( mbcmp, cpu, cpu2, prefix )\
+void intra_##mbcmp##_x3_8x8##cpu( pixel *fenc, pixel edge[36], int res[3] )\
+{\
+    ALIGNED_ARRAY_16( pixel, pix, [8*FDEC_STRIDE] );\
+    prefix##predict_8x8_v##cpu2( pix, edge );\
+    res[0] = prefix##pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_8x8_h##cpu2( pix, edge );\
+    res[1] = prefix##pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_8x8_dc##cpu2( pix, edge );\
+    res[2] = prefix##pixel_##mbcmp##_8x8##cpu( pix, FDEC_STRIDE, fenc, FENC_STRIDE );\
+}
+
+
+
+INTRA_MBCMP_8x8_C( sad,, _c, vbench_)
+INTRA_MBCMP_8x8_C(sa8d,, _c, vbench_)
+#if HIGH_BIT_DEPTH && HAVE_MMX
+#define predict_8x8_v_sse2 predict_8x8_v_sse
+INTRA_MBCMP_8x8( sad, _mmx2,  _c, asm_)
+INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2, asm_)
+#endif
+#if !HIGH_BIT_DEPTH && (HAVE_ARMV6 || ARCH_AARCH64)
+INTRA_MBCMP_8x8( sad, _neon, _neon )
+INTRA_MBCMP_8x8(sa8d, _neon, _neon )
+#endif
+
+#define INTRA_MBCMP_C( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2, prefix )\
+void intra_##mbcmp##_x3_##size##chroma##cpu( pixel *fenc, pixel *fdec, int res[3] )\
+{\
+    prefix##predict_##size##chroma##_##pred1##cpu2( fdec );\
+    res[0] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_##size##chroma##_##pred2##cpu2( fdec );\
+    res[1] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_##size##chroma##_##pred3##cpu2( fdec );\
+    res[2] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+}
+
+INTRA_MBCMP_C( sad,  4x4,   v, h, dc,  ,, _c, vbench_ )
+INTRA_MBCMP_C(satd,  4x4,   v, h, dc,  ,, _c, vbench_ )
+INTRA_MBCMP_C( sad,  8x8,  dc, h,  v, c,, _c, vbench_ )
+INTRA_MBCMP_C(satd,  8x8,  dc, h,  v, c,, _c, vbench_ )
+INTRA_MBCMP_C( sad,  8x16, dc, h,  v, c,, _c, vbench_ )
+INTRA_MBCMP_C(satd,  8x16, dc, h,  v, c,, _c, vbench_ )
+INTRA_MBCMP_C( sad, 16x16,  v, h, dc,  ,, _c, vbench_ )
+INTRA_MBCMP_C(satd, 16x16,  v, h, dc,  ,, _c, vbench_ )
+
+
+// FIXME: merge these two
+#define INTRA_MBCMP_C( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2 )\
+void intra_##mbcmp##_x3_##size##chroma##cpu( pixel *fenc, pixel *fdec, int res[3] )\
+{\
+    vbench_predict_##size##chroma##_##pred1##cpu2( fdec );\
+    res[0] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    vbench_predict_##size##chroma##_##pred2##cpu2( fdec );\
+    res[1] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    vbench_predict_##size##chroma##_##pred3##cpu2( fdec );\
+    res[2] = pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+}
+
+#define INTRA_MBCMP( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2, prefix)\
+void asm_intra_##mbcmp##_x3_##size##chroma##cpu( pixel *fenc, pixel *fdec, int res[3] )\
+{\
+    prefix##predict_##size##chroma##_##pred1##cpu2( fdec );\
+    res[0] = prefix##pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_##size##chroma##_##pred2##cpu2( fdec );\
+    res[1] = prefix##pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+    prefix##predict_##size##chroma##_##pred3##cpu2( fdec );\
+    res[2] = prefix##pixel_##mbcmp##_##size##cpu( fdec, FDEC_STRIDE, fenc, FENC_STRIDE );\
+}
+
+
+
+
+#if HAVE_MMX
+#if HIGH_BIT_DEPTH
+#define predict_8x8c_v_mmx2 x264_predict_8x8c_v_mmx
+#define predict_8x16c_v_mmx2 x264_predict_8x16c_v_c
+#define predict_8x8c_v_sse2 x264_predict_8x8c_v_sse
+#define predict_8x16c_v_sse2 x264_predict_8x16c_v_sse
+#define predict_16x16_v_sse2 x264_predict_16x16_v_sse
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _mmx2, _c, asm_ )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _mmx2, _mmx2, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _mmx2, _mmx2, asm_ )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _sse2, _sse2, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _sse2, _sse2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse2, _sse2, asm_ )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _sse2, _sse2, asm_ )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _ssse3, _sse2, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _ssse3, _sse2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _ssse3, _sse2, asm_ )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _ssse3, _sse2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse4, _sse2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _avx, _sse2, asm_ )
+#else
+#define x264_predict_8x16c_v_mmx2 x264_predict_8x16c_v_mmx
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _sse2, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse2, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _ssse3, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse4, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _avx, _mmx2, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _xop, _mmx2, asm_ )
+#endif
+#endif
+#if !HIGH_BIT_DEPTH && HAVE_ARMV6
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _armv6, asm_ )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _armv6, asm_ )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _c, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c, asm_ )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
+INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
+#endif
+#if !HIGH_BIT_DEPTH && ARCH_AARCH64
+INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _neon, asm_ )
+INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _neon, asm_ )
+INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP(satd,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _neon, asm_ )
+INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
+INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
+#endif
 
 
 /****************************************************************************

@@ -232,7 +232,6 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     pixf->vsad = pixel_vsad;
     pixf->asd8 = pixel_asd8;
 
-#if 0
     pixf->intra_sad_x3_4x4    = intra_sad_x3_4x4;
     pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4;
     pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8;
@@ -243,7 +242,6 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c;
     pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16;
     pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16;
-#endif
 
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX

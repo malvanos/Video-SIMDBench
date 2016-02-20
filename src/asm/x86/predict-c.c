@@ -351,7 +351,7 @@ void vbench_predict_16x16_init_mmx( int cpu, vbench_predict_t pf[7] )
 {
     if( !(cpu & CPU_MMX2) )
         return;
-    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_mmx2;
+    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_mmx2;
     pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_mmx2;
     pf[I_PRED_16x16_DC_LEFT] = vbench_predict_16x16_dc_left_mmx2;
     pf[I_PRED_16x16_V]       = asm_predict_16x16_v_mmx2;
@@ -362,7 +362,7 @@ void vbench_predict_16x16_init_mmx( int cpu, vbench_predict_t pf[7] )
     pf[I_PRED_16x16_V]       = vbench_predict_16x16_v_sse;
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_sse2;
+    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_sse2;
     pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_sse2;
     pf[I_PRED_16x16_DC_LEFT] = asm_predict_16x16_dc_left_sse2;
     pf[I_PRED_16x16_H]       = asm_predict_16x16_h_sse2;
@@ -382,7 +382,7 @@ void vbench_predict_16x16_init_mmx( int cpu, vbench_predict_t pf[7] )
     pf[I_PRED_16x16_V]       = asm_predict_16x16_v_sse;
     if( !(cpu & CPU_SSE2) )
         return;
-    pf[I_PRED_16x16_DC]      = asm_predict_16x16_dc_sse2;
+    pf[I_PRED_16x16_DC]      = vbench_predict_16x16_dc_sse2;
     if( cpu & CPU_SSE2_IS_SLOW )
         return;
     pf[I_PRED_16x16_DC_TOP]  = asm_predict_16x16_dc_top_sse2;

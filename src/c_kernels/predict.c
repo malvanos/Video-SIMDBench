@@ -153,7 +153,7 @@ void vbench_predict_16x16_p_c( pixel *src )
  * 8x8 prediction for intra chroma block (4:2:0)
  ****************************************************************************/
 
-static void vbench_predict_8x8c_dc_128_c( pixel *src )
+void vbench_predict_8x8c_dc_128_c( pixel *src )
 {
     for( int y = 0; y < 8; y++ )
     {
@@ -162,7 +162,7 @@ static void vbench_predict_8x8c_dc_128_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-static void vbench_predict_8x8c_dc_128_c_10b( pixel *src )
+void vbench_predict_8x8c_dc_128_c_10b( pixel *src )
 {
     for( int y = 0; y < 8; y++ )
     {
@@ -171,7 +171,7 @@ static void vbench_predict_8x8c_dc_128_c_10b( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-static void vbench_predict_8x8c_dc_left_c( pixel *src )
+void vbench_predict_8x8c_dc_left_c( pixel *src )
 {
     int dc0 = 0, dc1 = 0;
 
@@ -712,22 +712,22 @@ static void vbench_predict_8x8_filter_c( pixel *src, pixel edge[36], int i_neigh
         src += FDEC_STRIDE; \
     }
 
-static void vbench_predict_8x8_dc_128_c( pixel *src, pixel edge[36] )
+void vbench_predict_8x8_dc_128_c( pixel *src, pixel edge[36] )
 {
     PREDICT_8x8_DC( PIXEL_SPLAT_X4( 1 << (8-1) ) );
 }
 
-static void vbench_predict_8x8_dc_128_c_10b( pixel_10b *src, pixel_10b edge[36] )
+void vbench_predict_8x8_dc_128_c_10b( pixel_10b *src, pixel_10b edge[36] )
 {
     PREDICT_8x8_DC( PIXEL_SPLAT_X4_10B( 1 << (10-1) ) );
 }
-static void vbench_predict_8x8_dc_left_c( pixel *src, pixel edge[36] )
+void vbench_predict_8x8_dc_left_c( pixel *src, pixel edge[36] )
 {
     PREDICT_8x8_LOAD_LEFT
     pixel4 dc = PIXEL_SPLAT_X4( (l0+l1+l2+l3+l4+l5+l6+l7+4) >> 3 );
     PREDICT_8x8_DC( dc );
 }
-static void vbench_predict_8x8_dc_top_c( pixel *src, pixel edge[36] )
+void vbench_predict_8x8_dc_top_c( pixel *src, pixel edge[36] )
 {
     PREDICT_8x8_LOAD_TOP
     pixel4 dc = PIXEL_SPLAT_X4( (t0+t1+t2+t3+t4+t5+t6+t7+4) >> 3 );
