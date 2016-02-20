@@ -633,7 +633,7 @@ PIXEL_SATD_C( 4,  8,  pixel_satd_4x4 )
 
 
 #define PIXEL_SATD_C_10B( w, h, sub )\
-int pixel_satd_10b_##w##x##h( pixel_10b *pix1, intptr_t i_pix1, pixel_10b *pix2, intptr_t i_pix2 )\
+int pixel_satd_##w##x##h##_10b( pixel_10b *pix1, intptr_t i_pix1, pixel_10b *pix2, intptr_t i_pix2 )\
 {\
     int sum = sub( pix1, i_pix1, pix2, i_pix2 )\
             + sub( pix1+4*i_pix1, i_pix1, pix2+4*i_pix2, i_pix2 );\
@@ -695,17 +695,17 @@ SATD_X_DECL7()
 void pixel_satd_x3_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2,\
                                             intptr_t i_stride, int scores[3] )\
 {\
-    scores[0] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[0] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix2, i_stride );\
 }\
 void pixel_satd_x4_10B_##size##cpu( pixel_10b *fenc, pixel_10b *pix0, pixel_10b *pix1, pixel_10b *pix2, pixel_10b *pix3,\
                                             intptr_t i_stride, int scores[4] )\
 {\
-    scores[0] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix0, i_stride );\
-    scores[1] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix1, i_stride );\
-    scores[2] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix2, i_stride );\
-    scores[3] = pixel_satd_10b_##size##cpu( fenc, FENC_STRIDE, pix3, i_stride );\
+    scores[0] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix0, i_stride );\
+    scores[1] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix1, i_stride );\
+    scores[2] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix2, i_stride );\
+    scores[3] = pixel_satd_##size##cpu##_10b( fenc, FENC_STRIDE, pix3, i_stride );\
 }
 #define SATD_X_DECL6_10B( cpu )\
 SATD_X_10B( 16x16, cpu )\
