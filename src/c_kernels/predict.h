@@ -271,7 +271,7 @@ void asm_predict_4x4_hu_mmx2( pixel *src );
 #endif
 
 
-static ALWAYS_INLINE uint32_t pack16to32( uint32_t a, uint32_t b )
+static  uint32_t pack16to32( uint32_t a, uint32_t b )
 {
 #if WORDS_BIGENDIAN
        return b + (a<<16);
@@ -279,7 +279,7 @@ static ALWAYS_INLINE uint32_t pack16to32( uint32_t a, uint32_t b )
           return a + (b<<16);
 #endif
 }
-static ALWAYS_INLINE uint32_t pack8to16( uint32_t a, uint32_t b )
+static  uint32_t pack8to16( uint32_t a, uint32_t b )
 {
 #if WORDS_BIGENDIAN
        return b + (a<<8);
@@ -287,7 +287,7 @@ static ALWAYS_INLINE uint32_t pack8to16( uint32_t a, uint32_t b )
           return a + (b<<8);
 #endif
 }
-static ALWAYS_INLINE uint32_t pack8to32( uint32_t a, uint32_t b, uint32_t c, uint32_t d )
+static  uint32_t pack8to32( uint32_t a, uint32_t b, uint32_t c, uint32_t d )
 {
 #if WORDS_BIGENDIAN
        return d + (c<<8) + (b<<16) + (a<<24);
@@ -295,7 +295,7 @@ static ALWAYS_INLINE uint32_t pack8to32( uint32_t a, uint32_t b, uint32_t c, uin
           return a + (b<<8) + (c<<16) + (d<<24);
 #endif
 }
-static ALWAYS_INLINE uint32_t pack16to32_mask( int a, int b )
+static  uint32_t pack16to32_mask( int a, int b )
 {
 #if WORDS_BIGENDIAN
        return (b&0xFFFF) + (a<<16);
@@ -303,7 +303,7 @@ static ALWAYS_INLINE uint32_t pack16to32_mask( int a, int b )
           return (a&0xFFFF) + (b<<16);
 #endif
 }
-static ALWAYS_INLINE uint64_t pack32to64( uint32_t a, uint32_t b )
+static  uint64_t pack32to64( uint32_t a, uint32_t b )
 {
 #if WORDS_BIGENDIAN
        return b + ((uint64_t)a<<32);
