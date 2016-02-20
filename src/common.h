@@ -8,6 +8,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <ctype.h>
+#include <inttypes.h>
 
 #include <sys/time.h>
 

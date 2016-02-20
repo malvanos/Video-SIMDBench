@@ -1317,7 +1317,7 @@ int check_pixel( int cpu_ref, int cpu_new )
             if( res_u_c != res_u_a || res_v_c != res_v_a )
             {
                 ok = 0;
-                fprintf( stderr, "ssd_nv12: %llu,%llu != %llu,%llu\n",
+                fprintf( stderr, "ssd_nv12: %"PRId64",%"PRId64" != %"PRId64",%"PRId64"\n",
                          res_u_c, res_v_c, res_u_a, res_v_a );
             }
         }
