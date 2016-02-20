@@ -69,9 +69,9 @@ int quiet = 0;
 
 
 
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int do_bench ;
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
 static bench_func_t benchs[MAX_FUNCS];
 
