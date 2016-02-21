@@ -33,6 +33,8 @@ typedef uint16_t udctcoef;
 #endif
 
 
+#define ARRAY_ELEMS(a) ((sizeof(a))/(sizeof(a[0])))
+
 #define CHROMA_SIZE(s) ((s)>>(CHROMA_H_SHIFT+CHROMA_V_SHIFT))
 #define FRAME_SIZE(s) ((s)+2*CHROMA_SIZE(s))
 #define CHROMA444 (CHROMA_FORMAT == CHROMA_444)

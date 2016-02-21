@@ -1097,7 +1097,7 @@ INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _ssse3, _sse2, asm_ )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _sse4, _sse2, asm_ )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _avx, _sse2, asm_ )
 #else
-#define x264_predict_8x16c_v_mmx2 x264_predict_8x16c_v_mmx
+#define asm_predict_8x16c_v_mmx2 asm_predict_8x16c_v_mmx
 INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _mmx2, _mmx2, asm_ )
 INTRA_MBCMP( sad,  8x16, dc, h,  v, c, _sse2, _mmx2, asm_ )
@@ -1260,7 +1260,7 @@ float ssim_end4_10b( int sum0[5][4], int sum1[5][4], int width )
     return ssim;
 }
 
-float pixel_ssim_wxh( 
+float vbench_pixel_ssim_wxh( 
                            pixel *pix1, intptr_t stride1,
                            pixel *pix2, intptr_t stride2,
                            int width, int height, void *buf, int *cnt )
@@ -1286,7 +1286,7 @@ float pixel_ssim_wxh(
     return ssim;
 }
 
-float pixel_ssim_wxh_10b( 
+float vbench_pixel_ssim_wxh_10b( 
                                pixel_10b *pix1, intptr_t stride1,
                                pixel_10b *pix2, intptr_t stride2,
                                int width, int height, void *buf, int *cnt )
