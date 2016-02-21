@@ -69,15 +69,15 @@ pixel *pbuf3, *pbuf4;
 
 
 
-int do_bench = 0;
 int bench_pattern_len = 0;
 const char *bench_pattern = "";
 char func_name[100];
-static bench_func_t benchs[MAX_FUNCS];
+bench_func_t benchs[MAX_FUNCS];
 
 
 #define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
 
+#define HAVE_X86_INLINE_ASM 1
 static inline uint32_t read_time(void)
 {
     uint32_t a = 0;
@@ -139,7 +139,9 @@ static void print_bench(void)
     printf( "nop: %d\n", nop_time );
 
     for( nfuncs = 0; nfuncs < MAX_FUNCS && benchs[nfuncs].name; nfuncs++ );
+
     qsort( benchs, nfuncs, sizeof(bench_func_t), cmp_bench );
+
     for( int i = 0; i < nfuncs; i++ )
         for( int j = 0; j < MAX_CPUS && (!j || benchs[i].vers[j].cpu); j++ )
         {
@@ -222,7 +224,6 @@ int main(int argc, char *argv[])
         fprintf( stderr, "no --bench for your cpu until you port rdtsc\n" );
         return 1;
 #endif
-        do_bench = 1;
         if( argv[1][7] == '=' )
         {
             bench_pattern = argv[1]+8;
@@ -259,7 +260,6 @@ int main(int argc, char *argv[])
     memset( buf1+0x1e00, 0, 0x2000*sizeof(pixel) );
 
 
-    if( do_bench )
         for( int i = 0; i < BENCH_ALIGNS && !ret; i++ )
         {
             INIT_POINTER_OFFSETS;
@@ -268,17 +268,14 @@ int main(int argc, char *argv[])
             pbuf1 += 32;
             fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
         }
-    else
-        ret = run_benchmarks( 0 );
 
     if( ret )
     {
         fprintf( stderr, "VideoBench: at least one test has failed. Go and fix that Right Now!\n" );
-        return -1;
+        //return -1;
     }
     fprintf( stderr, "VideoBench: All tests passed Yeah :)\n" );
-    if( do_bench )
-        print_bench();
+    print_bench();
     return 0;
 }
 

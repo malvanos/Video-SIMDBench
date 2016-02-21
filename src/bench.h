@@ -119,7 +119,7 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
 #endif
 
 #define call_bench(func,cpu,...)\
-    if( do_bench && !strncmp(func_name, bench_pattern, bench_pattern_len) )\
+    if( !strncmp(func_name, bench_pattern, bench_pattern_len) )\
     {\
         uint64_t tsum = 0;\
         int tcount = 0;\
@@ -140,7 +140,7 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
         }\
         bench_t *b = get_bench( func_name, cpu );\
         b->cycles += tsum;\
-        b->den += tcount;\
+        b->den += tcount; \
         b->pointer = func;\
     }
 
