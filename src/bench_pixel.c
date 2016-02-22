@@ -1326,7 +1326,6 @@ int check_pixel( int cpu_ref, int cpu_new )
         call_a( pixel_asm.ssd_nv12_core, pbuf1, (intptr_t)368, pbuf2, (intptr_t)368, 360, 8, &res_u_a, &res_v_a );
     }
 
-    return ret;
     report( "ssd_nv12 :" );
 
     if( pixel_asm.ssim_4x4x2_core != pixel_ref.ssim_4x4x2_core ||
@@ -1356,9 +1355,12 @@ int check_pixel( int cpu_ref, int cpu_new )
         report( "ssim :" );
     }
 
+    return ret;
+
     ok = 1; used_asm = 0;
     for( int i = 0; i < 32; i++ )
         cost_mv[i] = i*10;
+    
     for( int i = 0; i < 100 && ok; i++ )
         if( pixel_asm.ads[i&3] != pixel_ref.ads[i&3] )
         {
