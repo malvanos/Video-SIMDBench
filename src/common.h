@@ -80,9 +80,9 @@ typedef union { vbench_uint128_t i; uint64_t a[2]; uint32_t b[4]; uint16_t c[8];
 
 
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
+#define BENCH_RUNS 10  // tradeoff between accuracy and speed
 #define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 2048  // just has to be big enough to hold all the existing functions
+#define MAX_FUNCS 8192  // just has to be big enough to hold all the existing functions
 #define MAX_CPUS 64     // number of different combinations of cpu flags
 
 

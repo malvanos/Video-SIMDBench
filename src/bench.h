@@ -130,7 +130,7 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
             func(__VA_ARGS__);\
             func(__VA_ARGS__);\
             func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
+            func(__VA_ARGS__); \
             t = read_time() - t;\
             if( (uint64_t)t*tcount <= tsum*4 && ti > 0 )\
             {\
@@ -140,7 +140,7 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
         }\
         bench_t *b = get_bench( func_name, cpu );\
         b->cycles += tsum;\
-        b->den += tcount; \
+        b->den += tcount;   \
         b->pointer = func;\
     }
 

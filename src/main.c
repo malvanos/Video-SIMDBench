@@ -273,8 +273,8 @@ int main(int argc, char *argv[])
     {
         fprintf( stderr, "VideoBench: at least one test has failed. Go and fix that Right Now!\n" );
         //return -1;
-    }
-    fprintf( stderr, "VideoBench: All tests passed Yeah :)\n" );
+    }else
+        fprintf( stderr, "VideoBench: All tests passed Yeah :)\n" );
     print_bench();
     return 0;
 }

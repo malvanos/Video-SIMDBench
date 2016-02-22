@@ -83,6 +83,7 @@ static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
 
 #define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
 
+#define HAVE_X86_INLINE_ASM 1
 static inline uint32_t read_time(void)
 {
     uint32_t a = 0;
@@ -949,7 +950,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     report( "pixel " #name " :" );
 
     TEST_PIXEL( sad, 0 );
-    TEST_PIXEL( sad_aligned, 1 );
+    TEST_PIXEL( sad_aligned, 1 ); 
     TEST_PIXEL( ssd, 1 );
     TEST_PIXEL( satd, 0 );
     TEST_PIXEL( sa8d, 1 );
@@ -989,6 +990,7 @@ int check_pixel( int cpu_ref, int cpu_new )
             }
         }
     }
+
     report( "pixel sa8d_satd :" );
 
 #define TEST_PIXEL_X( N ) \
@@ -1129,6 +1131,8 @@ int check_pixel( int cpu_ref, int cpu_new )
             }
         }
     }
+
+    return ret;
     report( "pixel vsad :" );
 
     ok = 1; used_asm = 0;
@@ -1321,6 +1325,7 @@ int check_pixel( int cpu_ref, int cpu_new )
         call_c( pixel_c.ssd_nv12_core,   pbuf1, (intptr_t)368, pbuf2, (intptr_t)368, 360, 8, &res_u_c, &res_v_c );
         call_a( pixel_asm.ssd_nv12_core, pbuf1, (intptr_t)368, pbuf2, (intptr_t)368, 360, 8, &res_u_a, &res_v_a );
     }
+
     return ret;
     report( "ssd_nv12 :" );
 
