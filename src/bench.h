@@ -37,6 +37,7 @@
  *  Version - Changes
  *
  *  0.1     - Import only the basic structures.  
+ *  0.2     - Import bench_dct structures.
  *
  *
  *****************************************************************************/
@@ -47,6 +48,7 @@
 #if !defined(MAX_CPUS)
     #error "You should include the common.h first and then the bench.h"
 #endif
+
 
 typedef struct
 {
@@ -61,6 +63,40 @@ typedef struct
     char *name;
     bench_t vers[MAX_CPUS]; // MAX_CPUS defined to common.h
 } bench_func_t;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct
+{
+    uint8_t i_bits;
+    uint8_t i_size;
+} vlc_t;
+
+typedef struct
+{
+    uint16_t i_bits;
+    uint8_t  i_size;
+    /* Next level table to use */
+    uint8_t  i_next;
+} vlc_large_t;
+
+typedef struct bs_s
+{
+    uint8_t *p_start;
+    uint8_t *p;
+    uint8_t *p_end;
+
+    uintptr_t cur_bits;
+    int     i_left;    /* i_count number of available bits */
+    int     i_bits_encoded; /* RD only */
+} bs_t;
+
+typedef struct
+{
+    int32_t last;
+    int32_t mask;
+    ALIGNED_16( dctcoef level[18] );
+} bench_run_level_t;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,6 +204,9 @@ typedef void (*vbench_pixel_cmp_x4_t) ( pixel *, pixel *, pixel *, pixel *, pixe
 
 
 
+
+
+
 typedef struct
 {
     vbench_pixel_cmp_t  sad[8];
@@ -237,6 +276,92 @@ typedef struct
     int (*intra_sa8d_x9_8x8) ( pixel *fenc, pixel *fdec, pixel edge[36], uint16_t *bitcosts, uint16_t *satds );
     int (*intra_sad_x9_8x8)  ( pixel *fenc, pixel *fdec, pixel edge[36], uint16_t *bitcosts, uint16_t *satds );
 } vbench_pixel_function_t;
+
+typedef struct
+{
+    // pix1  stride = FENC_STRIDE
+    // pix2  stride = FDEC_STRIDE
+    // p_dst stride = FDEC_STRIDE
+    void (*sub4x4_dct)   ( dctcoef dct[16], pixel *pix1, pixel *pix2 );
+    void (*add4x4_idct)  ( pixel *p_dst, dctcoef dct[16] );
+
+    void (*sub8x8_dct)   ( dctcoef dct[4][16], pixel *pix1, pixel *pix2 );
+    void (*sub8x8_dct_dc)( dctcoef dct[4], pixel *pix1, pixel *pix2 );
+    void (*add8x8_idct)  ( pixel *p_dst, dctcoef dct[4][16] );
+    void (*add8x8_idct_dc) ( pixel *p_dst, dctcoef dct[4] );
+
+    void (*sub8x16_dct_dc)( dctcoef dct[8], pixel *pix1, pixel *pix2 );
+
+    void (*sub16x16_dct) ( dctcoef dct[16][16], pixel *pix1, pixel *pix2 );
+    void (*add16x16_idct)( pixel *p_dst, dctcoef dct[16][16] );
+    void (*add16x16_idct_dc) ( pixel *p_dst, dctcoef dct[16] );
+
+    void (*sub8x8_dct8)  ( dctcoef dct[64], pixel *pix1, pixel *pix2 );
+    void (*add8x8_idct8) ( pixel *p_dst, dctcoef dct[64] );
+
+    void (*sub16x16_dct8) ( dctcoef dct[4][64], pixel *pix1, pixel *pix2 );
+    void (*add16x16_idct8)( pixel *p_dst, dctcoef dct[4][64] );
+
+    void (*dct4x4dc) ( dctcoef d[16] );
+    void (*idct4x4dc)( dctcoef d[16] );
+
+    void (*dct2x4dc)( dctcoef dct[8], dctcoef dct4x4[8][16] );
+
+} vbench_dct_function_t;
+
+typedef struct
+{
+    void (*scan_8x8)( dctcoef level[64], dctcoef dct[64] );
+    void (*scan_4x4)( dctcoef level[16], dctcoef dct[16] );
+    int  (*sub_8x8)  ( dctcoef level[64], const pixel *p_src, pixel *p_dst );
+    int  (*sub_4x4)  ( dctcoef level[16], const pixel *p_src, pixel *p_dst );
+    int  (*sub_4x4ac)( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc );
+    void (*interleave_8x8_cavlc)( dctcoef *dst, dctcoef *src, uint8_t *nnz );
+
+} vbench_zigzag_function_t;
+
+
+typedef struct
+{
+    int (*quant_8x8)  ( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] );
+    int (*quant_4x4)  ( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] );
+    int (*quant_4x4x4)( dctcoef dct[4][16], udctcoef mf[16], udctcoef bias[16] );
+    int (*quant_4x4_dc)( dctcoef dct[16], int mf, int bias );
+    int (*quant_2x2_dc)( dctcoef dct[4], int mf, int bias );
+
+    void (*dequant_8x8)( dctcoef dct[64], int dequant_mf[6][64], int i_qp );
+    void (*dequant_4x4)( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
+    void (*dequant_4x4_dc)( dctcoef dct[16], int dequant_mf[6][16], int i_qp );
+
+    void (*idct_dequant_2x4_dc)( dctcoef dct[8], dctcoef dct4x4[8][16], int dequant_mf[6][16], int i_qp );
+    void (*idct_dequant_2x4_dconly)( dctcoef dct[8], int dequant_mf[6][16], int i_qp );
+
+    int (*optimize_chroma_2x2_dc)( dctcoef dct[4], int dequant_mf );
+    int (*optimize_chroma_2x4_dc)( dctcoef dct[8], int dequant_mf );
+
+    void (*denoise_dct)( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size );
+
+    int (*decimate_score15)( dctcoef *dct );
+    int (*decimate_score16)( dctcoef *dct );
+    int (*decimate_score64)( dctcoef *dct );
+    int (*coeff_last[14])( dctcoef *dct );
+    int (*coeff_last4)( dctcoef *dct );
+    int (*coeff_last8)( dctcoef *dct );
+    int (*coeff_level_run[13])( dctcoef *dct, vbench_run_level_t *runlevel );
+    int (*coeff_level_run4)( dctcoef *dct, vbench_run_level_t *runlevel );
+    int (*coeff_level_run8)( dctcoef *dct, vbench_run_level_t *runlevel );
+
+#define TRELLIS_PARAMS const int *unquant_mf, const uint8_t *zigzag, int lambda2,\
+    int last_nnz, dctcoef *coefs, dctcoef *quant_coefs, dctcoef *dct,\
+    uint8_t *cabac_state_sig, uint8_t *cabac_state_last,\
+    uint64_t level_state0, uint16_t level_state1
+    int (*trellis_cabac_4x4)( TRELLIS_PARAMS, int b_ac );
+    int (*trellis_cabac_8x8)( TRELLIS_PARAMS, int b_interlaced );
+    int (*trellis_cabac_4x4_psy)( TRELLIS_PARAMS, int b_ac, dctcoef *fenc_dct, int psy_trellis );
+    int (*trellis_cabac_8x8_psy)( TRELLIS_PARAMS, int b_interlaced, dctcoef *fenc_dct, int psy_trellis );
+    int (*trellis_cabac_dc)( TRELLIS_PARAMS, int num_coefs );
+    int (*trellis_cabac_chroma_422_dc)( TRELLIS_PARAMS );
+} vbench_quant_function_t;
 
 
 

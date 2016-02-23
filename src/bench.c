@@ -79,7 +79,6 @@ typedef struct
 
 extern int bench_pattern_len;
 extern const char *bench_pattern;
-char func_name[100];
 extern bench_func_t benchs[MAX_FUNCS];
 
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
@@ -89,7 +88,6 @@ static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr",
 static const char **intra_predict_8x8_names = intra_predict_4x4_names;
 static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
 
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
 
 #define HAVE_X86_INLINE_ASM 1
 static inline uint32_t read_time(void)
@@ -159,9 +157,9 @@ intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checka
 
 static int check_all_funcs( int cpu_ref, int cpu_new )
 {
-    return check_pixel( cpu_ref, cpu_new );
+    return check_pixel( cpu_ref, cpu_new )
+         + check_dct( cpu_ref, cpu_new );
 #if 0
-         + check_dct( cpu_ref, cpu_new )
          + check_mc( cpu_ref, cpu_new )
          + check_intra( cpu_ref, cpu_new )
          + check_deblock( cpu_ref, cpu_new )

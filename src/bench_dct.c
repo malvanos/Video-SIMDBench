@@ -43,9 +43,9 @@
 
 
 #include <ctype.h>
-#include "common.h"
 #include "osdep.h"
-
+#include "common.h"
+#include "bench.h"
 
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
@@ -65,30 +65,11 @@ int quiet = 0;
     if( !ok ) ret = -1; \
 }
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
 
-typedef struct
-{
-    void *pointer; // just for detecting duplicates
-    uint32_t cpu;
-    uint64_t cycles;
-    uint32_t den;
-} bench_t;
-
-typedef struct
-{
-    char *name;
-    bench_t vers[MAX_CPUS];
-} bench_func_t;
-
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
-static bench_func_t benchs[MAX_FUNCS];
+extern  bench_func_t benchs[MAX_FUNCS];
 
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
 static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
@@ -186,44 +167,44 @@ static void print_bench(void)
                 continue;
             printf( "%s_%s%s: %"PRId64"\n", benchs[i].name,
 #if HAVE_MMX
-                    b->cpu&X264_CPU_AVX2 ? "avx2" :
-                    b->cpu&X264_CPU_FMA3 ? "fma3" :
-                    b->cpu&X264_CPU_FMA4 ? "fma4" :
-                    b->cpu&X264_CPU_XOP ? "xop" :
-                    b->cpu&X264_CPU_AVX ? "avx" :
-                    b->cpu&X264_CPU_SSE42 ? "sse42" :
-                    b->cpu&X264_CPU_SSE4 ? "sse4" :
-                    b->cpu&X264_CPU_SSSE3 ? "ssse3" :
-                    b->cpu&X264_CPU_SSE3 ? "sse3" :
+                    b->cpu&CPU_AVX2 ? "avx2" :
+                    b->cpu&CPU_FMA3 ? "fma3" :
+                    b->cpu&CPU_FMA4 ? "fma4" :
+                    b->cpu&CPU_XOP ? "xop" :
+                    b->cpu&CPU_AVX ? "avx" :
+                    b->cpu&CPU_SSE42 ? "sse42" :
+                    b->cpu&CPU_SSE4 ? "sse4" :
+                    b->cpu&CPU_SSSE3 ? "ssse3" :
+                    b->cpu&CPU_SSE3 ? "sse3" :
                     /* print sse2slow only if there's also a sse2fast version of the same func */
-                    b->cpu&X264_CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&X264_CPU_SSE2_IS_FAST && !(b[1].cpu&X264_CPU_SSE3) ? "sse2slow" :
-                    b->cpu&X264_CPU_SSE2 ? "sse2" :
-                    b->cpu&X264_CPU_SSE ? "sse" :
-                    b->cpu&X264_CPU_MMX ? "mmx" :
+                    b->cpu&CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&CPU_SSE2_IS_FAST && !(b[1].cpu&CPU_SSE3) ? "sse2slow" :
+                    b->cpu&CPU_SSE2 ? "sse2" :
+                    b->cpu&CPU_SSE ? "sse" :
+                    b->cpu&CPU_MMX ? "mmx" :
 #elif ARCH_PPC
-                    b->cpu&X264_CPU_ALTIVEC ? "altivec" :
+                    b->cpu&CPU_ALTIVEC ? "altivec" :
 #elif ARCH_ARM
-                    b->cpu&X264_CPU_NEON ? "neon" :
-                    b->cpu&X264_CPU_ARMV6 ? "armv6" :
+                    b->cpu&CPU_NEON ? "neon" :
+                    b->cpu&CPU_ARMV6 ? "armv6" :
 #elif ARCH_AARCH64
-                    b->cpu&X264_CPU_NEON ? "neon" :
-                    b->cpu&X264_CPU_ARMV8 ? "armv8" :
+                    b->cpu&CPU_NEON ? "neon" :
+                    b->cpu&CPU_ARMV8 ? "armv8" :
 #elif ARCH_MIPS
-                    b->cpu&X264_CPU_MSA ? "msa" :
+                    b->cpu&CPU_MSA ? "msa" :
 #endif
                     "c",
 #if HAVE_MMX
-                    b->cpu&X264_CPU_CACHELINE_32 ? "_c32" :
-                    b->cpu&X264_CPU_SLOW_ATOM && b->cpu&X264_CPU_CACHELINE_64 ? "_c64_atom" :
-                    b->cpu&X264_CPU_CACHELINE_64 ? "_c64" :
-                    b->cpu&X264_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
-                    b->cpu&X264_CPU_LZCNT ? "_lzcnt" :
-                    b->cpu&X264_CPU_BMI2 ? "_bmi2" :
-                    b->cpu&X264_CPU_BMI1 ? "_bmi1" :
-                    b->cpu&X264_CPU_SLOW_CTZ ? "_slow_ctz" :
-                    b->cpu&X264_CPU_SLOW_ATOM ? "_atom" :
+                    b->cpu&CPU_CACHELINE_32 ? "_c32" :
+                    b->cpu&CPU_SLOW_ATOM && b->cpu&CPU_CACHELINE_64 ? "_c64_atom" :
+                    b->cpu&CPU_CACHELINE_64 ? "_c64" :
+                    b->cpu&CPU_SLOW_SHUFFLE ? "_slowshuffle" :
+                    b->cpu&CPU_LZCNT ? "_lzcnt" :
+                    b->cpu&CPU_BMI2 ? "_bmi2" :
+                    b->cpu&CPU_BMI1 ? "_bmi1" :
+                    b->cpu&CPU_SLOW_CTZ ? "_slow_ctz" :
+                    b->cpu&CPU_SLOW_ATOM ? "_atom" :
 #elif ARCH_ARM
-                    b->cpu&X264_CPU_FAST_NEON_MRC ? "_fast_mrc" :
+                    b->cpu&CPU_FAST_NEON_MRC ? "_fast_mrc" :
 #endif
                     "",
                     (int64_t)(10*b->cycles/b->den - nop_time)/4 );
@@ -315,10 +296,10 @@ void x264_checkasm_stack_clobber( uint64_t clobber, ... );
 
 static int check_dct( int cpu_ref, int cpu_new )
 {
-    x264_dct_function_t dct_c;
-    x264_dct_function_t dct_ref;
-    x264_dct_function_t dct_asm;
-    x264_quant_function_t qf;
+    vbench_dct_function_t dct_c;
+    vbench_dct_function_t dct_ref;
+    vbench_dct_function_t dct_asm;
+    vbench_quant_function_t qf;
     int ret = 0, ok, used_asm, interlace = 0;
     ALIGNED_ARRAY_N( dctcoef, dct1, [16],[16] );
     ALIGNED_ARRAY_N( dctcoef, dct2, [16],[16] );
@@ -342,7 +323,7 @@ static int check_dct( int cpu_ref, int cpu_new )
     for( int i = 0; i < 6; i++ )
         h->pps->scaling_list[i] = x264_cqm_flat16;
     x264_cqm_init( h );
-    x264_quant_init( h, 0, &qf );
+    vbench_quant_init( h, 0, &qf );
 
     /* overflow test cases */
     for( int i = 0; i < 5; i++ )

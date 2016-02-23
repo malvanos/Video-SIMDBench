@@ -71,11 +71,9 @@ pixel *pbuf3, *pbuf4;
 
 int bench_pattern_len = 0;
 const char *bench_pattern = "";
-char func_name[100];
 bench_func_t benchs[MAX_FUNCS];
 
 
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
 
 #define HAVE_X86_INLINE_ASM 1
 static inline uint32_t read_time(void)
