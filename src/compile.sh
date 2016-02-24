@@ -28,7 +28,7 @@ set -x
 
 
 gcc -g -Wall -O3  -march=corei7 --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX cpu-detect.o checkasm-a.o predict-a.o const-a.o pixel-a.o  sad-a.o  \
-    ./asm/x86/predict-c.c ./c_kernels/pixel.c ./c_kernels/predict.c ./c_kernels/quant.c  \
+    ./asm/x86/predict-c.c ./c_kernels/pixel.c ./c_kernels/predict.c ./c_kernels/quant.c  ./c_kernels/dct.c \
     main.c bench_pixel.c  bench_dct.c bench.c cpu.c   -I./
 
 #gcc -g -Wall -O3  -std=c99 -DARCH_X86_64=1 -DHAVE_MMX cpu-detect.o checkasm-a.o predict-a.o const-a.o pixel-a.o  sad-a.o  \

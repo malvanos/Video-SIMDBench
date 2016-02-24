@@ -32,7 +32,7 @@ typedef uint16_t udctcoef;
 #define ALIGNED_16( var ) DECLARE_ALIGNED( static var, 16 )
 #endif
 
-
+#define FIX8(f) ((int)(f*(1<<8)+.5))
 #define ARRAY_ELEMS(a) ((sizeof(a))/(sizeof(a[0])))
 
 
