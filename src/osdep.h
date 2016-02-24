@@ -26,6 +26,9 @@
  *****************************************************************************/
 
 
+#ifndef OSDEP_H
+#define OSDEP_H
+
 #ifdef __INTEL_COMPILER
 #include <mathimf.h>
 #else
@@ -147,6 +150,6 @@
 
 
 
-
+#endif // OSDEP
 
 

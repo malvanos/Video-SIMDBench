@@ -46,6 +46,7 @@
 #include "osdep.h"
 #include "common.h"
 #include "bench.h"
+#include "macroblock.h"
 
 #include "c_kernels/pixel.h"
 #include "c_kernels/predict.h"

@@ -35,6 +35,25 @@ typedef uint16_t udctcoef;
 
 #define ARRAY_ELEMS(a) ((sizeof(a))/(sizeof(a[0])))
 
+
+#define X264_BFRAME_MAX 16
+#define X264_REF_MAX 16
+#define X264_THREAD_MAX 128
+#define X264_LOOKAHEAD_THREAD_MAX 16
+#define X264_PCM_COST (FRAME_SIZE(256*8)+16)
+#define X264_PCM_COST_10B (FRAME_SIZE(256*10)+16)
+#define X264_LOOKAHEAD_MAX 250
+#define QP_BD_OFFSET (6*(8-8))
+#define QP_BD_OFFSET_10B (6*(10-8))
+#define QP_MAX_SPEC (51+QP_BD_OFFSET)
+#define QP_MAX (QP_MAX_SPEC+18)
+#define QP_MAX_MAX (51+2*6+18)
+
+// arbitrary, but low because SATD scores are 1/4 normal
+#define X264_LOOKAHEAD_QP (12+QP_BD_OFFSET)
+#define SPEC_QP(x) X264_MIN((x), QP_MAX_SPEC)
+
+
 #define CHROMA_SIZE(s) ((s)>>(CHROMA_H_SHIFT+CHROMA_V_SHIFT))
 #define FRAME_SIZE(s) ((s)+2*CHROMA_SIZE(s))
 #define CHROMA444 (CHROMA_FORMAT == CHROMA_444)
@@ -224,19 +243,6 @@ intptr_t benchmark_call( intptr_t (*func)(), int *ok, ... );
 
 /* Calls for the benchmarks */
 int check_pixel( int cpu_ref, int cpu_new );
-
-
-enum macroblock_position_e
-{
-    MB_LEFT     = 0x01,
-    MB_TOP      = 0x02,
-    MB_TOPRIGHT = 0x04,
-    MB_TOPLEFT  = 0x08,
-
-    MB_PRIVATE  = 0x10,
-
-    ALL_NEIGHBORS = 0xf,
-};
 
 
 

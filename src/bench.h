@@ -91,12 +91,13 @@ typedef struct bs_s
     int     i_bits_encoded; /* RD only */
 } bs_t;
 
+
 typedef struct
 {
     int32_t last;
     int32_t mask;
     ALIGNED_16( dctcoef level[18] );
-} bench_run_level_t;
+} vbench_run_level_t;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////

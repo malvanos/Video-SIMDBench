@@ -29,9 +29,11 @@
 /* predict4x4 are inspired from ffmpeg h264 decoder */
 
 
-#include "common.h"
 #include "osdep.h"
+#include "common.h"
+#include "bench.h"
 #include "predict.h"
+#include "macroblock.h"
 
 
 

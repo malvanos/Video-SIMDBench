@@ -26,11 +26,14 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#include "common.h"
+
 #include "osdep.h"
+#include "common.h"
+#include "bench.h"
+#include "macroblock.h"
 
 #if HAVE_MMX
-#include "x86/quant.h"
+#include "asm/x86/quant.h"
 #endif
 #if ARCH_PPC
 #   include "ppc/quant.h"
@@ -389,7 +392,7 @@ last(16)
 last(64)
 
 #define level_run(num)\
-static int coeff_level_run##num( dctcoef *dct, run_level_t *runlevel )\
+static int coeff_level_run##num( dctcoef *dct, vbench_run_level_t *runlevel )\
 {\
     int i_last = runlevel->last = coeff_last##num(dct);\
     int i_total = 0;\
@@ -410,18 +413,18 @@ level_run(15)
 level_run(16)
 
 #if ARCH_X86_64
-#define INIT_TRELLIS(cpu)\
-    pf->trellis_cabac_4x4 = trellis_cabac_4x4_##cpu;\
-    pf->trellis_cabac_8x8 = trellis_cabac_8x8_##cpu;\
-    pf->trellis_cabac_4x4_psy = trellis_cabac_4x4_psy_##cpu;\
-    pf->trellis_cabac_8x8_psy = trellis_cabac_8x8_psy_##cpu;\
-    pf->trellis_cabac_dc = trellis_cabac_dc_##cpu;\
-    pf->trellis_cabac_chroma_422_dc = trellis_cabac_chroma_422_dc_##cpu;
+#define INIT_TRELLIS(cpu,prefix)\
+    pf->trellis_cabac_4x4 = prefix##trellis_cabac_4x4_##cpu;\
+    pf->trellis_cabac_8x8 = prefix##trellis_cabac_8x8_##cpu;\
+    pf->trellis_cabac_4x4_psy = prefix##trellis_cabac_4x4_psy_##cpu;\
+    pf->trellis_cabac_8x8_psy = prefix##trellis_cabac_8x8_psy_##cpu;\
+    pf->trellis_cabac_dc = prefix##trellis_cabac_dc_##cpu;\
+    pf->trellis_cabac_chroma_422_dc = prefix##trellis_cabac_chroma_422_dc_##cpu;
 #else
 #define INIT_TRELLIS(...)
 #endif
 
-void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
+void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
     pf->quant_4x4 = quant_4x4;
@@ -456,7 +459,7 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
 
 #if HIGH_BIT_DEPTH
 #if HAVE_MMX
-    INIT_TRELLIS( sse2 );
+    INIT_TRELLIS( sse2, asm_ );
     if( cpu&CPU_MMX2 )
     {
 #if ARCH_X86
@@ -521,7 +524,7 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
         pf->decimate_score15 = decimate_score15_ssse3;
         pf->decimate_score16 = decimate_score16_ssse3;
         pf->decimate_score64 = decimate_score64_ssse3;
-        INIT_TRELLIS( ssse3 );
+        INIT_TRELLIS( ssse3, asm_  );
     }
     if( cpu&CPU_SSE4 )
     {
@@ -538,7 +541,7 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
     if( cpu&CPU_XOP )
     {
         pf->dequant_4x4_dc = dequant_4x4dc_xop;
-        if( h->param.i_cqm_preset != CQM_FLAT )
+        //if( h->param.i_cqm_preset != CQM_FLAT )
         {
             pf->dequant_4x4 = dequant_4x4_xop;
             pf->dequant_8x8 = dequant_8x8_xop;
@@ -560,14 +563,14 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
 #if HAVE_MMX
-    INIT_TRELLIS( sse2 );
+    INIT_TRELLIS( sse2, asm_  );
     if( cpu&CPU_MMX )
     {
 #if ARCH_X86
         pf->dequant_4x4 = dequant_4x4_mmx;
         pf->dequant_4x4_dc = dequant_4x4dc_mmx2;
         pf->dequant_8x8 = dequant_8x8_mmx;
-        if( h->param.i_cqm_preset == CQM_FLAT )
+        //if( h->param.i_cqm_preset == CQM_FLAT )
         {
             pf->dequant_4x4 = dequant_4x4_flat16_mmx;
             pf->dequant_8x8 = dequant_8x8_flat16_mmx;
@@ -578,143 +581,143 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
 
     if( cpu&CPU_MMX2 )
     {
-        pf->quant_2x2_dc = quant_2x2_dc_mmx2;
+        pf->quant_2x2_dc = asm_quant_2x2_dc_mmx2;
 #if ARCH_X86
-        pf->quant_4x4 = quant_4x4_mmx2;
-        pf->quant_8x8 = quant_8x8_mmx2;
-        pf->quant_4x4_dc = quant_4x4_dc_mmx2;
-        pf->decimate_score15 = decimate_score15_mmx2;
-        pf->decimate_score16 = decimate_score16_mmx2;
-        pf->decimate_score64 = decimate_score64_mmx2;
-        pf->coeff_last[  DCT_LUMA_AC] = coeff_last15_mmx2;
-        pf->coeff_last[ DCT_LUMA_4x4] = coeff_last16_mmx2;
-        pf->coeff_last[ DCT_LUMA_8x8] = coeff_last64_mmx2;
-        pf->coeff_level_run[  DCT_LUMA_AC] = coeff_level_run15_mmx2;
-        pf->coeff_level_run[ DCT_LUMA_4x4] = coeff_level_run16_mmx2;
+        pf->quant_4x4 = asm_quant_4x4_mmx2;
+        pf->quant_8x8 = asm_quant_8x8_mmx2;
+        pf->quant_4x4_dc = asm_quant_4x4_dc_mmx2;
+        pf->decimate_score15 = asm_decimate_score15_mmx2;
+        pf->decimate_score16 = asm_decimate_score16_mmx2;
+        pf->decimate_score64 = asm_decimate_score64_mmx2;
+        pf->coeff_last[  DCT_LUMA_AC] = asm_coeff_last15_mmx2;
+        pf->coeff_last[ DCT_LUMA_4x4] = asm_coeff_last16_mmx2;
+        pf->coeff_last[ DCT_LUMA_8x8] = asm_coeff_last64_mmx2;
+        pf->coeff_level_run[  DCT_LUMA_AC] = asm_coeff_level_run15_mmx2;
+        pf->coeff_level_run[ DCT_LUMA_4x4] = asm_coeff_level_run16_mmx2;
 #endif
-        pf->coeff_last4 = coeff_last4_mmx2;
-        pf->coeff_last8 = coeff_last8_mmx2;
-        pf->coeff_level_run4 = coeff_level_run4_mmx2;
-        pf->coeff_level_run8 = coeff_level_run8_mmx2;
+        pf->coeff_last4 = asm_coeff_last4_mmx2;
+        pf->coeff_last8 = asm_coeff_last8_mmx2;
+        pf->coeff_level_run4 = asm_coeff_level_run4_mmx2;
+        pf->coeff_level_run8 = asm_coeff_level_run8_mmx2;
         if( cpu&CPU_LZCNT )
         {
-            pf->coeff_last4 = coeff_last4_mmx2_lzcnt;
-            pf->coeff_last8 = coeff_last8_mmx2_lzcnt;
-            pf->coeff_level_run4 = coeff_level_run4_mmx2_lzcnt;
-            pf->coeff_level_run8 = coeff_level_run8_mmx2_lzcnt;
+            pf->coeff_last4 = asm_coeff_last4_mmx2_lzcnt;
+            pf->coeff_last8 = asm_coeff_last8_mmx2_lzcnt;
+            pf->coeff_level_run4 = asm_coeff_level_run4_mmx2_lzcnt;
+            pf->coeff_level_run8 = asm_coeff_level_run8_mmx2_lzcnt;
         }
     }
 
     if( cpu&CPU_SSE2 )
     {
-        pf->quant_4x4_dc = quant_4x4_dc_sse2;
-        pf->quant_4x4 = quant_4x4_sse2;
-        pf->quant_4x4x4 = quant_4x4x4_sse2;
-        pf->quant_8x8 = quant_8x8_sse2;
-        pf->dequant_4x4 = dequant_4x4_sse2;
-        pf->dequant_4x4_dc = dequant_4x4dc_sse2;
-        pf->dequant_8x8 = dequant_8x8_sse2;
-        if( h->param.i_cqm_preset == CQM_FLAT )
+        pf->quant_4x4_dc = asm_quant_4x4_dc_sse2;
+        pf->quant_4x4 = asm_quant_4x4_sse2;
+        pf->quant_4x4x4 = asm_quant_4x4x4_sse2;
+        pf->quant_8x8 = asm_quant_8x8_sse2;
+        pf->dequant_4x4 = asm_dequant_4x4_sse2;
+        pf->dequant_4x4_dc = asm_dequant_4x4dc_sse2;
+        pf->dequant_8x8 = asm_dequant_8x8_sse2;
+        //if( h->param.i_cqm_preset == CQM_FLAT )
         {
-            pf->dequant_4x4 = dequant_4x4_flat16_sse2;
-            pf->dequant_8x8 = dequant_8x8_flat16_sse2;
+            pf->dequant_4x4 = asm_dequant_4x4_flat16_sse2;
+            pf->dequant_8x8 = asm_dequant_8x8_flat16_sse2;
         }
-        pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc_sse2;
-        pf->denoise_dct = denoise_dct_sse2;
-        pf->decimate_score15 = decimate_score15_sse2;
-        pf->decimate_score16 = decimate_score16_sse2;
-        pf->decimate_score64 = decimate_score64_sse2;
-        pf->coeff_last[ DCT_LUMA_AC] = coeff_last15_sse2;
-        pf->coeff_last[DCT_LUMA_4x4] = coeff_last16_sse2;
-        pf->coeff_last[DCT_LUMA_8x8] = coeff_last64_sse2;
-        pf->coeff_level_run[ DCT_LUMA_AC] = coeff_level_run15_sse2;
-        pf->coeff_level_run[DCT_LUMA_4x4] = coeff_level_run16_sse2;
+        pf->optimize_chroma_2x2_dc = asm_optimize_chroma_2x2_dc_sse2;
+        pf->denoise_dct = asm_denoise_dct_sse2;
+        pf->decimate_score15 = asm_decimate_score15_sse2;
+        pf->decimate_score16 = asm_decimate_score16_sse2;
+        pf->decimate_score64 = asm_decimate_score64_sse2;
+        pf->coeff_last[ DCT_LUMA_AC] = asm_coeff_last15_sse2;
+        pf->coeff_last[DCT_LUMA_4x4] = asm_coeff_last16_sse2;
+        pf->coeff_last[DCT_LUMA_8x8] = asm_coeff_last64_sse2;
+        pf->coeff_level_run[ DCT_LUMA_AC] = asm_coeff_level_run15_sse2;
+        pf->coeff_level_run[DCT_LUMA_4x4] = asm_coeff_level_run16_sse2;
         if( cpu&CPU_LZCNT )
         {
-            pf->coeff_last[ DCT_LUMA_AC] = coeff_last15_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_4x4] = coeff_last16_sse2_lzcnt;
-            pf->coeff_last[DCT_LUMA_8x8] = coeff_last64_sse2_lzcnt;
-            pf->coeff_level_run[ DCT_LUMA_AC] = coeff_level_run15_sse2_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = coeff_level_run16_sse2_lzcnt;
+            pf->coeff_last[ DCT_LUMA_AC] = asm_coeff_last15_sse2_lzcnt;
+            pf->coeff_last[DCT_LUMA_4x4] = asm_coeff_last16_sse2_lzcnt;
+            pf->coeff_last[DCT_LUMA_8x8] = asm_coeff_last64_sse2_lzcnt;
+            pf->coeff_level_run[ DCT_LUMA_AC] = asm_coeff_level_run15_sse2_lzcnt;
+            pf->coeff_level_run[DCT_LUMA_4x4] = asm_coeff_level_run16_sse2_lzcnt;
         }
     }
 
     if( cpu&CPU_SSSE3 )
     {
-        pf->quant_2x2_dc = quant_2x2_dc_ssse3;
-        pf->quant_4x4_dc = quant_4x4_dc_ssse3;
-        pf->quant_4x4 = quant_4x4_ssse3;
-        pf->quant_4x4x4 = quant_4x4x4_ssse3;
-        pf->quant_8x8 = quant_8x8_ssse3;
-        pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc_ssse3;
-        pf->denoise_dct = denoise_dct_ssse3;
-        pf->decimate_score15 = decimate_score15_ssse3;
-        pf->decimate_score16 = decimate_score16_ssse3;
-        pf->decimate_score64 = decimate_score64_ssse3;
-        INIT_TRELLIS( ssse3 );
-        pf->coeff_level_run4 = coeff_level_run4_ssse3;
-        pf->coeff_level_run8 = coeff_level_run8_ssse3;
-        pf->coeff_level_run[ DCT_LUMA_AC] = coeff_level_run15_ssse3;
-        pf->coeff_level_run[DCT_LUMA_4x4] = coeff_level_run16_ssse3;
+        pf->quant_2x2_dc = asm_quant_2x2_dc_ssse3;
+        pf->quant_4x4_dc = asm_quant_4x4_dc_ssse3;
+        pf->quant_4x4 = asm_quant_4x4_ssse3;
+        pf->quant_4x4x4 = asm_quant_4x4x4_ssse3;
+        pf->quant_8x8 = asm_quant_8x8_ssse3;
+        pf->optimize_chroma_2x2_dc = asm_optimize_chroma_2x2_dc_ssse3;
+        pf->denoise_dct = asm_denoise_dct_ssse3;
+        pf->decimate_score15 = asm_decimate_score15_ssse3;
+        pf->decimate_score16 = asm_decimate_score16_ssse3;
+        pf->decimate_score64 = asm_decimate_score64_ssse3;
+        INIT_TRELLIS( ssse3, asm_  );
+        pf->coeff_level_run4 = asm_coeff_level_run4_ssse3;
+        pf->coeff_level_run8 = asm_coeff_level_run8_ssse3;
+        pf->coeff_level_run[ DCT_LUMA_AC] = asm_coeff_level_run15_ssse3;
+        pf->coeff_level_run[DCT_LUMA_4x4] = asm_coeff_level_run16_ssse3;
         if( cpu&CPU_LZCNT )
         {
-            pf->coeff_level_run4 = coeff_level_run4_ssse3;
-            pf->coeff_level_run8 = coeff_level_run8_ssse3;
-            pf->coeff_level_run[ DCT_LUMA_AC] = coeff_level_run15_ssse3_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = coeff_level_run16_ssse3_lzcnt;
+            pf->coeff_level_run4 = asm_coeff_level_run4_ssse3;
+            pf->coeff_level_run8 = asm_coeff_level_run8_ssse3;
+            pf->coeff_level_run[ DCT_LUMA_AC] = asm_coeff_level_run15_ssse3_lzcnt;
+            pf->coeff_level_run[DCT_LUMA_4x4] = asm_coeff_level_run16_ssse3_lzcnt;
         }
     }
 
     if( cpu&CPU_SSE4 )
     {
-        pf->quant_4x4_dc = quant_4x4_dc_sse4;
-        pf->quant_4x4 = quant_4x4_sse4;
-        pf->quant_8x8 = quant_8x8_sse4;
-        pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc_sse4;
+        pf->quant_4x4_dc = asm_quant_4x4_dc_sse4;
+        pf->quant_4x4 = asm_quant_4x4_sse4;
+        pf->quant_8x8 = asm_quant_8x8_sse4;
+        pf->optimize_chroma_2x2_dc = asm_optimize_chroma_2x2_dc_sse4;
     }
 
     if( cpu&CPU_AVX )
     {
-        pf->dequant_4x4_dc = dequant_4x4dc_avx;
-        if( h->param.i_cqm_preset != CQM_FLAT )
+        pf->dequant_4x4_dc = asm_dequant_4x4dc_avx;
+        //if( h->param.i_cqm_preset != CQM_FLAT )
         {
-            pf->dequant_4x4 = dequant_4x4_avx;
-            pf->dequant_8x8 = dequant_8x8_avx;
+            pf->dequant_4x4 = asm_dequant_4x4_avx;
+            pf->dequant_8x8 = asm_dequant_8x8_avx;
         }
-        pf->optimize_chroma_2x2_dc = optimize_chroma_2x2_dc_avx;
-        pf->denoise_dct = denoise_dct_avx;
+        pf->optimize_chroma_2x2_dc = asm_optimize_chroma_2x2_dc_avx;
+        pf->denoise_dct = asm_denoise_dct_avx;
     }
 
     if( cpu&CPU_XOP )
     {
-        if( h->param.i_cqm_preset != CQM_FLAT )
+        //if( h->param.i_cqm_preset != CQM_FLAT )
         {
-            pf->dequant_4x4 = dequant_4x4_xop;
-            pf->dequant_8x8 = dequant_8x8_xop;
+            pf->dequant_4x4 = asm_dequant_4x4_xop;
+            pf->dequant_8x8 = asm_dequant_8x8_xop;
         }
     }
 
     if( cpu&CPU_AVX2 )
     {
-        pf->quant_4x4 = quant_4x4_avx2;
-        pf->quant_4x4_dc = quant_4x4_dc_avx2;
-        pf->quant_8x8 = quant_8x8_avx2;
-        pf->quant_4x4x4 = quant_4x4x4_avx2;
-        pf->dequant_4x4 = dequant_4x4_avx2;
-        pf->dequant_8x8 = dequant_8x8_avx2;
-        pf->dequant_4x4_dc = dequant_4x4dc_avx2;
-        if( h->param.i_cqm_preset == CQM_FLAT )
+        pf->quant_4x4 = asm_quant_4x4_avx2;
+        pf->quant_4x4_dc = asm_quant_4x4_dc_avx2;
+        pf->quant_8x8 = asm_quant_8x8_avx2;
+        pf->quant_4x4x4 = asm_quant_4x4x4_avx2;
+        pf->dequant_4x4 = asm_dequant_4x4_avx2;
+        pf->dequant_8x8 = asm_dequant_8x8_avx2;
+        pf->dequant_4x4_dc = asm_dequant_4x4dc_avx2;
+        //if( h->param.i_cqm_preset == CQM_FLAT )
         {
-            pf->dequant_4x4 = dequant_4x4_flat16_avx2;
-            pf->dequant_8x8 = dequant_8x8_flat16_avx2;
+            pf->dequant_4x4 = asm_dequant_4x4_flat16_avx2;
+            pf->dequant_8x8 = asm_dequant_8x8_flat16_avx2;
         }
-        pf->decimate_score64 = decimate_score64_avx2;
-        pf->denoise_dct = denoise_dct_avx2;
+        pf->decimate_score64 = asm_decimate_score64_avx2;
+        pf->denoise_dct = asm_denoise_dct_avx2;
         if( cpu&CPU_LZCNT )
         {
-            pf->coeff_last[DCT_LUMA_8x8] = coeff_last64_avx2_lzcnt;
-            pf->coeff_level_run[ DCT_LUMA_AC] = coeff_level_run15_avx2_lzcnt;
-            pf->coeff_level_run[DCT_LUMA_4x4] = coeff_level_run16_avx2_lzcnt;
+            pf->coeff_last[DCT_LUMA_8x8] = asm_coeff_last64_avx2_lzcnt;
+            pf->coeff_level_run[ DCT_LUMA_AC] = asm_coeff_level_run15_avx2_lzcnt;
+            pf->coeff_level_run[DCT_LUMA_4x4] = asm_coeff_level_run16_avx2_lzcnt;
         }
     }
 #endif // HAVE_MMX
@@ -722,70 +725,70 @@ void vbench_quant_init( t *h, int cpu, quant_function_t *pf )
 #if HAVE_ALTIVEC
     if( cpu&CPU_ALTIVEC )
     {
-        pf->quant_2x2_dc = quant_2x2_dc_altivec;
-        pf->quant_4x4_dc = quant_4x4_dc_altivec;
-        pf->quant_4x4 = quant_4x4_altivec;
-        pf->quant_8x8 = quant_8x8_altivec;
+        pf->quant_2x2_dc = asm_quant_2x2_dc_altivec;
+        pf->quant_4x4_dc = asm_quant_4x4_dc_altivec;
+        pf->quant_4x4 = asm_quant_4x4_altivec;
+        pf->quant_8x8 = asm_quant_8x8_altivec;
 
-        pf->dequant_4x4 = dequant_4x4_altivec;
-        pf->dequant_8x8 = dequant_8x8_altivec;
+        pf->dequant_4x4 = asm_dequant_4x4_altivec;
+        pf->dequant_8x8 = asm_dequant_8x8_altivec;
     }
 #endif
 
 #if HAVE_ARMV6
     if( cpu&CPU_ARMV6 )
     {
-        pf->coeff_last4 = coeff_last4_arm;
-        pf->coeff_last8 = coeff_last8_arm;
+        pf->coeff_last4 = asm_coeff_last4_arm;
+        pf->coeff_last8 = asm_coeff_last8_arm;
     }
 #endif
 #if HAVE_ARMV6 || ARCH_AARCH64
     if( cpu&CPU_NEON )
     {
-        pf->quant_2x2_dc   = quant_2x2_dc_neon;
-        pf->quant_4x4      = quant_4x4_neon;
-        pf->quant_4x4_dc   = quant_4x4_dc_neon;
-        pf->quant_4x4x4    = quant_4x4x4_neon;
-        pf->quant_8x8      = quant_8x8_neon;
-        pf->dequant_4x4    = dequant_4x4_neon;
-        pf->dequant_4x4_dc = dequant_4x4_dc_neon;
-        pf->dequant_8x8    = dequant_8x8_neon;
-        pf->coeff_last[ DCT_LUMA_AC] = coeff_last15_neon;
-        pf->coeff_last[DCT_LUMA_4x4] = coeff_last16_neon;
-        pf->coeff_last[DCT_LUMA_8x8] = coeff_last64_neon;
-        pf->denoise_dct = denoise_dct_neon;
-        pf->decimate_score15 = decimate_score15_neon;
-        pf->decimate_score16 = decimate_score16_neon;
-        pf->decimate_score64 = decimate_score64_neon;
+        pf->quant_2x2_dc   = asm_quant_2x2_dc_neon;
+        pf->quant_4x4      = asm_quant_4x4_neon;
+        pf->quant_4x4_dc   = asm_quant_4x4_dc_neon;
+        pf->quant_4x4x4    = asm_quant_4x4x4_neon;
+        pf->quant_8x8      = asm_quant_8x8_neon;
+        pf->dequant_4x4    = asm_dequant_4x4_neon;
+        pf->dequant_4x4_dc = asm_dequant_4x4_dc_neon;
+        pf->dequant_8x8    = asm_dequant_8x8_neon;
+        pf->coeff_last[ DCT_LUMA_AC] = asm_coeff_last15_neon;
+        pf->coeff_last[DCT_LUMA_4x4] = asm_coeff_last16_neon;
+        pf->coeff_last[DCT_LUMA_8x8] = asm_coeff_last64_neon;
+        pf->denoise_dct = asm_denoise_dct_neon;
+        pf->decimate_score15 = asm_decimate_score15_neon;
+        pf->decimate_score16 = asm_decimate_score16_neon;
+        pf->decimate_score64 = asm_decimate_score64_neon;
     }
 #endif
 #if ARCH_AARCH64
     if( cpu&CPU_ARMV8 )
     {
-        pf->coeff_last4 = coeff_last4_aarch64;
-        pf->coeff_last8 = coeff_last8_aarch64;
-        pf->coeff_level_run4 = coeff_level_run4_aarch64;
+        pf->coeff_last4 = asm_coeff_last4_aarch64;
+        pf->coeff_last8 = asm_coeff_last8_aarch64;
+        pf->coeff_level_run4 = asm_coeff_level_run4_aarch64;
     }
     if( cpu&CPU_NEON )
     {
-        pf->coeff_level_run8 = coeff_level_run8_neon;
-        pf->coeff_level_run[  DCT_LUMA_AC] = coeff_level_run15_neon;
-        pf->coeff_level_run[ DCT_LUMA_4x4] = coeff_level_run16_neon;
+        pf->coeff_level_run8 = asm_coeff_level_run8_neon;
+        pf->coeff_level_run[  DCT_LUMA_AC] = asm_coeff_level_run15_neon;
+        pf->coeff_level_run[ DCT_LUMA_4x4] = asm_coeff_level_run16_neon;
     }
 #endif
 
 #if HAVE_MSA
     if( cpu&CPU_MSA )
     {
-        pf->quant_4x4      = quant_4x4_msa;
-        pf->quant_4x4_dc   = quant_4x4_dc_msa;
-        pf->quant_4x4x4    = quant_4x4x4_msa;
-        pf->quant_8x8      = quant_8x8_msa;
-        pf->dequant_4x4    = dequant_4x4_msa;
-        pf->dequant_4x4_dc = dequant_4x4_dc_msa;
-        pf->dequant_8x8    = dequant_8x8_msa;
-        pf->coeff_last[DCT_LUMA_4x4] = coeff_last16_msa;
-        pf->coeff_last[DCT_LUMA_8x8] = coeff_last64_msa;
+        pf->quant_4x4      = asm_quant_4x4_msa;
+        pf->quant_4x4_dc   = asm_quant_4x4_dc_msa;
+        pf->quant_4x4x4    = asm_quant_4x4x4_msa;
+        pf->quant_8x8      = asm_quant_8x8_msa;
+        pf->dequant_4x4    = asm_dequant_4x4_msa;
+        pf->dequant_4x4_dc = asm_dequant_4x4_dc_msa;
+        pf->dequant_8x8    = asm_dequant_8x8_msa;
+        pf->coeff_last[DCT_LUMA_4x4] = asm_coeff_last16_msa;
+        pf->coeff_last[DCT_LUMA_8x8] = asm_coeff_last64_msa;
     }
 #endif
 #endif // HIGH_BIT_DEPTH

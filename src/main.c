@@ -40,8 +40,8 @@
 #include <ctype.h>
 
 #include "common.h"
-#include "bench.h"
 #include "osdep.h"
+#include "bench.h"
 
 
 

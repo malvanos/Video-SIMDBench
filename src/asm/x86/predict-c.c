@@ -25,6 +25,7 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
+#include "osdep.h"
 #include "common.h"
 #include "asm/x86/predict.h"
 #include "c_kernels/predict.h"

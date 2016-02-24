@@ -960,7 +960,7 @@ HADAMARD_AC_10B( 8, 16 )
 HADAMARD_AC_10B( 8, 8 )
 
 /////////////////////////////////////////////////////////////////////////////////
-#define SAD_X( size ) \
+#define SAD_X2( size ) \
 void vbench_pixel_sad_x3_##size( pixel *fenc, pixel *pix0, pixel *pix1, pixel *pix2,\
                                       intptr_t i_stride, int scores[3] )\
 {\
@@ -977,13 +977,13 @@ void vbench_pixel_sad_x4_##size( pixel *fenc, pixel *pix0, pixel *pix1,pixel *pi
     scores[3] = pixel_sad_##size( fenc, FENC_STRIDE, pix3, i_stride );\
 }
 
-SAD_X( 16x16 )
-SAD_X( 16x8 )
-SAD_X( 8x16 )
-SAD_X( 8x8 )
-SAD_X( 8x4 )
-SAD_X( 4x8 )
-SAD_X( 4x4 )
+SAD_X2( 16x16 )
+SAD_X2( 16x8 )
+SAD_X2( 8x16 )
+SAD_X2( 8x8 )
+SAD_X2( 8x4 )
+SAD_X2( 4x8 )
+SAD_X2( 4x4 )
 
 
 // FIXME: merge these twos: must rename all pixel funcs
