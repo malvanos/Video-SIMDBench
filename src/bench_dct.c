@@ -182,7 +182,6 @@ static int check_dct( int cpu_ref, int cpu_new )
     udctcoef        (*nr_offset_emergency)[4][64];
 
 
-
     //memset( h, 0, sizeof(*h) );
     //x264_param_default( &h->param );
 
@@ -269,15 +268,15 @@ static int check_dct( int cpu_ref, int cpu_new )
     dct_c.sub16x16_dct8( dct8, pbuf1, pbuf2 );
     for( int i = 0; i < 16; i++ )
     {
-        qf.quant_4x4( dct4[i], h->quant4_mf[CQM_4IY][20], h->quant4_bias[CQM_4IY][20] );
-        qf.dequant_4x4( dct4[i], h->dequant4_mf[CQM_4IY], 20 );
+        qf.quant_4x4( dct4[i], quant4_mf[CQM_4IY][20], quant4_bias[CQM_4IY][20] );
+        qf.dequant_4x4( dct4[i], dequant4_mf[CQM_4IY], 20 );
     }
     for( int i = 0; i < 4; i++ )
     {
-        qf.quant_8x8( dct8[i], h->quant8_mf[CQM_8IY][20], h->quant8_bias[CQM_8IY][20] );
-        qf.dequant_8x8( dct8[i], h->dequant8_mf[CQM_8IY], 20 );
+        qf.quant_8x8( dct8[i], quant8_mf[CQM_8IY][20], quant8_bias[CQM_8IY][20] );
+        qf.dequant_8x8( dct8[i], dequant8_mf[CQM_8IY], 20 );
     }
-    x264_cqm_delete( h );
+    vbench_cqm_delete( dequant4_mf, dequant8_mf, unquant4_mf, unquant8_mf, quant4_mf,   quant8_mf,    quant4_bias,    quant8_bias,  quant4_bias0,  quant8_bias0,   nr_offset_emergency  );
 
 #define TEST_IDCT( name, src ) \
     if( dct_asm.name != dct_ref.name ) \
@@ -370,9 +369,9 @@ static int check_dct( int cpu_ref, int cpu_new )
     TEST_DCTDC_CHROMA( dct2x4dc );
 #undef TEST_DCTDC_CHROMA
 
-    x264_zigzag_function_t zigzag_c[2];
-    x264_zigzag_function_t zigzag_ref[2];
-    x264_zigzag_function_t zigzag_asm[2];
+    vbench_zigzag_function_t zigzag_c[2];
+    vbench_zigzag_function_t zigzag_ref[2];
+    vbench_zigzag_function_t zigzag_asm[2];
 
     ALIGNED_16( dctcoef level1[64] );
     ALIGNED_16( dctcoef level2[64] );
@@ -472,9 +471,9 @@ static int check_dct( int cpu_ref, int cpu_new )
         } \
     }
 
-    x264_zigzag_init( 0, &zigzag_c[0], &zigzag_c[1] );
-    x264_zigzag_init( cpu_ref, &zigzag_ref[0], &zigzag_ref[1] );
-    x264_zigzag_init( cpu_new, &zigzag_asm[0], &zigzag_asm[1] );
+    vbench_zigzag_init( 0, &zigzag_c[0], &zigzag_c[1] );
+    vbench_zigzag_init( cpu_ref, &zigzag_ref[0], &zigzag_ref[1] );
+    vbench_zigzag_init( cpu_new, &zigzag_asm[0], &zigzag_asm[1] );
 
     ok = 1; used_asm = 0;
     TEST_INTERLEAVE( interleave_8x8_cavlc, level1, level2, dct8[0], 64 );
@@ -495,13 +494,6 @@ static int check_dct( int cpu_ref, int cpu_new )
 
     return ret;
 }
-
-int run_benchmarks(int i){
-    /* 32-byte alignment is guaranteed whenever it's useful, 
-     * but some functions also vary in speed depending on %64 */
-    return x264_stack_pagealign(check_all_flags, i*32 );
-}
-
 
 
 #define SHIFT(x,s) ((s)<=0 ? (x)<<-(s) : ((x)+(1<<((s)-1)))>>(s))
@@ -566,7 +558,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
     int num_8x8_lists = 1 == CHROMA_444 ? 4
                       : 1 ? 2 : 0; /* Checkasm may segfault if optimized out by --chroma-format */
 
-#define CQM_ALLOC( w, count )\
+#define CQM_ALLOC( w, count, type )\
     for( int i = 0; i < count; i++ )\
     {\
         int size = w*w;\
@@ -577,15 +569,15 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 break;\
         if( j < i )\
         {\
-            h->  quant##w##_mf[i] = h->  quant##w##_mf[j];\
-            h->dequant##w##_mf[i] = h->dequant##w##_mf[j];\
-            h->unquant##w##_mf[i] = h->unquant##w##_mf[j];\
+              quant##w##_mf[i] =   quant##w##_mf[j];\
+            dequant##w##_mf[i] = dequant##w##_mf[j];\
+            unquant##w##_mf[i] = unquant##w##_mf[j];\
         }\
         else\
         {\
-            h->  quant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
-            h->dequant##w##_mf[i] = memalign( NATIVE_ALIGN, 6*size*sizeof(int) );\
-            h->unquant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(int) );\
+              quant##w##_mf[i] = (int[6][16]) memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+            dequant##w##_mf[i] = memalign( NATIVE_ALIGN, 6*size*sizeof(int) );\
+            unquant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(int) );\
         }\
         for( j = 0; j < i; j++ )\
             if( deadzone[j] == deadzone[i] &&\
@@ -593,18 +585,18 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 break;\
         if( j < i )\
         {\
-            h->quant##w##_bias[i] = h->quant##w##_bias[j];\
-            h->quant##w##_bias0[i] = h->quant##w##_bias0[j];\
+             quant##w##_bias[i] = quant##w##_bias[j];\
+            quant##w##_bias0[i] = quant##w##_bias0[j];\
         }\
         else\
         {\
-             h->quant##w##_bias[i]  = memalign( NATIVE_ALIGN,(QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
-             h->quant##w##_bias0[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+             quant##w##_bias[i]  = memalign( NATIVE_ALIGN,(QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+             quant##w##_bias0[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
         }\
     }
 
-    CQM_ALLOC( 4, 4 )
-    CQM_ALLOC( 8, num_8x8_lists )
+    CQM_ALLOC( 4, 4, (int[6][16]) )
+    CQM_ALLOC( 8, num_8x8_lists, (int[6][16]) )
 
     for( int q = 0; q < 6; q++ )
     {
@@ -752,28 +744,45 @@ fail:
     {\
         int j;\
         for( j = 0; j < i; j++ )\
-            if( h->quant##n##_mf[i] == h->quant##n##_mf[j] )\
+            if( quant##n##_mf[i] == quant##n##_mf[j] )\
                 break;\
         if( j == i )\
         {\
-            free( h->  quant##n##_mf[i] );\
-            free( h->dequant##n##_mf[i] );\
-            free( h->unquant##n##_mf[i] );\
+            free(   quant##n##_mf[i] );\
+            free( dequant##n##_mf[i] );\
+            free( unquant##n##_mf[i] );\
         }\
         for( j = 0; j < i; j++ )\
-            if( h->quant##n##_bias[i] == h->quant##n##_bias[j] )\
+            if( quant##n##_bias[i] == quant##n##_bias[j] )\
                 break;\
         if( j == i )\
         {\
-            free( h->quant##n##_bias[i] );\
-            free( h->quant##n##_bias0[i] );\
+            free( quant##n##_bias[i] );\
+            free( quant##n##_bias0[i] );\
         }\
     }
 
-void vbench_cqm_delete( x264_t *h )
+void vbench_cqm_delete(
+                    /* quantization matrix for decoding, [cqm][qp%6][coef] */
+                    int             (*dequant4_mf[4])[16],   /* [4][6][16] */
+                    int             (*dequant8_mf[4])[64],   /* [4][6][64] */
+                    /* quantization matrix for trellis, [cqm][qp][coef] */
+                    int             (*unquant4_mf[4])[16],   /* [4][QP_MAX_SPEC+1][16] */
+                    int             (*unquant8_mf[4])[64],   /* [4][QP_MAX_SPEC+1][64] */
+                    /* quantization matrix for deadzone */
+                    udctcoef        (*quant4_mf[4])[16],     /* [4][QP_MAX_SPEC+1][16] */
+                    udctcoef        (*quant8_mf[4])[64],     /* [4][QP_MAX_SPEC+1][64] */
+                    udctcoef        (*quant4_bias[4])[16],   /* [4][QP_MAX_SPEC+1][16] */
+                    udctcoef        (*quant8_bias[4])[64],   /* [4][QP_MAX_SPEC+1][64] */
+                    udctcoef        (*quant4_bias0[4])[16],  /* [4][QP_MAX_SPEC+1][16] */
+                    udctcoef        (*quant8_bias0[4])[64],  /* [4][QP_MAX_SPEC+1][64] */
+                    udctcoef        (*nr_offset_emergency)[4][64]
+
+        
+        )
 {
     CQM_DELETE( 4, 4 );
     CQM_DELETE( 8, CHROMA444 ? 4 : 2 );
-    free( h->nr_offset_emergency );
+    free( nr_offset_emergency );
 }
 
