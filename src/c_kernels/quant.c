@@ -336,6 +336,18 @@ const uint8_t decimate_table8[64] =
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+const uint8_t asm_decimate_table4[16] =
+{
+    3,2,2,1,1,1,0,0,0,0,0,0,0,0,0,0
+};
+const uint8_t asm_decimate_table8[64] =
+{
+    3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,
+    1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
+
 static int ALWAYS_INLINE decimate_score_internal( dctcoef *dct, int i_max )
 {
     const uint8_t *ds_table = (i_max == 64) ? decimate_table8 : decimate_table4;

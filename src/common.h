@@ -51,7 +51,13 @@ typedef uint16_t udctcoef;
 
 // arbitrary, but low because SATD scores are 1/4 normal
 #define X264_LOOKAHEAD_QP (12+QP_BD_OFFSET)
-#define SPEC_QP(x) X264_MIN((x), QP_MAX_SPEC)
+#define SPEC_QP(x) MIN((x), QP_MAX_SPEC)
+
+
+#define MIN(a,b) ( (a)<(b) ? (a) : (b) )
+#define MIN3(a,b,c) MIN((a),MIN((b),(c)))
+#define MIN4(a,b,c,d) MIN((a),MIN3((b),(c),(d)))
+
 
 
 #define CHROMA_SIZE(s) ((s)>>(CHROMA_H_SHIFT+CHROMA_V_SHIFT))

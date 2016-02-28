@@ -118,35 +118,10 @@ static bench_t* get_bench( const char *name, int cpu )
 }
 
 
+#define call_c1(func,...) func(__VA_ARGS__)
 
-#if ARCH_X86_64
-/* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
- * This is done by clobbering the stack with junk around the stack pointer and calling the
- * assembly function through x264_checkasm_call with added dummy arguments which forces all
- * real arguments to be passed on the stack and not in registers. For 32-bit argument the
- * upper half of the 64-bit register location on the stack will now contain junk. Note that
- * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
- * overwrite the junk written to the stack so there's no guarantee that it will always
- * detect all functions that assumes zero-extension.
- */
-void x264_checkasm_stack_clobber( uint64_t clobber, ... );
-#define call_a1(func,...) ({ \
-    uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
-    x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
-    x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
-#define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1 call_c1
-#endif
 
-#if ARCH_ARM
-#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1_64 call_a1
-#endif
-
-static int check_dct( int cpu_ref, int cpu_new )
+int check_dct( int cpu_ref, int cpu_new )
 {
     vbench_dct_function_t dct_c;
     vbench_dct_function_t dct_ref;
@@ -657,11 +632,11 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 quant4_mf[i_list][q][i] = j = SHIFT(quant4_mf[i_list][q%6][i], q/6 - 1);
                 if( !j )
                 {
-                    min_qp_err = X264_MIN( min_qp_err, q );
+                    min_qp_err = MIN( min_qp_err, q );
                     continue;
                 }
                 // round to nearest, unless that would cause the deadzone to be negative
-                quant4_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
+                quant4_bias[i_list][q][i] = MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
                 quant4_bias0[i_list][q][i] = (1<<15)/j;
                 if( j > 0xffff && q > max_qp_err && (i_list == CQM_4IY || i_list == CQM_4PY) )
                     max_qp_err = q;
@@ -678,10 +653,10 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
 
                     if( !j )
                     {
-                        min_qp_err = X264_MIN( min_qp_err, q );
+                        min_qp_err = MIN( min_qp_err, q );
                         continue;
                     }
-                    quant8_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
+                    quant8_bias[i_list][q][i] = MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
                     quant8_bias0[i_list][q][i] = (1<<15)/j;
                     if( j > 0xffff && q > max_qp_err && (i_list == CQM_8IY || i_list == CQM_8PY) )
                         max_qp_err = q;
@@ -730,7 +705,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 /* Formula chosen as an exponential scale to vaguely mimic the effects
                  * of a higher quantizer. */
                 double bias = (pow( 2, pos*(QP_MAX - QP_MAX_SPEC)/10. )*0.003-0.003) * start;
-                nr_offset[i] = X264_MIN( bias + 0.5, max );
+                nr_offset[i] = MIN( bias + 0.5, max );
             }
         }
 #if 0
