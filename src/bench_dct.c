@@ -61,7 +61,7 @@ pixel *pbuf3, *pbuf4;
 int quiet = 0;
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
@@ -524,20 +524,20 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
     int def_dequant8[6][64];
 
     /* quantization matrix for decoding, [cqm][qp%6][coef] */
-    int (*dequant4_mf[4])[16];   /* [4][6][16] */
-    int (*dequant8_mf[4])[64];   /* [4][6][64] */
+    ALIGNED_32(int dequant4_mf[4][6][16]);   /* [4][6][16] */
+    ALIGNED_32(int dequant8_mf[4][6][64]);   /* [4][6][64] */
 
     /* quantization matrix for trellis, [cqm][qp][coef] */
-    int (*unquant4_mf[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
-    int (*unquant8_mf[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32(int unquant4_mf[4][QP_MAX_SPEC+1][16]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32(int unquant8_mf[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
 
     /* quantization matrix for deadzone */
-    udctcoef        (*quant4_mf[4])[16];     /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_mf[4])[64];     /* [4][QP_MAX_SPEC+1][64] */
-    udctcoef        (*quant4_bias[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_bias[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
-    udctcoef        (*quant4_bias0[4])[16];  /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_bias0[4])[64];  /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][64] */
     udctcoef        (*nr_offset_emergency)[4][64];
 
 
@@ -551,7 +551,8 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
     int num_8x8_lists = 1 == CHROMA_444 ? 4
                       : 1 ? 2 : 0; /* Checkasm may segfault if optimized out by --chroma-format */
 
-#define CQM_ALLOC( w, count, type )\
+
+#define CQM_ALLOC( w, count )\
     for( int i = 0; i < count; i++ )\
     {\
         int size = w*w;\
@@ -562,15 +563,14 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 break;\
         if( j < i )\
         {\
-              quant##w##_mf[i] =   quant##w##_mf[j];\
-            dequant##w##_mf[i] = dequant##w##_mf[j];\
-            unquant##w##_mf[i] = unquant##w##_mf[j];\
+         /*     quant##w##_mf[i] =   quant##w##_mf[j]*/;\
+          /*  dequant##w##_mf[i] = dequant##w##_mf[j];*/\
+          /*  unquant##w##_mf[i] = unquant##w##_mf[j];*/\
         }\
         else\
         {\
-              quant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
-            dequant##w##_mf[i] = memalign( NATIVE_ALIGN, 6*size*sizeof(int) );\
-            unquant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(int) );\
+           /* dequant##w##_mf[i] = memalign( NATIVE_ALIGN, 6*size*sizeof(int) );*/\
+           /* unquant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(int) );*/\
         }\
         for( j = 0; j < i; j++ )\
             if( deadzone[j] == deadzone[i] &&\
@@ -578,18 +578,18 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 break;\
         if( j < i )\
         {\
-             quant##w##_bias[i] = quant##w##_bias[j];\
-            quant##w##_bias0[i] = quant##w##_bias0[j];\
+             /*quant##w##_bias[i] = quant##w##_bias[j];*/\
+           /* quant##w##_bias0[i] = quant##w##_bias0[j];*/\
         }\
         else\
         {\
-             quant##w##_bias[i]  = memalign( NATIVE_ALIGN,(QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
-             quant##w##_bias0[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+             /*quant##w##_bias[i]  = memalign( NATIVE_ALIGN,(QP_MAX_SPEC+1)*size*sizeof(udctcoef) );*/\
+            /* quant##w##_bias0[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );*/\
         }\
     }
 
-    CQM_ALLOC( 4, 4, (int[6][16]) )
-    CQM_ALLOC( 8, num_8x8_lists, (int[6][16]) )
+    CQM_ALLOC( 4, 4 )
+    CQM_ALLOC( 8, num_8x8_lists )
 
     for( int q = 0; q < 6; q++ )
     {
@@ -635,7 +635,6 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                     min_qp_err = MIN( min_qp_err, q );
                     continue;
                 }
-                // round to nearest, unless that would cause the deadzone to be negative
                 quant4_bias[i_list][q][i] = MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
                 quant4_bias0[i_list][q][i] = (1<<15)/j;
                 if( j > 0xffff && q > max_qp_err && (i_list == CQM_4IY || i_list == CQM_4PY) )
@@ -721,6 +720,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
 #endif
     return 0;
 fail:
+    printf("DCT Failed!\n");
     vbench_cqm_delete( 
                     dequant4_mf[4][16],   /* [4][6][16] */
                     dequant8_mf[4][64],   /* [4][6][64] */
@@ -782,8 +782,8 @@ void vbench_cqm_delete(
         
         )
 {
-    CQM_DELETE( 4, 4 );
-    CQM_DELETE( 8, CHROMA444 ? 4 : 2 );
-    free( nr_offset_emergency );
+   // CQM_DELETE( 4, 4 );
+ //   CQM_DELETE( 8, CHROMA444 ? 4 : 2 );
+    //free( nr_offset_emergency );
 }
 
