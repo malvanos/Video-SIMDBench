@@ -547,8 +547,26 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
     int def_quant8[6][64];
     int def_dequant4[6][16];
     int def_dequant8[6][64];
-    int quant4_mf[4][6][16];
-    int quant8_mf[4][6][64];
+
+    /* quantization matrix for decoding, [cqm][qp%6][coef] */
+    int (*dequant4_mf[4])[16];   /* [4][6][16] */
+    int (*dequant8_mf[4])[64];   /* [4][6][64] */
+
+    /* quantization matrix for trellis, [cqm][qp][coef] */
+    int (*unquant4_mf[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
+    int (*unquant8_mf[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
+
+    /* quantization matrix for deadzone */
+    udctcoef        (*quant4_mf[4])[16];     /* [4][QP_MAX_SPEC+1][16] */
+    udctcoef        (*quant8_mf[4])[64];     /* [4][QP_MAX_SPEC+1][64] */
+    udctcoef        (*quant4_bias[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
+    udctcoef        (*quant8_bias[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
+    udctcoef        (*quant4_bias0[4])[16];  /* [4][QP_MAX_SPEC+1][16] */
+    udctcoef        (*quant8_bias0[4])[64];  /* [4][QP_MAX_SPEC+1][64] */
+    udctcoef        (*nr_offset_emergency)[4][64];
+
+
+
     int deadzone[4] = { 32 - 0,
                         32 - 1,
                         32 - 11, 32 - 21 };
@@ -575,7 +593,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
         }\
         else\
         {\
-              quant##w##_mf[i] = (int[6][16]) memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
+              quant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(udctcoef) );\
             dequant##w##_mf[i] = memalign( NATIVE_ALIGN, 6*size*sizeof(int) );\
             unquant##w##_mf[i] = memalign( NATIVE_ALIGN, (QP_MAX_SPEC+1)*size*sizeof(int) );\
         }\
@@ -619,14 +637,14 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
         for( int i_list = 0; i_list < 4; i_list++ )
             for( int i = 0; i < 16; i++ )
             {
-                h->dequant4_mf[i_list][q][i] = def_dequant4[q][i] * h->pps->scaling_list[i_list][i];
-                     quant4_mf[i_list][q][i] = DIV(def_quant4[q][i] * 16, h->pps->scaling_list[i_list][i]);
+                   dequant4_mf[i_list][q][i] = def_dequant4[q][i] *scaling_list[i_list][i];
+                     quant4_mf[i_list][q][i] = DIV(def_quant4[q][i] * 16, scaling_list[i_list][i]);
             }
         for( int i_list = 0; i_list < num_8x8_lists; i_list++ )
             for( int i = 0; i < 64; i++ )
             {
-                h->dequant8_mf[i_list][q][i] = def_dequant8[q][i] * h->pps->scaling_list[4+i_list][i];
-                     quant8_mf[i_list][q][i] = DIV(def_quant8[q][i] * 16, h->pps->scaling_list[4+i_list][i]);
+                   dequant8_mf[i_list][q][i] = def_dequant8[q][i] * scaling_list[4+i_list][i];
+                     quant8_mf[i_list][q][i] = DIV(def_quant8[q][i] * 16, scaling_list[4+i_list][i]);
             }
     }
     for( int q = 0; q <= QP_MAX_SPEC; q++ )
@@ -635,16 +653,16 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
         for( int i_list = 0; i_list < 4; i_list++ )
             for( int i = 0; i < 16; i++ )
             {
-                h->unquant4_mf[i_list][q][i] = (1ULL << (q/6 + 15 + 8)) / quant4_mf[i_list][q%6][i];
-                h->quant4_mf[i_list][q][i] = j = SHIFT(quant4_mf[i_list][q%6][i], q/6 - 1);
+                unquant4_mf[i_list][q][i] = (1ULL << (q/6 + 15 + 8)) / quant4_mf[i_list][q%6][i];
+                quant4_mf[i_list][q][i] = j = SHIFT(quant4_mf[i_list][q%6][i], q/6 - 1);
                 if( !j )
                 {
                     min_qp_err = X264_MIN( min_qp_err, q );
                     continue;
                 }
                 // round to nearest, unless that would cause the deadzone to be negative
-                h->quant4_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
-                h->quant4_bias0[i_list][q][i] = (1<<15)/j;
+                quant4_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
+                quant4_bias0[i_list][q][i] = (1<<15)/j;
                 if( j > 0xffff && q > max_qp_err && (i_list == CQM_4IY || i_list == CQM_4PY) )
                     max_qp_err = q;
                 if( j > 0xffff && q > max_chroma_qp_err && (i_list == CQM_4IC || i_list == CQM_4PC) )
@@ -654,17 +672,17 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
             for( int i_list = 0; i_list < num_8x8_lists; i_list++ )
                 for( int i = 0; i < 64; i++ )
                 {
-                    h->unquant8_mf[i_list][q][i] = (1ULL << (q/6 + 16 + 8)) / quant8_mf[i_list][q%6][i];
+                    unquant8_mf[i_list][q][i] = (1ULL << (q/6 + 16 + 8)) / quant8_mf[i_list][q%6][i];
                     j = SHIFT(quant8_mf[i_list][q%6][i], q/6);
-                    h->quant8_mf[i_list][q][i] = (uint16_t)j;
+                    quant8_mf[i_list][q][i] = (uint16_t)j;
 
                     if( !j )
                     {
                         min_qp_err = X264_MIN( min_qp_err, q );
                         continue;
                     }
-                    h->quant8_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
-                    h->quant8_bias0[i_list][q][i] = (1<<15)/j;
+                    quant8_bias[i_list][q][i] = X264_MIN( DIV(deadzone[i_list]<<10, j), (1<<15)/j );
+                    quant8_bias0[i_list][q][i] = (1<<15)/j;
                     if( j > 0xffff && q > max_qp_err && (i_list == CQM_8IY || i_list == CQM_8PY) )
                         max_qp_err = q;
                     if( j > 0xffff && q > max_chroma_qp_err && (i_list == CQM_8IC || i_list == CQM_8PC) )
@@ -674,14 +692,14 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
 
     /* Emergency mode denoising. */
     vbench_emms();
-    h->nr_offset_emergency = memalign( NATIVE_ALIGN,  sizeof(*h->nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
+    nr_offset_emergency = memalign( NATIVE_ALIGN,  sizeof(*nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
     for( int q = 0; q < QP_MAX - QP_MAX_SPEC; q++ )
         for( int cat = 0; cat < 3 + CHROMA444; cat++ )
         {
             int dct8x8 = cat&1;
 
             int size = dct8x8 ? 64 : 16;
-            udctcoef *nr_offset = h->nr_offset_emergency[q][cat];
+            udctcoef *nr_offset = nr_offset_emergency[q][cat];
             /* Denoise chroma first (due to h264's chroma QP offset), then luma, then DC. */
             int dc_threshold =    (QP_MAX-QP_MAX_SPEC)*2/3;
             int luma_threshold =  (QP_MAX-QP_MAX_SPEC)*2/3;
@@ -689,6 +707,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
 
             for( int i = 0; i < size; i++ )
             {
+#define BIT_DEPTH 8
                 int max = (1 << (7 + BIT_DEPTH)) - 1;
                 /* True "emergency mode": remove all DCT coefficients */
                 if( q == QP_MAX - QP_MAX_SPEC - 1 )
@@ -706,36 +725,43 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                 double pos = (double)(q-thresh+1) / (QP_MAX - QP_MAX_SPEC - thresh);
 
                 /* XXX: this math is largely tuned for /dev/random input. */
-                double start = dct8x8 ? h->unquant8_mf[CQM_8PY][QP_MAX_SPEC][i]
-                                      : h->unquant4_mf[CQM_4PY][QP_MAX_SPEC][i];
+                double start = dct8x8 ? unquant8_mf[CQM_8PY][QP_MAX_SPEC][i]
+                                      : unquant4_mf[CQM_4PY][QP_MAX_SPEC][i];
                 /* Formula chosen as an exponential scale to vaguely mimic the effects
                  * of a higher quantizer. */
                 double bias = (pow( 2, pos*(QP_MAX - QP_MAX_SPEC)/10. )*0.003-0.003) * start;
                 nr_offset[i] = X264_MIN( bias + 0.5, max );
             }
         }
-
+#if 0
     if( !h->mb.b_lossless )
     {
-        while( chroma_qp_table[SPEC_QP(h->param.rc.i_qp_min)] <= max_chroma_qp_err )
-            h->param.rc.i_qp_min++;
+        while( chroma_qp_table[SPEC_QP(param.rc.i_qp_min)] <= max_chroma_qp_err )
+            param.rc.i_qp_min++;
         if( min_qp_err <= h->param.rc.i_qp_max )
-            h->param.rc.i_qp_max = min_qp_err-1;
+            param.rc.i_qp_max = min_qp_err-1;
         if( max_qp_err >= h->param.rc.i_qp_min )
-            h->param.rc.i_qp_min = max_qp_err+1;
-        /* If long level-codes aren't allowed, we need to allow QP high enough to avoid them. */
-        if( !h->param.b_cabac && h->sps->i_profile_idc < PROFILE_HIGH )
-            while( chroma_qp_table[SPEC_QP(h->param.rc.i_qp_max)] <= 12 || h->param.rc.i_qp_max <= 12 )
-                h->param.rc.i_qp_max++;
-        if( h->param.rc.i_qp_min > h->param.rc.i_qp_max )
-        {
-            x264_log( h, X264_LOG_ERROR, "Impossible QP constraints for CQM (min=%d, max=%d)\n", h->param.rc.i_qp_min, h->param.rc.i_qp_max );
-            return -1;
-        }
+            param.rc.i_qp_min = max_qp_err+1;
     }
+#endif
     return 0;
 fail:
-    vbench_cqm_delete( h );
+    vbench_cqm_delete( 
+                    dequant4_mf[4][16],   /* [4][6][16] */
+                    dequant8_mf[4][64],   /* [4][6][64] */
+                    unquant4_mf[4][16],   /* [4][qp_max_spec+1][16] */
+                    unquant8_mf[4][64],   /* [4][qp_max_spec+1][64] */
+                    quant4_mf[4][16],     /* [4][qp_max_spec+1][16] */
+                    quant8_mf[4][64],     /* [4][qp_max_spec+1][64] */
+                    quant4_bias[4][16],   /* [4][qp_max_spec+1][16] */
+                    quant8_bias[4][64],   /* [4][qp_max_spec+1][64] */
+                    quant4_bias0[4][16],  /* [4][qp_max_spec+1][16] */
+                    quant8_bias0[4][64],  /* [4][qp_max_spec+1][64] */
+                    nr_offset_emergency[4][64]
+
+
+            
+            );
     return -1;
 }
 
@@ -767,15 +793,15 @@ void vbench_cqm_delete(
                     int             (*dequant4_mf[4])[16],   /* [4][6][16] */
                     int             (*dequant8_mf[4])[64],   /* [4][6][64] */
                     /* quantization matrix for trellis, [cqm][qp][coef] */
-                    int             (*unquant4_mf[4])[16],   /* [4][QP_MAX_SPEC+1][16] */
-                    int             (*unquant8_mf[4])[64],   /* [4][QP_MAX_SPEC+1][64] */
+                    int             (*unquant4_mf[4])[16],   /* [4][qp_max_spec+1][16] */
+                    int             (*unquant8_mf[4])[64],   /* [4][qp_max_spec+1][64] */
                     /* quantization matrix for deadzone */
-                    udctcoef        (*quant4_mf[4])[16],     /* [4][QP_MAX_SPEC+1][16] */
-                    udctcoef        (*quant8_mf[4])[64],     /* [4][QP_MAX_SPEC+1][64] */
-                    udctcoef        (*quant4_bias[4])[16],   /* [4][QP_MAX_SPEC+1][16] */
-                    udctcoef        (*quant8_bias[4])[64],   /* [4][QP_MAX_SPEC+1][64] */
-                    udctcoef        (*quant4_bias0[4])[16],  /* [4][QP_MAX_SPEC+1][16] */
-                    udctcoef        (*quant8_bias0[4])[64],  /* [4][QP_MAX_SPEC+1][64] */
+                    udctcoef        (*quant4_mf[4])[16],     /* [4][qp_max_spec+1][16] */
+                    udctcoef        (*quant8_mf[4])[64],     /* [4][qp_max_spec+1][64] */
+                    udctcoef        (*quant4_bias[4])[16],   /* [4][qp_max_spec+1][16] */
+                    udctcoef        (*quant8_bias[4])[64],   /* [4][qp_max_spec+1][64] */
+                    udctcoef        (*quant4_bias0[4])[16],  /* [4][qp_max_spec+1][16] */
+                    udctcoef        (*quant8_bias0[4])[64],  /* [4][qp_max_spec+1][64] */
                     udctcoef        (*nr_offset_emergency)[4][64]
 
         
