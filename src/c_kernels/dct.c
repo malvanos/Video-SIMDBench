@@ -56,7 +56,7 @@
               i==3 ? FIX8(0.9415) :\
               i==4 ? FIX8(1.2651) :\
               i==5 ? FIX8(1.1910) :0)
-const uint32_t dct8_weight_tab[64] = {
+const uint32_t asm_dct8_weight_tab[64] = {
     W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
     W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
     W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),
@@ -72,7 +72,7 @@ const uint32_t dct8_weight_tab[64] = {
 #define W(i) (i==0 ? FIX8(1.76777) :\
               i==1 ? FIX8(1.11803) :\
               i==2 ? FIX8(0.70711) :0)
-const uint32_t dct4_weight_tab[16] = {
+const uint32_t asm_dct4_weight_tab[16] = {
     W(0), W(1), W(0), W(1),
     W(1), W(2), W(1), W(2),
     W(0), W(1), W(0), W(1),
@@ -84,12 +84,13 @@ const uint32_t dct4_weight_tab[16] = {
 #define W(i) (i==0 ? FIX8(3.125) :\
               i==1 ? FIX8(1.25) :\
               i==2 ? FIX8(0.5) :0)
-const uint32_t dct4_weight2_tab[16] = {
+const uint32_t asm_dct4_weight2_tab[16] = {
     W(0), W(1), W(0), W(1),
     W(1), W(2), W(1), W(2),
     W(0), W(1), W(0), W(1),
     W(1), W(2), W(1), W(2)
 };
+#
 #undef W
 
 #define W(i) (i==0 ? FIX8(1.00000) :\
@@ -98,7 +99,7 @@ const uint32_t dct4_weight2_tab[16] = {
               i==3 ? FIX8(0.88637) :\
               i==4 ? FIX8(1.60040) :\
               i==5 ? FIX8(1.41850) :0)
-const uint32_t dct8_weight2_tab[64] = {
+const uint32_t asm_dct8_weight2_tab[64] = {
     W(0), W(3), W(4), W(3),  W(0), W(3), W(4), W(3),
     W(3), W(1), W(5), W(1),  W(3), W(1), W(5), W(1),
     W(4), W(5), W(2), W(5),  W(4), W(5), W(2), W(5),

@@ -60,10 +60,9 @@ pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
 pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm  ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
