@@ -29,8 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "common/common.h"
-#include "mc.h"
+#include "common.h"
 
 #define DECL_SUF( func, args )\
     void func##_mmx2 args;\
