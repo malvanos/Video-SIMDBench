@@ -141,20 +141,22 @@ int check_dct( int cpu_ref, int cpu_new )
     uint8_t *scaling_list[8]; /* could be 12, but we don't allow separate Cb/Cr lists */
     uint8_t   *chroma_qp_table; /* includes both the nonlinear luma->chroma mapping and chroma_qp_offset */
 
+
     /* quantization matrix for decoding, [cqm][qp%6][coef] */
-    int             (*dequant4_mf[4])[16];   /* [4][6][16] */
-    int             (*dequant8_mf[4])[64];   /* [4][6][64] */
+    ALIGNED_32(int dequant4_mf[4][6][16]);   /* [4][6][16] */
+    ALIGNED_32(int dequant8_mf[4][6][64]);   /* [4][6][64] */
+
     /* quantization matrix for trellis, [cqm][qp][coef] */
-    int             (*unquant4_mf[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
-    int             (*unquant8_mf[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32(int unquant4_mf[4][QP_MAX_SPEC+1][16]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32(int unquant8_mf[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
+
     /* quantization matrix for deadzone */
-    udctcoef        (*quant4_mf[4])[16];     /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_mf[4])[64];     /* [4][QP_MAX_SPEC+1][64] */
-    udctcoef        (*quant4_bias[4])[16];   /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_bias[4])[64];   /* [4][QP_MAX_SPEC+1][64] */
-    udctcoef        (*quant4_bias0[4])[16];  /* [4][QP_MAX_SPEC+1][16] */
-    udctcoef        (*quant8_bias0[4])[64];  /* [4][QP_MAX_SPEC+1][64] */
-    udctcoef        (*nr_offset_emergency)[4][64];
+    ALIGNED_32( udctcoef        quant4_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][64] */
 
 
     //memset( h, 0, sizeof(*h) );
@@ -251,7 +253,7 @@ int check_dct( int cpu_ref, int cpu_new )
         qf.quant_8x8( dct8[i], quant8_mf[CQM_8IY][20], quant8_bias[CQM_8IY][20] );
         qf.dequant_8x8( dct8[i], dequant8_mf[CQM_8IY], 20 );
     }
-    vbench_cqm_delete( dequant4_mf, dequant8_mf, unquant4_mf, unquant8_mf, quant4_mf,   quant8_mf,    quant4_bias,    quant8_bias,  quant4_bias0,  quant8_bias0,   nr_offset_emergency  );
+    //vbench_cqm_delete( dequant4_mf, dequant8_mf, unquant4_mf, unquant8_mf, quant4_mf,   quant8_mf,    quant4_bias,    quant8_bias,  quant4_bias0,  quant8_bias0,   nr_offset_emergency  );
 
 #define TEST_IDCT( name, src ) \
     if( dct_asm.name != dct_ref.name ) \
@@ -663,7 +665,6 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
                         max_chroma_qp_err = q;
                 }
     }
-
     /* Emergency mode denoising. */
     vbench_emms();
     nr_offset_emergency = memalign( NATIVE_ALIGN,  sizeof(*nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
