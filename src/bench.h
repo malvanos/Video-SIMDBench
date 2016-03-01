@@ -91,7 +91,6 @@ typedef struct bs_s
     int     i_bits_encoded; /* RD only */
 } bs_t;
 
-
 typedef struct
 {
     int32_t last;
@@ -391,11 +390,11 @@ typedef struct
 typedef struct
 {
     void (*mc_luma)( pixel *dst, intptr_t i_dst, pixel **src, intptr_t i_src,
-            int mvx, int mvy, int i_width, int i_height, const x264_weight_t *weight );
+            int mvx, int mvy, int i_width, int i_height, const vbench_weight_t *weight );
 
     /* may round up the dimensions if they're not a power of 2 */
     pixel* (*get_ref)( pixel *dst, intptr_t *i_dst, pixel **src, intptr_t i_src,
-            int mvx, int mvy, int i_width, int i_height, const x264_weight_t *weight );
+            int mvx, int mvy, int i_width, int i_height, const vbench_weight_t *weight );
 
     /* mc_chroma may write up to 2 bytes of garbage to the right of dst,
      *      * so it must be run from left to right. */
@@ -449,7 +448,7 @@ typedef struct
     weight_fn_t *weight;
     weight_fn_t *offsetadd;
     weight_fn_t *offsetsub;
-//    void (*weight_cache)( x264_t *, x264_weight_t * );
+//    void (*weight_cache)( x264_t *, vbench_weight_t * );
 
     void (*mbtree_propagate_cost)( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
             uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
