@@ -49,6 +49,7 @@
 #endif
 
 
+#define ALIGN(x,a) (((x)+((a)-1))&~((a)-1))
 
 #define DECLARE_ALIGNED( var, n ) var __attribute__((aligned(n)))
 #define ALIGNED_32( var ) DECLARE_ALIGNED( var, 32 )

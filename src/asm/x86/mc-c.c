@@ -99,7 +99,7 @@ void asm_prefetch_fenc_422_mmx2( pixel *, intptr_t, pixel *, intptr_t, int );
 void asm_prefetch_ref_mmx2( pixel *, intptr_t, int );
 void asm_plane_copy_core_sse( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void asm_plane_copy_core_avx( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
-void asm_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+void vbench_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void asm_plane_copy_swap_core_ssse3( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void asm_plane_copy_swap_core_avx2 ( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 void asm_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
@@ -112,7 +112,7 @@ void asm_plane_copy_interleave_core_sse2( pixel *dst,  intptr_t i_dst,
 void asm_plane_copy_interleave_core_avx( pixel *dst,  intptr_t i_dst,
                                           pixel *srcu, intptr_t i_srcu,
                                           pixel *srcv, intptr_t i_srcv, int w, int h );
-void asm_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
+void plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h );
 void asm_plane_copy_deinterleave_mmx( pixel *dstu, intptr_t i_dstu,
@@ -479,7 +479,7 @@ static void asm_hpel_filter_##cpu( pixel *dsth, pixel *dstv, pixel *dstc, pixel 
         dstc += stride;\
         src  += stride;\
     }\
-    asm_sfence();\
+    asm_cpu_sfence();\
 }
 
 HPEL(8, mmx2, mmx2, mmx2, mmx2)
@@ -505,7 +505,7 @@ static void asm_plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr
 {\
     int c_w = (align) / sizeof(pixel) - 1;\
     if( w < 256 ) /* tiny resolutions don't want non-temporal hints. dunno the exact threshold. */\
-        asm_plane_copy_c( dst, i_dst, src, i_src, w, h );\
+        vbench_plane_copy_c( dst, i_dst, src, i_src, w, h );\
     else if( !(w&c_w) )\
         asm_plane_copy_core_##cpu( dst, i_dst, src, i_src, w, h );\
     else\
@@ -556,7 +556,7 @@ static void asm_plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, i
         }\
     }\
     else\
-        asm_plane_copy_swap_c( dst, i_dst, src, i_src, w, h );\
+        vbench_plane_copy_swap_c( dst, i_dst, src, i_src, w, h );\
 }
 
 PLANE_COPY_SWAP(16, ssse3)
@@ -584,10 +584,10 @@ static void asm_plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
             else\
                 asm_plane_copy_interleave_core_##cpu( dst+i_dst, i_dst, srcu+i_srcu, i_srcu, srcv+i_srcv, i_srcv, (w+c_w)&~c_w, h );\
         }\
-        asm_plane_copy_interleave_c( dst, 0, srcu, 0, srcv, 0, w, 1 );\
+        vbench_plane_copy_interleave_c( dst, 0, srcu, 0, srcv, 0, w, 1 );\
     }\
     else\
-        asm_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
+        vbench_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
 }
 
 PLANE_INTERLEAVE(mmx2)

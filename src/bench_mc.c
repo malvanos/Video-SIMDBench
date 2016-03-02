@@ -48,16 +48,17 @@
 #include "bench.h"
 
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
+/* buf1, buf2: initialised to random data and shouldn't write into them */
+extern uint8_t *buf1, *buf2;
+/* buf3, buf4: used to store output */
+extern uint8_t *buf3, *buf4;
+/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
+extern pixel *pbuf1, *pbuf2;
+/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
+extern pixel *pbuf3, *pbuf4;
+
+
 
 #define report( name ) { \
     if( used_asm ) \
@@ -122,14 +123,13 @@ static bench_t* get_bench( const char *name, int cpu )
     benchs[i].vers[j].cpu = cpu;
     return &benchs[i].vers[j];
 }
-
+extern vbench_weight_t vbench_weight_none[3];
 int check_mc( int cpu_ref, int cpu_new )
 {
-#if 0
-    x264_mc_functions_t mc_c;
-    x264_mc_functions_t mc_ref;
-    x264_mc_functions_t mc_a;
-    x264_pixel_function_t pixf;
+    vbench_mc_functions_t mc_c;
+    vbench_mc_functions_t mc_ref;
+    vbench_mc_functions_t mc_a;
+    vbench_pixel_function_t pixf;
 
     pixel *src     = &(pbuf1)[2*64+2];
     pixel *src2[4] = { &(pbuf1)[3*64+2], &(pbuf1)[5*64+2],
@@ -139,15 +139,15 @@ int check_mc( int cpu_ref, int cpu_new )
 
     int ret = 0, ok, used_asm;
 
-    x264_mc_init( 0, &mc_c, 0 );
-    x264_mc_init( cpu_ref, &mc_ref, 0 );
-    x264_mc_init( cpu_new, &mc_a, 0 );
-    x264_pixel_init( 0, &pixf );
+    vbench_mc_init( 0, &mc_c, 0 );
+    vbench_mc_init( cpu_ref, &mc_ref, 0 );
+    vbench_mc_init( cpu_new, &mc_a, 0 );
+    vbench_pixel_init( 0, &pixf );
 
 #define MC_TEST_LUMA( w, h ) \
         if( mc_a.mc_luma != mc_ref.mc_luma && !(w&(w-1)) && h<=16 ) \
         { \
-            const x264_weight_t *weight = x264_weight_none; \
+            const vbench_weight_t *weight = vbench_weight_none; \
             set_func_name( "mc_luma_%dx%d", w, h ); \
             used_asm = 1; \
             for( int i = 0; i < 1024; i++ ) \
@@ -165,7 +165,7 @@ int check_mc( int cpu_ref, int cpu_new )
             pixel *ref = dst2; \
             intptr_t ref_stride = 32; \
             int w_checked = ( ( sizeof(pixel) == 2 && (w == 12 || w == 20)) ? w-2 : w ); \
-            const x264_weight_t *weight = x264_weight_none; \
+            const vbench_weight_t *weight = vbench_weight_none; \
             set_func_name( "get_ref_%dx%d", w_checked, h ); \
             used_asm = 1; \
             for( int i = 0; i < 1024; i++ ) \
@@ -271,11 +271,9 @@ int check_mc( int cpu_ref, int cpu_new )
     { \
         ALIGNED_16( pixel buffC[640] ); \
         ALIGNED_16( pixel buffA[640] ); \
-        int j = X264_MAX( i*4, 2 ); \
+        int j = MAX( i*4, 2 ); \
         memset( buffC, 0, 640 * sizeof(pixel) ); \
         memset( buffA, 0, 640 * sizeof(pixel) ); \
-        x264_t ha; \
-        ha.mc = mc_a; \
         /* w12 is the same as w16 in some cases */ \
         if( i == 3 && mc_a.name[i] == mc_a.name[i+1] ) \
             continue; \
@@ -284,7 +282,7 @@ int check_mc( int cpu_ref, int cpu_new )
             set_func_name( "%s_w%d", #name, j ); \
             used_asm = 1; \
             call_c1( mc_c.weight[i],     buffC, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
-            mc_a.weight_cache(&ha, &weight); \
+            mc_a.weight_cache(&mc_a, &weight); \
             call_a1( weight.weightfn[i], buffA, (intptr_t)32, pbuf2+align_off, (intptr_t)32, &weight, 16 ); \
             for( int k = 0; k < 16; k++ ) \
                 if( memcmp( &buffC[k*32], &buffA[k*32], j * sizeof(pixel) ) ) \
@@ -314,7 +312,7 @@ int check_mc( int cpu_ref, int cpu_new )
             {
                 if( s == 1<<d )
                     continue;
-                x264_weight_t weight = { .i_scale = s, .i_denom = d, .i_offset = o };
+                vbench_weight_t weight = { .i_scale = s, .i_denom = d, .i_offset = o };
                 MC_TEST_WEIGHT( weight, weight, (align_cnt++ % 4) );
             }
         }
@@ -327,7 +325,7 @@ int check_mc( int cpu_ref, int cpu_new )
     {
         int s = 1, d = 0;
         if( rand() & 15 ) continue;
-        x264_weight_t weight = { .i_scale = 1, .i_denom = 0, .i_offset = o };
+        vbench_weight_t weight = { .i_scale = 1, .i_denom = 0, .i_offset = o };
         MC_TEST_WEIGHT( offsetadd, weight, (align_cnt++ % 4) );
     }
     report( "mc offsetadd :" );
@@ -336,7 +334,7 @@ int check_mc( int cpu_ref, int cpu_new )
     {
         int s = 1, d = 0;
         if( rand() & 15 ) continue;
-        x264_weight_t weight = { .i_scale = 1, .i_denom = 0, .i_offset = o };
+        vbench_weight_t weight = { .i_scale = 1, .i_denom = 0, .i_offset = o };
         MC_TEST_WEIGHT( offsetsub, weight, (align_cnt++ % 4) );
     }
     report( "mc offsetsub :" );
@@ -403,7 +401,7 @@ int check_mc( int cpu_ref, int cpu_new )
             intptr_t src_stride = plane_specs[i].src_stride;
             intptr_t dst_stride = (w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
-            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
+            pixel *src1 = pbuf1 + MAX(0, -src_stride) * (h-1);
             memset( pbuf3, 0, 0x1000*sizeof(pixel) );
             memset( pbuf4, 0, 0x1000*sizeof(pixel) );
             call_c( mc_c.plane_copy, pbuf3, dst_stride, src1, src_stride, w, h );
@@ -429,7 +427,7 @@ int check_mc( int cpu_ref, int cpu_new )
             intptr_t src_stride = plane_specs[i].src_stride;
             intptr_t dst_stride = (2*w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
-            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
+            pixel *src1 = pbuf1 + MAX(0, -src_stride) * (h-1);
             memset( pbuf3, 0, 0x1000*sizeof(pixel) );
             memset( pbuf4, 0, 0x1000*sizeof(pixel) );
             call_c( mc_c.plane_copy_swap, pbuf3, dst_stride, src1, src_stride, w, h );
@@ -455,7 +453,7 @@ int check_mc( int cpu_ref, int cpu_new )
             intptr_t src_stride = (plane_specs[i].src_stride + 1) >> 1;
             intptr_t dst_stride = (2*w + 127) & ~63;
             assert( dst_stride * h <= 0x1000 );
-            pixel *src1 = pbuf1 + X264_MAX(0, -src_stride) * (h-1);
+            pixel *src1 = pbuf1 + MAX(0, -src_stride) * (h-1);
             memset( pbuf3, 0, 0x1000*sizeof(pixel) );
             memset( pbuf4, 0, 0x1000*sizeof(pixel) );
             call_c( mc_c.plane_copy_interleave, pbuf3, dst_stride, src1, src_stride, src1+1024, src_stride+16, w, h );
@@ -646,7 +644,7 @@ int check_mc( int cpu_ref, int cpu_new )
     if( mc_a.mbtree_propagate_cost != mc_ref.mbtree_propagate_cost )
     {
         used_asm = 1;
-        x264_emms();
+        vbench_emms();
         for( int i = 0; i < 10; i++ )
         {
             float fps_factor = (rand()&65535) / 65535.0f;
@@ -658,7 +656,7 @@ int check_mc( int cpu_ref, int cpu_new )
             uint16_t *inter = intra+128;
             uint16_t *qscale = inter+128;
             uint16_t *rnd = (uint16_t*)buf2;
-            x264_emms();
+            vbench_emms();
             for( int j = 0; j < 100; j++ )
             {
                 intra[j]  = *rnd++ & 0x7fff;
@@ -669,7 +667,7 @@ int check_mc( int cpu_ref, int cpu_new )
             call_c( mc_c.mbtree_propagate_cost, dstc, prop, intra, inter, qscale, &fps_factor, 100 );
             call_a( mc_a.mbtree_propagate_cost, dsta, prop, intra, inter, qscale, &fps_factor, 100 );
             // I don't care about exact rounding, this is just how close the floating-point implementation happens to be
-            x264_emms();
+            vbench_emms();
             for( int j = 0; j < 100 && ok; j++ )
             {
                 ok &= abs( dstc[j]-dsta[j] ) <= 1 || fabs( (double)dstc[j]/dsta[j]-1 ) < 1e-4;
@@ -685,7 +683,6 @@ int check_mc( int cpu_ref, int cpu_new )
         for( int i = 0; i < 8; i++ )
         {
             set_func_name( "mbtree_propagate_list" );
-            x264_t h;
             int height = 4;
             int width = 128;
             int size = width*height;
@@ -693,15 +690,16 @@ int check_mc( int cpu_ref, int cpu_new )
             h.mb.i_mb_width = width;
             h.mb.i_mb_height = height;*/
 
-            //h.scratch_buffer2 = (uint8_t*)(ref_costsa + size);
-            void *scratch_buffer2 = (uint8_t*)(ref_costsa + size);
-            
-
             uint16_t *ref_costsc = (uint16_t*)buf3;
             uint16_t *ref_costsa = (uint16_t*)buf4;
             int16_t (*mvs)[2] = (int16_t(*)[2])(ref_costsc + size);
             int16_t *propagate_amount = (int16_t*)(mvs + width);
             uint16_t *lowres_costs = (uint16_t*)(propagate_amount + width);
+
+
+            //h.scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+            void *scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+            
 
             int bipred_weight = (rand()%63)+1;
             int list = i&1;
@@ -771,8 +769,6 @@ int check_mc( int cpu_ref, int cpu_new )
     }
 
     return ret;
-#endif
-    return 0;
 }
 
 

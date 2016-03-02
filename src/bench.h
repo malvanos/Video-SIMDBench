@@ -142,6 +142,8 @@ static const struct { uint8_t w, h; } vbech_pixel_size[12] =
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+#define call_c1(func,...) func(__VA_ARGS__)
 #if ARCH_X86_64
 /* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
  * This is done by clobbering the stack with junk around the stack pointer and calling the

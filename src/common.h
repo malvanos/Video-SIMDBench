@@ -49,7 +49,7 @@ typedef uint16_t udctcoef;
 #define QP_MAX (QP_MAX_SPEC+18)
 #define QP_MAX_MAX (51+2*6+18)
 
-
+#define LOWRES_COST_MASK ((1<<14)-1)
 #define LOWRES_COST_SHIFT 14
 
 // arbitrary, but low because SATD scores are 1/4 normal
@@ -57,10 +57,13 @@ typedef uint16_t udctcoef;
 #define SPEC_QP(x) MIN((x), QP_MAX_SPEC)
 
 
+#define MAX(a,b) ( (a)<(b) ? (b) : (a) )
+
 #define MIN(a,b) ( (a)<(b) ? (a) : (b) )
 #define MIN3(a,b,c) MIN((a),MIN((b),(c)))
 #define MIN4(a,b,c,d) MIN((a),MIN3((b),(c),(d)))
 
+#define MC_CLIP_ADD(s,x) (s) = MIN((s)+(x),(1<<15)-1)
 
 
 #define CHROMA_SIZE(s) ((s)>>(CHROMA_H_SHIFT+CHROMA_V_SHIFT))

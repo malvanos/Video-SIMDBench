@@ -43,8 +43,10 @@
 
 
 #include <ctype.h>
-#include "common.h"
 #include "osdep.h"
+#include "common.h"
+#include "bench.h"
+
 
 
 

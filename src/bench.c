@@ -48,13 +48,13 @@
 #include "osdep.h"
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
+extern uint8_t *buf1, *buf2;
 /* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
+extern uint8_t *buf3, *buf4;
 /* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
+extern pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
+extern pixel *pbuf3, *pbuf4;
 
 
 #define report( name ) { \
@@ -139,9 +139,9 @@ intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checka
 static int check_all_funcs( int cpu_ref, int cpu_new )
 {
     return check_pixel( cpu_ref, cpu_new )
-         + check_dct( cpu_ref, cpu_new );
+         + check_dct( cpu_ref, cpu_new )
+         + check_mc( cpu_ref, cpu_new );
 #if 0
-         + check_mc( cpu_ref, cpu_new )
          + check_intra( cpu_ref, cpu_new )
          + check_deblock( cpu_ref, cpu_new )
          + check_quant( cpu_ref, cpu_new )
