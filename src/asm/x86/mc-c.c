@@ -32,6 +32,7 @@
 #include "osdep.h"
 #include "common.h"
 #include "bench.h"
+#include "asm/x86/mc.h"
 
 
 extern const uint8_t vbench_hpel_ref0[16];
@@ -295,7 +296,7 @@ MC_WEIGHT_WTAB(weight,sse2,mmx2,sse2,12)
 MC_WEIGHT_WTAB(offsetadd,sse2,mmx2,sse2,16)
 MC_WEIGHT_WTAB(offsetsub,sse2,mmx2,sse2,16)
 
-static void x264_weight_cache_mmx2( vbench_mc_functions_t *mc, vbench_weight_t *w )
+static void asm_weight_cache_mmx2( vbench_mc_functions_t *mc, vbench_weight_t *w )
 {
     if( w->i_scale == 1<<w->i_denom )
     {
@@ -327,7 +328,7 @@ MC_WEIGHT_WTAB(offsetsub,sse2,mmx2,mmx2,16)
 MC_WEIGHT_WTAB(weight,ssse3,ssse3,ssse3,16)
 MC_WEIGHT_WTAB(weight,avx2,ssse3,avx2,16)
 
-static void x264_weight_cache_mmx2( vbench_mc_functions_t *mc, vbench_weight_t *w )
+static void asm_weight_cache_mmx2( vbench_mc_functions_t *mc, vbench_weight_t *w )
 {
     int i;
     int16_t den1;
@@ -350,7 +351,7 @@ static void x264_weight_cache_mmx2( vbench_mc_functions_t *mc, vbench_weight_t *
     }
 }
 
-static void x264_weight_cache_ssse3( vbench_mc_functions_t *mc, vbench_weight_t *w )
+static void asm_weight_cache_ssse3( vbench_mc_functions_t *mc, vbench_weight_t *w )
 {
     int i, den1;
     if( w->i_scale == 1<<w->i_denom )
@@ -595,6 +596,7 @@ PLANE_INTERLEAVE(sse2)
 PLANE_INTERLEAVE(avx)
 #endif
 
+#define HAVE_X86_INLINE_ASM 1
 #if HAVE_X86_INLINE_ASM
 #undef MC_CLIP_ADD
 #define MC_CLIP_ADD(s,x)\
@@ -625,10 +627,75 @@ do\
 } while(0)
 #endif
 
+#define PROPAGATE_LIST(cpu)\
+        void asm_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
+                uint16_t *lowres_costs, int16_t *output,\
+                int bipred_weight, int mb_y, int len );\
+    \
+    static void asm_mbtree_propagate_list_##cpu( uint16_t *ref_costs, int16_t (*mvs)[2],\
+            int16_t *propagate_amount, uint16_t *lowres_costs,\
+            int bipred_weight, int mb_y, int len, int list, unsigned stride, unsigned width, unsigned height, void *buffer2  )\
+{\
+    int16_t *current = buffer2;\
+    \
+    asm_mbtree_propagate_list_internal_##cpu( mvs, propagate_amount, lowres_costs,\
+            current, bipred_weight, mb_y, len );\
+    \
+    \
+    for( unsigned i = 0; i < len; current += 32 )\
+    {\
+        int end = MIN( i+8, len );\
+        for( ; i < end; i++, current += 2 )\
+        {\
+            if( !(lowres_costs[i] & (1 << (list+LOWRES_COST_SHIFT))) )\
+            continue;\
+            \
+            unsigned mbx = current[0];\
+            unsigned mby = current[1];\
+            unsigned idx0 = mbx + mby * stride;\
+            unsigned idx2 = idx0 + stride;\
+            \
+            /* Shortcut for the simple/common case of zero MV */\
+            if( !M32( mvs[i] ) )\
+            {\
+                MC_CLIP_ADD( ref_costs[idx0], current[16] );\
+                continue;\
+            }\
+            \
+            if( mbx < width-1 && mby < height-1 )\
+            {\
+                MC_CLIP_ADD2( ref_costs+idx0, current+16 );\
+                MC_CLIP_ADD2( ref_costs+idx2, current+32 );\
+            }\
+            else\
+            {\
+                /* Note: this takes advantage of unsigned representation to\
+                 *                  * catch negative mbx/mby. */\
+                if( mby < height )\
+                {\
+                    if( mbx < width )\
+                    MC_CLIP_ADD( ref_costs[idx0+0], current[16] );\
+                    if( mbx+1 < width )\
+                    MC_CLIP_ADD( ref_costs[idx0+1], current[17] );\
+                }\
+                if( mby+1 < height )\
+                {\
+                    if( mbx < width )\
+                    MC_CLIP_ADD( ref_costs[idx2+0], current[32] );\
+                    if( mbx+1 < width )\
+                    MC_CLIP_ADD( ref_costs[idx2+1], current[33] );\
+                }\
+            }\
+        }\
+    }\
+}
+
+
+
 PROPAGATE_LIST(ssse3)
 PROPAGATE_LIST(avx)
 
-void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
+void vbench_mc_init_mmx( int cpu, vbench_mc_functions_t *pf )
 {
     if( !(cpu&CPU_MMX) )
         return;
@@ -680,94 +747,94 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 
     if( cpu&CPU_SSE )
     {
-        pf->memcpy_aligned  = x264_memcpy_aligned_sse;
-        pf->memzero_aligned = x264_memzero_aligned_sse;
-        pf->plane_copy = x264_plane_copy_sse;
+        pf->memcpy_aligned  = asm_memcpy_aligned_sse;
+        pf->memzero_aligned = asm_memzero_aligned_sse;
+        pf->plane_copy = asm_plane_copy_sse;
     }
 
 #if HIGH_BIT_DEPTH
 #if ARCH_X86 // all x86_64 cpus with cacheline split issues use sse2 instead
-    if( cpu&(X264_CPU_CACHELINE_32|X264_CPU_CACHELINE_64) )
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_cache32_mmx2;
+    if( cpu&(CPU_CACHELINE_32|CPU_CACHELINE_64) )
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_cache32_mmx2;
 #endif
 
     if( !(cpu&CPU_SSE2) )
         return;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
+    pf->frame_init_lowres_core = asm_frame_init_lowres_core_sse2;
 
-    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
-    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
+    pf->load_deinterleave_chroma_fenc = asm_load_deinterleave_chroma_fenc_sse2;
+    pf->load_deinterleave_chroma_fdec = asm_load_deinterleave_chroma_fdec_sse2;
 
-    pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
-    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
+    pf->plane_copy_interleave   = asm_plane_copy_interleave_sse2;
+    pf->plane_copy_deinterleave = asm_plane_copy_deinterleave_sse2;
 
     if( cpu&CPU_SSE2_IS_FAST )
     {
         pf->get_ref = get_ref_sse2;
         pf->mc_luma = mc_luma_sse2;
-        pf->hpel_filter = x264_hpel_filter_sse2;
+        pf->hpel_filter = asm_hpel_filter_sse2;
     }
 
-    pf->integral_init4v = x264_integral_init4v_sse2;
-    pf->integral_init8v = x264_integral_init8v_sse2;
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
-    pf->store_interleave_chroma = x264_store_interleave_chroma_sse2;
-    pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
-    pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
+    pf->integral_init4v = asm_integral_init4v_sse2;
+    pf->integral_init8v = asm_integral_init8v_sse2;
+    pf->mbtree_propagate_cost = asm_mbtree_propagate_cost_sse2;
+    pf->store_interleave_chroma = asm_store_interleave_chroma_sse2;
+    pf->offsetadd = asm_mc_offsetadd_wtab_sse2;
+    pf->offsetsub = asm_mc_offsetsub_wtab_sse2;
 
     if( cpu&CPU_SSE2_IS_SLOW )
         return;
 
-    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_sse2;
-    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_sse2;
-    pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_sse2;
-    pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_sse2;
-    pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_sse2;
-    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_sse2;
-    pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_sse2;
-    pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_sse2;
-    pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_sse2;
+    pf->avg[PIXEL_16x16] = asm_pixel_avg_16x16_sse2;
+    pf->avg[PIXEL_16x8]  = asm_pixel_avg_16x8_sse2;
+    pf->avg[PIXEL_8x16]  = asm_pixel_avg_8x16_sse2;
+    pf->avg[PIXEL_8x8]   = asm_pixel_avg_8x8_sse2;
+    pf->avg[PIXEL_8x4]   = asm_pixel_avg_8x4_sse2;
+    pf->avg[PIXEL_4x16]  = asm_pixel_avg_4x16_sse2;
+    pf->avg[PIXEL_4x8]   = asm_pixel_avg_4x8_sse2;
+    pf->avg[PIXEL_4x4]   = asm_pixel_avg_4x4_sse2;
+    pf->avg[PIXEL_4x2]   = asm_pixel_avg_4x2_sse2;
 
-    pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-    pf->weight = x264_mc_weight_wtab_sse2;
+    pf->copy[PIXEL_16x16] = asm_mc_copy_w16_aligned_sse;
+    pf->weight = asm_mc_weight_wtab_sse2;
 
     if( !(cpu&CPU_STACK_MOD4) )
-        pf->mc_chroma = x264_mc_chroma_sse2;
+        pf->mc_chroma = asm_mc_chroma_sse2;
 
     if( !(cpu&CPU_SSSE3) )
         return;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
-    pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
-    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_ssse3;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->frame_init_lowres_core = asm_frame_init_lowres_core_ssse3;
+    pf->plane_copy_swap = asm_plane_copy_swap_ssse3;
+    pf->plane_copy_deinterleave_v210 = asm_plane_copy_deinterleave_v210_ssse3;
+    pf->mbtree_propagate_list = asm_mbtree_propagate_list_ssse3;
 
-    if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
-        pf->integral_init4v = x264_integral_init4v_ssse3;
+    if( !(cpu&(CPU_SLOW_SHUFFLE|CPU_SLOW_ATOM|CPU_SLOW_PALIGNR)) )
+        pf->integral_init4v = asm_integral_init4v_ssse3;
 
     if( !(cpu&CPU_AVX) )
         return;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
-    pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_avx;
-    pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_avx;
-    pf->plane_copy_interleave        = x264_plane_copy_interleave_avx;
-    pf->plane_copy_deinterleave      = x264_plane_copy_deinterleave_avx;
-    pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx;
-    pf->store_interleave_chroma      = x264_store_interleave_chroma_avx;
-    pf->copy[PIXEL_16x16]            = x264_mc_copy_w16_aligned_avx;
+    pf->frame_init_lowres_core = asm_frame_init_lowres_core_avx;
+    pf->load_deinterleave_chroma_fenc = asm_load_deinterleave_chroma_fenc_avx;
+    pf->load_deinterleave_chroma_fdec = asm_load_deinterleave_chroma_fdec_avx;
+    pf->plane_copy_interleave        = asm_plane_copy_interleave_avx;
+    pf->plane_copy_deinterleave      = asm_plane_copy_deinterleave_avx;
+    pf->plane_copy_deinterleave_v210 = asm_plane_copy_deinterleave_v210_avx;
+    pf->store_interleave_chroma      = asm_store_interleave_chroma_avx;
+    pf->copy[PIXEL_16x16]            = asm_mc_copy_w16_aligned_avx;
 
     if( !(cpu&CPU_STACK_MOD4) )
-        pf->mc_chroma = x264_mc_chroma_avx;
+        pf->mc_chroma = asm_mc_chroma_avx;
 
     if( cpu&CPU_XOP )
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_xop;
 
     if( cpu&CPU_AVX2 )
     {
         pf->mc_luma = mc_luma_avx2;
-        pf->plane_copy_deinterleave_v210 = x264_plane_copy_deinterleave_v210_avx2;
+        pf->plane_copy_deinterleave_v210 = asm_plane_copy_deinterleave_v210_avx2;
     }
 #else // !HIGH_BIT_DEPTH
 
@@ -776,52 +843,52 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     {
         pf->mc_luma = mc_luma_cache32_mmx2;
         pf->get_ref = get_ref_cache32_mmx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_cache32_mmx2;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_cache32_mmx2;
     }
     else if( cpu&CPU_CACHELINE_64 )
     {
         pf->mc_luma = mc_luma_cache64_mmx2;
         pf->get_ref = get_ref_cache64_mmx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_cache32_mmx2;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_cache32_mmx2;
     }
 #endif
 
     if( !(cpu&CPU_SSE2) )
         return;
 
-    pf->integral_init4v = x264_integral_init4v_sse2;
-    pf->integral_init8v = x264_integral_init8v_sse2;
-    pf->hpel_filter = x264_hpel_filter_sse2_amd;
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_sse2;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_sse2;
+    pf->integral_init4v = asm_integral_init4v_sse2;
+    pf->integral_init8v = asm_integral_init8v_sse2;
+    pf->hpel_filter = asm_hpel_filter_sse2_amd;
+    pf->mbtree_propagate_cost = asm_mbtree_propagate_cost_sse2;
+    pf->plane_copy_deinterleave_rgb = asm_plane_copy_deinterleave_rgb_sse2;
 
     if( !(cpu&CPU_SSE2_IS_SLOW) )
     {
-        pf->weight = x264_mc_weight_wtab_sse2;
+        pf->weight = asm_mc_weight_wtab_sse2;
         if( !(cpu&CPU_SLOW_ATOM) )
         {
-            pf->offsetadd = x264_mc_offsetadd_wtab_sse2;
-            pf->offsetsub = x264_mc_offsetsub_wtab_sse2;
+            pf->offsetadd = asm_mc_offsetadd_wtab_sse2;
+            pf->offsetsub = asm_mc_offsetsub_wtab_sse2;
         }
 
-        pf->copy[PIXEL_16x16] = x264_mc_copy_w16_aligned_sse;
-        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_sse2;
-        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_sse2;
-        pf->avg[PIXEL_8x16] = x264_pixel_avg_8x16_sse2;
-        pf->avg[PIXEL_8x8]  = x264_pixel_avg_8x8_sse2;
-        pf->avg[PIXEL_8x4]  = x264_pixel_avg_8x4_sse2;
-        pf->hpel_filter = x264_hpel_filter_sse2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_sse2;
+        pf->copy[PIXEL_16x16] = asm_mc_copy_w16_aligned_sse;
+        pf->avg[PIXEL_16x16] = asm_pixel_avg_16x16_sse2;
+        pf->avg[PIXEL_16x8]  = asm_pixel_avg_16x8_sse2;
+        pf->avg[PIXEL_8x16] = asm_pixel_avg_8x16_sse2;
+        pf->avg[PIXEL_8x8]  = asm_pixel_avg_8x8_sse2;
+        pf->avg[PIXEL_8x4]  = asm_pixel_avg_8x4_sse2;
+        pf->hpel_filter = asm_hpel_filter_sse2;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_sse2;
         if( !(cpu&CPU_STACK_MOD4) )
-            pf->mc_chroma = x264_mc_chroma_sse2;
+            pf->mc_chroma = asm_mc_chroma_sse2;
 
         if( cpu&CPU_SSE2_IS_FAST )
         {
-            pf->store_interleave_chroma = x264_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
-            pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_sse2;
-            pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_sse2;
-            pf->plane_copy_interleave   = x264_plane_copy_interleave_sse2;
-            pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_sse2;
+            pf->store_interleave_chroma = asm_store_interleave_chroma_sse2; // FIXME sse2fast? sse2medium?
+            pf->load_deinterleave_chroma_fenc = asm_load_deinterleave_chroma_fenc_sse2;
+            pf->load_deinterleave_chroma_fdec = asm_load_deinterleave_chroma_fdec_sse2;
+            pf->plane_copy_interleave   = asm_plane_copy_interleave_sse2;
+            pf->plane_copy_deinterleave = asm_plane_copy_deinterleave_sse2;
             pf->mc_luma = mc_luma_sse2;
             pf->get_ref = get_ref_sse2;
             if( cpu&CPU_CACHELINE_64 )
@@ -835,24 +902,24 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
     if( !(cpu&CPU_SSSE3) )
         return;
 
-    pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_ssse3;
-    pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_ssse3;
-    pf->avg[PIXEL_8x16]  = x264_pixel_avg_8x16_ssse3;
-    pf->avg[PIXEL_8x8]   = x264_pixel_avg_8x8_ssse3;
-    pf->avg[PIXEL_8x4]   = x264_pixel_avg_8x4_ssse3;
-    pf->avg[PIXEL_4x16]  = x264_pixel_avg_4x16_ssse3;
-    pf->avg[PIXEL_4x8]   = x264_pixel_avg_4x8_ssse3;
-    pf->avg[PIXEL_4x4]   = x264_pixel_avg_4x4_ssse3;
-    pf->avg[PIXEL_4x2]   = x264_pixel_avg_4x2_ssse3;
-    pf->plane_copy_swap = x264_plane_copy_swap_ssse3;
-    pf->plane_copy_deinterleave_rgb = x264_plane_copy_deinterleave_rgb_ssse3;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_ssse3;
+    pf->avg[PIXEL_16x16] = asm_pixel_avg_16x16_ssse3;
+    pf->avg[PIXEL_16x8]  = asm_pixel_avg_16x8_ssse3;
+    pf->avg[PIXEL_8x16]  = asm_pixel_avg_8x16_ssse3;
+    pf->avg[PIXEL_8x8]   = asm_pixel_avg_8x8_ssse3;
+    pf->avg[PIXEL_8x4]   = asm_pixel_avg_8x4_ssse3;
+    pf->avg[PIXEL_4x16]  = asm_pixel_avg_4x16_ssse3;
+    pf->avg[PIXEL_4x8]   = asm_pixel_avg_4x8_ssse3;
+    pf->avg[PIXEL_4x4]   = asm_pixel_avg_4x4_ssse3;
+    pf->avg[PIXEL_4x2]   = asm_pixel_avg_4x2_ssse3;
+    pf->plane_copy_swap = asm_plane_copy_swap_ssse3;
+    pf->plane_copy_deinterleave_rgb = asm_plane_copy_deinterleave_rgb_ssse3;
+    pf->mbtree_propagate_list = asm_mbtree_propagate_list_ssse3;
 
     if( !(cpu&CPU_SLOW_PSHUFB) )
     {
-        pf->load_deinterleave_chroma_fenc = x264_load_deinterleave_chroma_fenc_ssse3;
-        pf->load_deinterleave_chroma_fdec = x264_load_deinterleave_chroma_fdec_ssse3;
-        pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_ssse3;
+        pf->load_deinterleave_chroma_fenc = asm_load_deinterleave_chroma_fenc_ssse3;
+        pf->load_deinterleave_chroma_fdec = asm_load_deinterleave_chroma_fdec_ssse3;
+        pf->plane_copy_deinterleave = asm_plane_copy_deinterleave_ssse3;
     }
 
     if( !(cpu&CPU_SLOW_PALIGNR) )
@@ -860,16 +927,16 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
 #if ARCH_X86_64
         if( !(cpu&CPU_SLOW_ATOM) ) /* The 64-bit version is slower, but the 32-bit version is faster? */
 #endif
-            pf->hpel_filter = x264_hpel_filter_ssse3;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_ssse3;
+            pf->hpel_filter = asm_hpel_filter_ssse3;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_ssse3;
     }
     if( !(cpu&CPU_STACK_MOD4) )
-        pf->mc_chroma = x264_mc_chroma_ssse3;
+        pf->mc_chroma = asm_mc_chroma_ssse3;
 
     if( cpu&CPU_CACHELINE_64 )
     {
         if( !(cpu&CPU_STACK_MOD4) )
-            pf->mc_chroma = x264_mc_chroma_ssse3_cache64;
+            pf->mc_chroma = asm_mc_chroma_ssse3_cache64;
         pf->mc_luma = mc_luma_cache64_ssse3;
         pf->get_ref = get_ref_cache64_ssse3;
         if( cpu&CPU_SLOW_ATOM )
@@ -879,59 +946,59 @@ void x264_mc_init_mmx( int cpu, x264_mc_functions_t *pf )
         }
     }
 
-    pf->weight_cache = x264_weight_cache_ssse3;
-    pf->weight = x264_mc_weight_wtab_ssse3;
+    pf->weight_cache = asm_weight_cache_ssse3;
+    pf->weight = asm_mc_weight_wtab_ssse3;
 
-    if( !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SLOW_ATOM|X264_CPU_SLOW_PALIGNR)) )
-        pf->integral_init4v = x264_integral_init4v_ssse3;
+    if( !(cpu&(CPU_SLOW_SHUFFLE|CPU_SLOW_ATOM|CPU_SLOW_PALIGNR)) )
+        pf->integral_init4v = asm_integral_init4v_ssse3;
 
     if( !(cpu&CPU_SSE4) )
         return;
 
-    pf->integral_init4h = x264_integral_init4h_sse4;
-    pf->integral_init8h = x264_integral_init8h_sse4;
+    pf->integral_init4h = asm_integral_init4h_sse4;
+    pf->integral_init8h = asm_integral_init8h_sse4;
 
     if( !(cpu&CPU_AVX) )
         return;
 
-    pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx;
-    pf->integral_init8h = x264_integral_init8h_avx;
-    pf->hpel_filter = x264_hpel_filter_avx;
+    pf->frame_init_lowres_core = asm_frame_init_lowres_core_avx;
+    pf->integral_init8h = asm_integral_init8h_avx;
+    pf->hpel_filter = asm_hpel_filter_avx;
 
     if( !(cpu&CPU_STACK_MOD4) )
-        pf->mc_chroma = x264_mc_chroma_avx;
+        pf->mc_chroma = asm_mc_chroma_avx;
 
     if( cpu&CPU_XOP )
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_xop;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_xop;
 
     if( cpu&CPU_AVX2 )
     {
-        pf->hpel_filter = x264_hpel_filter_avx2;
-        pf->mc_chroma = x264_mc_chroma_avx2;
-        pf->weight = x264_mc_weight_wtab_avx2;
-        pf->avg[PIXEL_16x16] = x264_pixel_avg_16x16_avx2;
-        pf->avg[PIXEL_16x8]  = x264_pixel_avg_16x8_avx2;
-        pf->integral_init8v = x264_integral_init8v_avx2;
-        pf->integral_init4v = x264_integral_init4v_avx2;
-        pf->integral_init8h = x264_integral_init8h_avx2;
-        pf->integral_init4h = x264_integral_init4h_avx2;
-        pf->frame_init_lowres_core = x264_frame_init_lowres_core_avx2;
+        pf->hpel_filter = asm_hpel_filter_avx2;
+        pf->mc_chroma = asm_mc_chroma_avx2;
+        pf->weight = asm_mc_weight_wtab_avx2;
+        pf->avg[PIXEL_16x16] = asm_pixel_avg_16x16_avx2;
+        pf->avg[PIXEL_16x8]  = asm_pixel_avg_16x8_avx2;
+        pf->integral_init8v = asm_integral_init8v_avx2;
+        pf->integral_init4v = asm_integral_init4v_avx2;
+        pf->integral_init8h = asm_integral_init8h_avx2;
+        pf->integral_init4h = asm_integral_init4h_avx2;
+        pf->frame_init_lowres_core = asm_frame_init_lowres_core_avx2;
     }
 #endif // HIGH_BIT_DEPTH
 
     if( !(cpu&CPU_AVX) )
         return;
-    pf->memzero_aligned = x264_memzero_aligned_avx;
-    pf->plane_copy = x264_plane_copy_avx;
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx;
-    pf->mbtree_propagate_list = x264_mbtree_propagate_list_avx;
+    pf->memzero_aligned = asm_memzero_aligned_avx;
+    pf->plane_copy = asm_plane_copy_avx;
+    pf->mbtree_propagate_cost = asm_mbtree_propagate_cost_avx;
+    pf->mbtree_propagate_list = asm_mbtree_propagate_list_avx;
 
     if( cpu&CPU_FMA4 )
-        pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_fma4;
+        pf->mbtree_propagate_cost = asm_mbtree_propagate_cost_fma4;
 
     if( !(cpu&CPU_AVX2) )
         return;
-    pf->plane_copy_swap = x264_plane_copy_swap_avx2;
+    pf->plane_copy_swap = asm_plane_copy_swap_avx2;
     pf->get_ref = get_ref_avx2;
-    pf->mbtree_propagate_cost = x264_mbtree_propagate_cost_avx2;
+    pf->mbtree_propagate_cost = asm_mbtree_propagate_cost_avx2;
 }

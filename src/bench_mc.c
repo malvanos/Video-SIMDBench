@@ -689,16 +689,20 @@ int check_mc( int cpu_ref, int cpu_new )
             int height = 4;
             int width = 128;
             int size = width*height;
-            h.mb.i_mb_stride = width;
+            /*h.mb.i_mb_stride = width;
             h.mb.i_mb_width = width;
-            h.mb.i_mb_height = height;
+            h.mb.i_mb_height = height;*/
+
+            //h.scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+            void *scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+            
 
             uint16_t *ref_costsc = (uint16_t*)buf3;
             uint16_t *ref_costsa = (uint16_t*)buf4;
             int16_t (*mvs)[2] = (int16_t(*)[2])(ref_costsc + size);
             int16_t *propagate_amount = (int16_t*)(mvs + width);
             uint16_t *lowres_costs = (uint16_t*)(propagate_amount + width);
-            h.scratch_buffer2 = (uint8_t*)(ref_costsa + size);
+
             int bipred_weight = (rand()%63)+1;
             int list = i&1;
             for( int j = 0; j < size; j++ )
@@ -712,8 +716,8 @@ int check_mc( int cpu_ref, int cpu_new )
                 lowres_costs[j] = list_dist[list][rand()&7] << LOWRES_COST_SHIFT;
             }
 
-            call_c1( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
-            call_a1( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
+            call_c1( mc_c.mbtree_propagate_list, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list, width, width, height, scratch_buffer2 );
+            call_a1( mc_a.mbtree_propagate_list, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list, width, width, height, scratch_buffer2 );
 
             for( int j = 0; j < size && ok; j++ )
             {
@@ -722,8 +726,8 @@ int check_mc( int cpu_ref, int cpu_new )
                     fprintf( stderr, "mbtree_propagate_list FAILED at %d: %d !~= %d\n", j, ref_costsc[j], ref_costsa[j] );
             }
 
-            call_c2( mc_c.mbtree_propagate_list, &h, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
-            call_a2( mc_a.mbtree_propagate_list, &h, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list );
+            call_c2( mc_c.mbtree_propagate_list, ref_costsc, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list, width, width, height, scratch_buffer2 );
+            call_a2( mc_a.mbtree_propagate_list, ref_costsa, mvs, propagate_amount, lowres_costs, bipred_weight, 0, width, list, width, width, height, scratch_buffer2 );
         }
     }
     report( "mbtree :" );

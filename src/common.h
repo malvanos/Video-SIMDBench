@@ -49,6 +49,9 @@ typedef uint16_t udctcoef;
 #define QP_MAX (QP_MAX_SPEC+18)
 #define QP_MAX_MAX (51+2*6+18)
 
+
+#define LOWRES_COST_SHIFT 14
+
 // arbitrary, but low because SATD scores are 1/4 normal
 #define X264_LOOKAHEAD_QP (12+QP_BD_OFFSET)
 #define SPEC_QP(x) MIN((x), QP_MAX_SPEC)

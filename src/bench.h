@@ -386,8 +386,8 @@ typedef struct
  *   width == 8 -> height == 4 or 8 or 16
  *   width == 16-> height == 8 or 16
  * * */
-
-typedef struct
+struct vbench_mc_functions_t;
+typedef struct vbench_mc_functions_t
 {
     void (*mc_luma)( pixel *dst, intptr_t i_dst, pixel **src, intptr_t i_src,
             int mvx, int mvy, int i_width, int i_height, const vbench_weight_t *weight );
@@ -448,14 +448,14 @@ typedef struct
     weight_fn_t *weight;
     weight_fn_t *offsetadd;
     weight_fn_t *offsetsub;
-//    void (*weight_cache)( x264_t *, vbench_weight_t * );
+    void (*weight_cache)(  struct vbench_mc_functions_t *mc, vbench_weight_t * );
 
     void (*mbtree_propagate_cost)( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
             uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
 
-  //  void (*mbtree_propagate_list)( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
-    //        int16_t *propagate_amount, uint16_t *lowres_costs,
-      //      int bipred_weight, int mb_y, int len, int list );
+   void (*mbtree_propagate_list)( uint16_t *ref_costs, int16_t (*mvs)[2],
+            int16_t *propagate_amount, uint16_t *lowres_costs,
+           int bipred_weight, int mb_y, int len, int list,  unsigned stride, unsigned width, unsigned height, void *buffer2   );
 } vbench_mc_functions_t;
 
 
