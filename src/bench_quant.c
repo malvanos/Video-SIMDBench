@@ -41,10 +41,12 @@
  *
  *****************************************************************************/
 
-
 #include <ctype.h>
-#include "common.h"
 #include "osdep.h"
+#include "common.h"
+#include "bench.h"
+#include "osdep.h"
+#include "macroblock.h"
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
 extern uint8_t *buf1, *buf2;
@@ -56,45 +58,15 @@ extern pixel *pbuf1, *pbuf2;
 extern pixel *pbuf3, *pbuf4;
 
 
-#define report( name ) { \
-    if( used_asm && !quiet ) \
-        fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
-    if( !ok ) ret = -1; \
-}
-
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
-
-typedef struct
-{
-    void *pointer; // just for detecting duplicates
-    uint32_t cpu;
-    uint64_t cycles;
-    uint32_t den;
-} bench_t;
-
-typedef struct
-{
-    char *name;
-    bench_t vers[MAX_CPUS];
-} bench_func_t;
-
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
-static bench_func_t benchs[MAX_FUNCS];
-
-static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
-static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_8x8c_names[7] = { "dc", "h", "v", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr", "vr", "hd", "vl", "hu", "dcl", "dct", "dc8" };
-static const char **intra_predict_8x8_names = intra_predict_4x4_names;
-static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
+extern  bench_func_t benchs[MAX_FUNCS];
 
 #define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
+
+#define HAVE_X86_INLINE_ASM 1
+
 
 static inline uint32_t read_time(void)
 {
@@ -153,95 +125,13 @@ static int cmp_bench( const void *a, const void *b )
     }
 }
 
-#if ARCH_X86 || ARCH_X86_64
-int x264_stack_pagealign( int (*func)(), int align );
-
-/* detect when callee-saved regs aren't saved
- * needs an explicit asm check because it only sometimes crashes in normal use. */
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#else
-#define x264_stack_pagealign( func, align ) func()
-#endif
-
-#if ARCH_AARCH64
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#endif
-
-#if ARCH_ARM
-intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
-intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
-intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
-#endif
-
-#define call_c1(func,...) func(__VA_ARGS__)
-
-#if ARCH_X86_64
-/* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
- * This is done by clobbering the stack with junk around the stack pointer and calling the
- * assembly function through x264_checkasm_call with added dummy arguments which forces all
- * real arguments to be passed on the stack and not in registers. For 32-bit argument the
- * upper half of the 64-bit register location on the stack will now contain junk. Note that
- * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
- * overwrite the junk written to the stack so there's no guarantee that it will always
- * detect all functions that assumes zero-extension.
- */
-void x264_checkasm_stack_clobber( uint64_t clobber, ... );
-#define call_a1(func,...) ({ \
-    uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
-    x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
-    x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
-#define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1 call_c1
-#endif
-
-#if ARCH_ARM
-#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1_64 call_a1
-#endif
-
-#define call_bench(func,cpu,...)\
-    if( do_bench && !strncmp(func_name, bench_pattern, bench_pattern_len) )\
-    {\
-        uint64_t tsum = 0;\
-        int tcount = 0;\
-        call_a1(func, __VA_ARGS__);\
-        for( int ti = 0; ti < (cpu?BENCH_RUNS:BENCH_RUNS/4); ti++ )\
-        {\
-            uint32_t t = read_time();\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            t = read_time() - t;\
-            if( (uint64_t)t*tcount <= tsum*4 && ti > 0 )\
-            {\
-                tsum += t;\
-                tcount++;\
-            }\
-        }\
-        bench_t *b = get_bench( func_name, cpu );\
-        b->cycles += tsum;\
-        b->den += tcount;\
-        b->pointer = func;\
-    }
-
-/* for most functions, run benchmark and correctness test at the same time.
- * for those that modify their inputs, run the above macros separately */
-#define call_a(func,...) ({ call_a2(func,__VA_ARGS__); call_a1(func,__VA_ARGS__); })
-#define call_c(func,...) ({ call_c2(func,__VA_ARGS__); call_c1(func,__VA_ARGS__); })
-#define call_a2(func,...) ({ call_bench(func,cpu_new,__VA_ARGS__); })
-#define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
-#define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
 
 
-static int check_quant( int cpu_ref, int cpu_new )
+int check_quant( int cpu_ref, int cpu_new )
 {
-    x264_quant_function_t qf_c;
-    x264_quant_function_t qf_ref;
-    x264_quant_function_t qf_a;
+    vbench_quant_function_t qf_c;
+    vbench_quant_function_t qf_ref;
+    vbench_quant_function_t qf_a;
     ALIGNED_ARRAY_N( dctcoef, dct1,[64] );
     ALIGNED_ARRAY_N( dctcoef, dct2,[64] );
     ALIGNED_ARRAY_N( dctcoef, dct3,[8],[16] );
@@ -249,6 +139,31 @@ static int check_quant( int cpu_ref, int cpu_new )
     ALIGNED_ARRAY_N( uint8_t, cqm_buf,[64] );
     int ret = 0, ok, used_asm;
     int oks[3] = {1,1,1}, used_asms[3] = {0,0,0};
+    int i_cqm_preset;
+
+    /* These are normally in x264 but we are not going to used them */
+    int def_quant4[6][16];
+    int def_quant8[6][64];
+    int def_dequant4[6][16];
+    int def_dequant8[6][64];
+
+    /* quantization matrix for decoding, [cqm][qp%6][coef] */
+    ALIGNED_32(int dequant4_mf[4][6][16]);   /* [4][6][16] */
+    ALIGNED_32(int dequant8_mf[4][6][64]);   /* [4][6][64] */
+
+    /* quantization matrix for trellis, [cqm][qp][coef] */
+    ALIGNED_32(int unquant4_mf[4][QP_MAX_SPEC+1][16]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32(int unquant8_mf[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
+
+    /* quantization matrix for deadzone */
+    ALIGNED_32( udctcoef        quant4_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_mf[4][QP_MAX_SPEC+1][64]);     /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias[4][QP_MAX_SPEC+1][64]);   /* [4][QP_MAX_SPEC+1][64] */
+    ALIGNED_32( udctcoef        quant4_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][16] */
+    ALIGNED_32( udctcoef        quant8_bias0[4][QP_MAX_SPEC+1][64]);  /* [4][QP_MAX_SPEC+1][64] */
+
+#if 0
     x264_t h_buf;
     x264_t *h = &h_buf;
     memset( h, 0, sizeof(*h) );
@@ -256,23 +171,26 @@ static int check_quant( int cpu_ref, int cpu_new )
     x264_param_default( &h->param );
     h->chroma_qp_table = i_chroma_qp_table + 12;
     h->param.analyse.b_transform_8x8 = 1;
-
+#endif
     for( int i_cqm = 0; i_cqm < 4; i_cqm++ )
     {
         if( i_cqm == 0 )
         {
-            for( int i = 0; i < 6; i++ )
-                h->pps->scaling_list[i] = x264_cqm_flat16;
-            h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_FLAT;
+            //for( int i = 0; i < 6; i++ )
+            //    h->pps->scaling_list[i] = x264_cqm_flat16;
+            //h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_FLAT;
+            i_cqm_preset = CQM_FLAT;
         }
         else if( i_cqm == 1 )
         {
-            for( int i = 0; i < 6; i++ )
-                h->pps->scaling_list[i] = x264_cqm_jvt[i];
-            h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_JVT;
+            //for( int i = 0; i < 6; i++ )
+            //    h->pps->scaling_list[i] = x264_cqm_jvt[i];
+            //h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_JVT;
+            i_cqm_preset = CQM_JVT;
         }
         else
         {
+#if 0
             int max_scale = BIT_DEPTH < 10 ? 255 : 228;
             if( i_cqm == 2 )
                 for( int i = 0; i < 64; i++ )
@@ -283,14 +201,19 @@ static int check_quant( int cpu_ref, int cpu_new )
             for( int i = 0; i < 6; i++ )
                 h->pps->scaling_list[i] = cqm_buf;
             h->param.i_cqm_preset = h->pps->i_cqm_preset = X264_CQM_CUSTOM;
+#endif
+            i_cqm_preset = CQM_CUSTOM;
         }
 
-        h->param.rc.i_qp_min = 0;
-        h->param.rc.i_qp_max = QP_MAX_SPEC;
-        x264_cqm_init( h );
-        x264_quant_init( h, 0, &qf_c );
-        x264_quant_init( h, cpu_ref, &qf_ref );
-        x264_quant_init( h, cpu_new, &qf_a );
+        //h->param.rc.i_qp_min = 0;
+        //h->param.rc.i_qp_max = QP_MAX_SPEC;
+        int i_qp_min = 0;
+        int i_qp_max = QP_MAX_SPEC;
+        //x264_cqm_init( h ); // FIXME: we need to fix this function
+        //
+        vbench_quant_init( i_cqm_preset, 0, &qf_c );
+        vbench_quant_init( i_cqm_preset, cpu_ref, &qf_ref );
+        vbench_quant_init( i_cqm_preset, cpu_new, &qf_a );
 
 #define INIT_QUANT8(j,max) \
         { \
@@ -317,23 +240,23 @@ static int check_quant( int cpu_ref, int cpu_new )
         { \
             set_func_name( #name ); \
             used_asms[0] = 1; \
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- ) \
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- ) \
             { \
                 for( int j = 0; j < 2; j++ ) \
                 { \
                     int result_c, result_a; \
                     for( int i = 0; i < 16; i++ ) \
                         dct1[i] = dct2[i] = j ? (rand() & 0x1fff) - 0xfff : 0; \
-                    result_c = call_c1( qf_c.name, dct1, h->quant4_mf[CQM_4IY][qp][0], h->quant4_bias[CQM_4IY][qp][0] ); \
-                    result_a = call_a1( qf_a.name, dct2, h->quant4_mf[CQM_4IY][qp][0], h->quant4_bias[CQM_4IY][qp][0] ); \
+                    result_c = call_c1( qf_c.name, dct1, quant4_mf[CQM_4IY][qp][0], quant4_bias[CQM_4IY][qp][0] ); \
+                    result_a = call_a1( qf_a.name, dct2, quant4_mf[CQM_4IY][qp][0], quant4_bias[CQM_4IY][qp][0] ); \
                     if( memcmp( dct1, dct2, 16*sizeof(dctcoef) ) || result_c != result_a ) \
                     { \
                         oks[0] = 0; \
                         fprintf( stderr, #name "(cqm=%d): [FAILED]\n", i_cqm ); \
                         break; \
                     } \
-                    call_c2( qf_c.name, dct1, h->quant4_mf[CQM_4IY][qp][0], h->quant4_bias[CQM_4IY][qp][0] ); \
-                    call_a2( qf_a.name, dct2, h->quant4_mf[CQM_4IY][qp][0], h->quant4_bias[CQM_4IY][qp][0] ); \
+                    call_c2( qf_c.name, dct1, quant4_mf[CQM_4IY][qp][0], quant4_bias[CQM_4IY][qp][0] ); \
+                    call_a2( qf_a.name, dct2, quant4_mf[CQM_4IY][qp][0], quant4_bias[CQM_4IY][qp][0] ); \
                 } \
             } \
         }
@@ -343,21 +266,21 @@ static int check_quant( int cpu_ref, int cpu_new )
         { \
             set_func_name( #qname ); \
             used_asms[0] = 1; \
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- ) \
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- ) \
             { \
                 for( int j = 0; j < maxj; j++ ) \
                 { \
                     INIT_QUANT##type(j, w*w) \
-                    int result_c = call_c1( qf_c.qname, (void*)dct1, h->quant##type##_mf[block][qp], h->quant##type##_bias[block][qp] ); \
-                    int result_a = call_a1( qf_a.qname, (void*)dct2, h->quant##type##_mf[block][qp], h->quant##type##_bias[block][qp] ); \
+                    int result_c = call_c1( qf_c.qname, (void*)dct1, quant##type##_mf[block][qp], quant##type##_bias[block][qp] ); \
+                    int result_a = call_a1( qf_a.qname, (void*)dct2, quant##type##_mf[block][qp], quant##type##_bias[block][qp] ); \
                     if( memcmp( dct1, dct2, w*w*sizeof(dctcoef) ) || result_c != result_a ) \
                     { \
                         oks[0] = 0; \
                         fprintf( stderr, #qname "(qp=%d, cqm=%d, block="#block"): [FAILED]\n", qp, i_cqm ); \
                         break; \
                     } \
-                    call_c2( qf_c.qname, (void*)dct1, h->quant##type##_mf[block][qp], h->quant##type##_bias[block][qp] ); \
-                    call_a2( qf_a.qname, (void*)dct2, h->quant##type##_mf[block][qp], h->quant##type##_bias[block][qp] ); \
+                    call_c2( qf_c.qname, (void*)dct1, quant##type##_mf[block][qp], quant##type##_bias[block][qp] ); \
+                    call_a2( qf_a.qname, (void*)dct2, quant##type##_mf[block][qp], quant##type##_bias[block][qp] ); \
                 } \
             } \
         }
@@ -371,6 +294,7 @@ static int check_quant( int cpu_ref, int cpu_new )
         TEST_QUANT_DC( quant_4x4_dc, **h->quant4_mf[CQM_4IY] );
         TEST_QUANT_DC( quant_2x2_dc, **h->quant4_mf[CQM_4IC] );
 
+#if 0
 #define TEST_DEQUANT( qname, dqname, block, w ) \
         if( qf_a.dqname != qf_ref.dqname ) \
         { \
@@ -507,10 +431,10 @@ static int check_quant( int cpu_ref, int cpu_new )
 
         TEST_OPTIMIZE_CHROMA_DC( optimize_chroma_2x2_dc, 4 );
         TEST_OPTIMIZE_CHROMA_DC( optimize_chroma_2x4_dc, 8 );
-
-        x264_cqm_delete( h );
+#endif
+        //x264_cqm_delete( h );
     }
-
+#if 0
     ok = oks[0]; used_asm = used_asms[0];
     report( "quant :" );
 
@@ -646,12 +570,9 @@ static int check_quant( int cpu_ref, int cpu_new )
     TEST_LEVELRUN( coeff_level_run[  DCT_LUMA_AC], coeff_level_run15, 16, 1 );
     TEST_LEVELRUN( coeff_level_run[ DCT_LUMA_4x4], coeff_level_run16, 16, 0 );
     report( "coeff_level_run :" );
-
+ 
     return ret;
-}
-int run_benchmarks(int i){
-    /* 32-byte alignment is guaranteed whenever it's useful, 
-     * but some functions also vary in speed depending on %64 */
-    return x264_stack_pagealign(check_all_flags, i*32 );
+#endif
+    return 0;
 }
 

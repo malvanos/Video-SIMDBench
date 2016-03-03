@@ -168,7 +168,7 @@ int check_dct( int cpu_ref, int cpu_new )
            scaling_list[i] = vbench_cqm_flat16;
 
     vbench_cqm_init( scaling_list, chroma_qp_table );
-    vbench_quant_init( 0, &qf );
+    vbench_quant_init(0 , 0, &qf );
 
     /* overflow test cases */
     for( int i = 0; i < 5; i++ )

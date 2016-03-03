@@ -436,7 +436,7 @@ level_run(16)
 #define INIT_TRELLIS(...)
 #endif
 
-void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
+void vbench_quant_init(int i_cqm_preset, int cpu, vbench_quant_function_t *pf )
 {
     pf->quant_8x8 = quant_8x8;
     pf->quant_4x4 = quant_4x4;
@@ -553,7 +553,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
     if( cpu&CPU_XOP )
     {
         pf->dequant_4x4_dc = dequant_4x4dc_xop;
-        //if( h->param.i_cqm_preset != CQM_FLAT )
+        if( i_cqm_preset != CQM_FLAT )
         {
             pf->dequant_4x4 = dequant_4x4_xop;
             pf->dequant_8x8 = dequant_8x8_xop;
@@ -582,7 +582,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
         pf->dequant_4x4 = dequant_4x4_mmx;
         pf->dequant_4x4_dc = dequant_4x4dc_mmx2;
         pf->dequant_8x8 = dequant_8x8_mmx;
-        //if( h->param.i_cqm_preset == CQM_FLAT )
+        if( i_cqm_preset == CQM_FLAT )
         {
             pf->dequant_4x4 = dequant_4x4_flat16_mmx;
             pf->dequant_8x8 = dequant_8x8_flat16_mmx;
@@ -629,7 +629,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
         pf->dequant_4x4 = asm_dequant_4x4_sse2;
         pf->dequant_4x4_dc = asm_dequant_4x4dc_sse2;
         pf->dequant_8x8 = asm_dequant_8x8_sse2;
-        //if( h->param.i_cqm_preset == CQM_FLAT )
+        if( i_cqm_preset == CQM_FLAT )
         {
             pf->dequant_4x4 = asm_dequant_4x4_flat16_sse2;
             pf->dequant_8x8 = asm_dequant_8x8_flat16_sse2;
@@ -691,7 +691,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
     if( cpu&CPU_AVX )
     {
         pf->dequant_4x4_dc = asm_dequant_4x4dc_avx;
-        //if( h->param.i_cqm_preset != CQM_FLAT )
+        if( i_cqm_preset != CQM_FLAT )
         {
             pf->dequant_4x4 = asm_dequant_4x4_avx;
             pf->dequant_8x8 = asm_dequant_8x8_avx;
@@ -702,7 +702,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
 
     if( cpu&CPU_XOP )
     {
-        //if( h->param.i_cqm_preset != CQM_FLAT )
+        if( i_cqm_preset != CQM_FLAT )
         {
             pf->dequant_4x4 = asm_dequant_4x4_xop;
             pf->dequant_8x8 = asm_dequant_8x8_xop;
@@ -718,7 +718,7 @@ void vbench_quant_init(int cpu, vbench_quant_function_t *pf )
         pf->dequant_4x4 = asm_dequant_4x4_avx2;
         pf->dequant_8x8 = asm_dequant_8x8_avx2;
         pf->dequant_4x4_dc = asm_dequant_4x4dc_avx2;
-        //if( h->param.i_cqm_preset == CQM_FLAT )
+        if( i_cqm_preset == CQM_FLAT )
         {
             pf->dequant_4x4 = asm_dequant_4x4_flat16_avx2;
             pf->dequant_8x8 = asm_dequant_8x8_flat16_avx2;

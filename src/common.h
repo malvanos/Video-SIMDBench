@@ -161,6 +161,46 @@ static const uint8_t x264_scan8[16*3 + 3] =
 
 
 
+/****************************************************************************
+ * ANALYZE FLAGS
+ ****************************************************************************/
+/* Analyse flags */
+#define ANALYSE_I4x4       0x0001  /* Analyse i4x4 */
+#define ANALYSE_I8x8       0x0002  /* Analyse i8x8 (requires 8x8 transform) */
+#define ANALYSE_PSUB16x16  0x0010  /* Analyse p16x8, p8x16 and p8x8 */
+#define ANALYSE_PSUB8x8    0x0020  /* Analyse p8x4, p4x8, p4x4 */
+#define ANALYSE_BSUB16x16  0x0100  /* Analyse b16x8, b8x16 and b8x8 */
+#define DIRECT_PRED_NONE        0
+#define DIRECT_PRED_SPATIAL     1
+#define DIRECT_PRED_TEMPORAL    2
+#define DIRECT_PRED_AUTO        3
+#define ME_DIA                  0
+#define ME_HEX                  1
+#define ME_UMH                  2
+#define ME_ESA                  3
+#define ME_TESA                 4
+#define CQM_FLAT                0
+#define CQM_JVT                 1
+#define CQM_CUSTOM              2
+#define RC_CQP                  0
+#define RC_CRF                  1
+#define RC_ABR                  2
+#define QP_AUTO                 0
+#define AQ_NONE                 0
+#define AQ_VARIANCE             1
+#define AQ_AUTOVARIANCE         2
+#define AQ_AUTOVARIANCE_BIASED  3
+#define B_ADAPT_NONE            0
+#define B_ADAPT_FAST            1
+#define B_ADAPT_TRELLIS         2
+#define WEIGHTP_NONE            0
+#define WEIGHTP_SIMPLE          1
+#define WEIGHTP_SMART           2
+#define B_PYRAMID_NONE          0
+#define B_PYRAMID_STRICT        1
+#define B_PYRAMID_NORMAL        2
+#define KEYINT_MIN_AUTO         0
+#define KEYINT_MAX_INFINITE     (1<<30)
 
 
 
@@ -349,6 +389,11 @@ static int vbench_median( int a, int b, int c )
     b += (a-b)&((a-b)>>31);
     return b;
 }
+
+
+
+
+
 
 
 #endif // COMMON_H
