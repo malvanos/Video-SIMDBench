@@ -460,6 +460,32 @@ typedef struct vbench_mc_functions_t
            int bipred_weight, int mb_y, int len, int list,  unsigned stride, unsigned width, unsigned height, void *buffer2   );
 } vbench_mc_functions_t;
 
+typedef void (*vbench_deblock_inter_t)( pixel *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
+typedef void (*vbench_deblock_intra_t)( pixel *pix, intptr_t stride, int alpha, int beta );
+typedef struct
+{
+    vbench_deblock_inter_t deblock_luma[2];
+    vbench_deblock_inter_t deblock_chroma[2];
+    vbench_deblock_inter_t deblock_h_chroma_420;
+    vbench_deblock_inter_t deblock_h_chroma_422;
+    vbench_deblock_intra_t deblock_luma_intra[2];
+    vbench_deblock_intra_t deblock_chroma_intra[2];
+    vbench_deblock_intra_t deblock_h_chroma_420_intra;
+    vbench_deblock_intra_t deblock_h_chroma_422_intra;
+    vbench_deblock_inter_t deblock_luma_mbaff;
+    vbench_deblock_inter_t deblock_chroma_mbaff;
+    vbench_deblock_inter_t deblock_chroma_420_mbaff;
+    vbench_deblock_inter_t deblock_chroma_422_mbaff;
+    vbench_deblock_intra_t deblock_luma_intra_mbaff;
+    vbench_deblock_intra_t deblock_chroma_intra_mbaff;
+    vbench_deblock_intra_t deblock_chroma_420_intra_mbaff;
+    vbench_deblock_intra_t deblock_chroma_422_intra_mbaff;
+    void (*deblock_strength) ( uint8_t nnz[SCAN8_SIZE], int8_t ref[2][SCAN8_LUMA_SIZE],
+            int16_t mv[2][SCAN8_LUMA_SIZE][2], uint8_t bs[2][8][4], int mvy_limit,
+            int bframe );
+} vbench_deblock_function_t;
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////

@@ -43,52 +43,34 @@
 
 
 #include <ctype.h>
+#include "osdep.h"
 #include "common.h"
+#include "bench.h"
 #include "osdep.h"
 
-
-
 /* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
+extern uint8_t *buf1, *buf2;
 /* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
+extern uint8_t *buf3, *buf4;
 /* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
+extern pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
+extern pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
+
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
-
-typedef struct
-{
-    void *pointer; // just for detecting duplicates
-    uint32_t cpu;
-    uint64_t cycles;
-    uint32_t den;
-} bench_t;
-
-typedef struct
-{
-    char *name;
-    bench_t vers[MAX_CPUS];
-} bench_func_t;
-
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
-static bench_func_t benchs[MAX_FUNCS];
+extern  bench_func_t benchs[MAX_FUNCS];
+
+
 
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
 static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
@@ -156,101 +138,22 @@ static int cmp_bench( const void *a, const void *b )
     }
 }
 
-#if ARCH_X86 || ARCH_X86_64
-int x264_stack_pagealign( int (*func)(), int align );
 
-/* detect when callee-saved regs aren't saved
- * needs an explicit asm check because it only sometimes crashes in normal use. */
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#else
-#define x264_stack_pagealign( func, align ) func()
-#endif
 
-#if ARCH_AARCH64
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#endif
+#define BIT_DEPTH 8
 
-#if ARCH_ARM
-intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
-intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
-intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
-#endif
-
-#define call_c1(func,...) func(__VA_ARGS__)
-
-#if ARCH_X86_64
-/* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
- * This is done by clobbering the stack with junk around the stack pointer and calling the
- * assembly function through x264_checkasm_call with added dummy arguments which forces all
- * real arguments to be passed on the stack and not in registers. For 32-bit argument the
- * upper half of the 64-bit register location on the stack will now contain junk. Note that
- * this is dependant on compiler behaviour and that interrupts etc. at the wrong time may
- * overwrite the junk written to the stack so there's no guarantee that it will always
- * detect all functions that assumes zero-extension.
- */
-void x264_checkasm_stack_clobber( uint64_t clobber, ... );
-#define call_a1(func,...) ({ \
-    uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
-    x264_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
-    x264_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
-#define call_a1(func,...) x264_checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1 call_c1
-#endif
-
-#if ARCH_ARM
-#define call_a1_64(func,...) ((uint64_t (*)(intptr_t(*)(), int*, ...))x264_checkasm_call)( (intptr_t(*)())func, &ok, __VA_ARGS__ )
-#else
-#define call_a1_64 call_a1
-#endif
-
-#define call_bench(func,cpu,...)\
-    if( do_bench && !strncmp(func_name, bench_pattern, bench_pattern_len) )\
-    {\
-        uint64_t tsum = 0;\
-        int tcount = 0;\
-        call_a1(func, __VA_ARGS__);\
-        for( int ti = 0; ti < (cpu?BENCH_RUNS:BENCH_RUNS/4); ti++ )\
-        {\
-            uint32_t t = read_time();\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            func(__VA_ARGS__);\
-            t = read_time() - t;\
-            if( (uint64_t)t*tcount <= tsum*4 && ti > 0 )\
-            {\
-                tsum += t;\
-                tcount++;\
-            }\
-        }\
-        bench_t *b = get_bench( func_name, cpu );\
-        b->cycles += tsum;\
-        b->den += tcount;\
-        b->pointer = func;\
-    }
-
-/* for most functions, run benchmark and correctness test at the same time.
- * for those that modify their inputs, run the above macros separately */
-#define call_a(func,...) ({ call_a2(func,__VA_ARGS__); call_a1(func,__VA_ARGS__); })
-#define call_c(func,...) ({ call_c2(func,__VA_ARGS__); call_c1(func,__VA_ARGS__); })
-#define call_a2(func,...) ({ call_bench(func,cpu_new,__VA_ARGS__); })
-#define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
-#define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
-
-static int check_deblock( int cpu_ref, int cpu_new )
+int check_deblock( int cpu_ref, int cpu_new )
 {
-    x264_deblock_function_t db_c;
-    x264_deblock_function_t db_ref;
-    x264_deblock_function_t db_a;
+    vbench_deblock_function_t db_c;
+    vbench_deblock_function_t db_ref;
+    vbench_deblock_function_t db_a;
     int ret = 0, ok = 1, used_asm = 0;
     int alphas[36], betas[36];
     int8_t tcs[36][4];
 
-    x264_deblock_init( 0, &db_c, 0 );
-    x264_deblock_init( cpu_ref, &db_ref, 0 );
-    x264_deblock_init( cpu_new, &db_a, 0 );
+    vbench_deblock_init( 0, &db_c, 0 );
+    vbench_deblock_init( cpu_ref, &db_ref, 0 );
+    vbench_deblock_init( cpu_new, &db_a, 0 );
 
     /* not exactly the real values of a,b,tc but close enough */
     for( int i = 35, a = 255, c = 250; i >= 0; i-- )
@@ -308,15 +211,15 @@ static int check_deblock( int cpu_ref, int cpu_new )
     {
         for( int i = 0; i < 100; i++ )
         {
-            ALIGNED_ARRAY_16( uint8_t, nnz, [X264_SCAN8_SIZE] );
-            ALIGNED_4( int8_t ref[2][X264_SCAN8_LUMA_SIZE] );
-            ALIGNED_ARRAY_16( int16_t, mv, [2],[X264_SCAN8_LUMA_SIZE][2] );
+            ALIGNED_ARRAY_16( uint8_t, nnz, [SCAN8_SIZE] );
+            ALIGNED_4( int8_t ref[2][SCAN8_LUMA_SIZE] );
+            ALIGNED_ARRAY_16( int16_t, mv, [2],[SCAN8_LUMA_SIZE][2] );
             ALIGNED_ARRAY_N( uint8_t, bs, [2],[2][8][4] );
             memset( bs, 99, sizeof(uint8_t)*2*4*8*2 );
-            for( int j = 0; j < X264_SCAN8_SIZE; j++ )
+            for( int j = 0; j < SCAN8_SIZE; j++ )
                 nnz[j] = ((rand()&7) == 7) * rand() & 0xf;
             for( int j = 0; j < 2; j++ )
-                for( int k = 0; k < X264_SCAN8_LUMA_SIZE; k++ )
+                for( int k = 0; k < SCAN8_LUMA_SIZE; k++ )
                 {
                     ref[j][k] = ((rand()&3) != 3) ? 0 : (rand() & 31) - 2;
                     for( int l = 0; l < 2; l++ )

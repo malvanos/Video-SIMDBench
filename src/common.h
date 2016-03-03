@@ -113,6 +113,66 @@ typedef union { vbench_uint128_t i; uint64_t a[2]; uint32_t b[4]; uint16_t c[8];
 
 
 
+
+#define SCAN8_LUMA_SIZE (5*8)
+#define SCAN8_SIZE (SCAN8_LUMA_SIZE*3)
+#define SCAN8_0 (4+1*8)
+/* Scan8 organization:
+ *  0 1 2 3 4 5 6 7
+ *  0  DY    y y y y y
+ *  1        y Y Y Y Y
+ *  2        y Y Y Y Y
+ *  3        y Y Y Y Y
+ *  4        y Y Y Y Y
+ *  5  DU    u u u u u
+ *  6        u U U U U
+ *  7        u U U U U
+ *  8        u U U U U
+ *  9        u U U U U
+ *  10 DV    v v v v v
+ *  11       v V V V V
+ *  12       v V V V V
+ *  13       v V V V V
+ *  14       v V V V V
+ *  DY/DU/DV are for luma/chroma DC.
+ **/
+
+#define LUMA_DC   48
+#define CHROMA_DC 49
+
+static const uint8_t x264_scan8[16*3 + 3] =
+{
+    4+ 1*8, 5+ 1*8, 4+ 2*8, 5+ 2*8,
+    6+ 1*8, 7+ 1*8, 6+ 2*8, 7+ 2*8,
+    4+ 3*8, 5+ 3*8, 4+ 4*8, 5+ 4*8,
+    6+ 3*8, 7+ 3*8, 6+ 4*8, 7+ 4*8,
+    4+ 6*8, 5+ 6*8, 4+ 7*8, 5+ 7*8,
+    6+ 6*8, 7+ 6*8, 6+ 7*8, 7+ 7*8,
+    4+ 8*8, 5+ 8*8, 4+ 9*8, 5+ 9*8,
+    6+ 8*8, 7+ 8*8, 6+ 9*8, 7+ 9*8,
+    4+11*8, 5+11*8, 4+12*8, 5+12*8,
+    6+11*8, 7+11*8, 6+12*8, 7+12*8,
+    4+13*8, 5+13*8, 4+14*8, 5+14*8,
+    6+13*8, 7+13*8, 6+14*8, 7+14*8,
+    0+ 0*8, 0+ 5*8, 0+10*8
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define BENCH_RUNS 10  // tradeoff between accuracy and speed
 #define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
 #define MAX_FUNCS 8192  // just has to be big enough to hold all the existing functions
