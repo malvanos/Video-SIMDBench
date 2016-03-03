@@ -97,19 +97,19 @@ static ALWAYS_INLINE void deblock_edge_luma_c( pixel *pix, intptr_t xstride, int
         if( abs( p2 - p0 ) < beta )
         {
             if( tc0 )
-                pix[-2*xstride] = p1 + x264_clip3( (( p2 + ((p0 + q0 + 1) >> 1)) >> 1) - p1, -tc0, tc0 );
+                pix[-2*xstride] = p1 + vbench_clip3( (( p2 + ((p0 + q0 + 1) >> 1)) >> 1) - p1, -tc0, tc0 );
             tc++;
         }
         if( abs( q2 - q0 ) < beta )
         {
             if( tc0 )
-                pix[ 1*xstride] = q1 + x264_clip3( (( q2 + ((p0 + q0 + 1) >> 1)) >> 1) - q1, -tc0, tc0 );
+                pix[ 1*xstride] = q1 + vbench_clip3( (( q2 + ((p0 + q0 + 1) >> 1)) >> 1) - q1, -tc0, tc0 );
             tc++;
         }
 
-        delta = x264_clip3( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
-        pix[-1*xstride] = x264_clip_pixel( p0 + delta );    /* p0' */
-        pix[ 0*xstride] = x264_clip_pixel( q0 - delta );    /* q0' */
+        delta = vbench_clip3( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
+        pix[-1*xstride] = vbench_clip_pixel( p0 + delta );    /* p0' */
+        pix[ 0*xstride] = vbench_clip_pixel( q0 - delta );    /* q0' */
     }
 }
 static inline void deblock_luma_c( pixel *pix, intptr_t xstride, intptr_t ystride, int alpha, int beta, int8_t *tc0 )
@@ -148,9 +148,9 @@ static ALWAYS_INLINE void deblock_edge_chroma_c( pixel *pix, intptr_t xstride, i
 
     if( abs( p0 - q0 ) < alpha && abs( p1 - p0 ) < beta && abs( q1 - q0 ) < beta )
     {
-        int delta = x264_clip3( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
-        pix[-1*xstride] = x264_clip_pixel( p0 + delta );    /* p0' */
-        pix[ 0*xstride] = x264_clip_pixel( q0 - delta );    /* q0' */
+        int delta = vbench_clip3( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
+        pix[-1*xstride] = vbench_clip_pixel( p0 + delta );    /* p0' */
+        pix[ 0*xstride] = vbench_clip_pixel( q0 - delta );    /* q0' */
     }
 }
 static ALWAYS_INLINE void deblock_chroma_c( pixel *pix, int height, intptr_t xstride, intptr_t ystride, int alpha, int beta, int8_t *tc0 )
