@@ -38,7 +38,7 @@ gcc -g -Wall -O0  -march=corei7 --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX \
     cpu-detect.o checkasm-a.o predict-a.o const-a.o pixel-a.o  sad-a.o dct-a.o dct-64.o quant-a.o trellis-64.o  cabac-a.o mc-a.o mc-a2.o \
     ./asm/x86/predict-c.c ./asm/x86/mc-c.c \
     ./c_kernels/pixel.c ./c_kernels/predict.c ./c_kernels/quant.c  ./c_kernels/dct.c  ./c_kernels/mc.c \
-    main.c bench_pixel.c  bench_dct.c bench_cabac.c  bench_mc.c \
+    main.c bench_pixel.c  bench_dct.c bench_cabac.c  bench_mc.c bench_intra.c \
     bench.c cpu.c   -I./ -lm
 
 #gcc -g -Wall -O3  -std=c99 -DARCH_X86_64=1 -DHAVE_MMX cpu-detect.o checkasm-a.o predict-a.o const-a.o pixel-a.o  sad-a.o  \

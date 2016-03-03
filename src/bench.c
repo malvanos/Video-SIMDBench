@@ -140,9 +140,9 @@ static int check_all_funcs( int cpu_ref, int cpu_new )
 {
     return check_pixel( cpu_ref, cpu_new )
          + check_dct( cpu_ref, cpu_new )
-         + check_mc( cpu_ref, cpu_new );
+         + check_mc( cpu_ref, cpu_new )
+         + check_intra( cpu_ref, cpu_new );
 #if 0
-         + check_intra( cpu_ref, cpu_new )
          + check_deblock( cpu_ref, cpu_new )
          + check_quant( cpu_ref, cpu_new )
          + check_cabac( cpu_ref, cpu_new )

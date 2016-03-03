@@ -46,51 +46,30 @@
 #include "osdep.h"
 #include "common.h"
 #include "bench.h"
-
-
-
+#include "macroblock.h"
+#include "c_kernels/predict.h"
 
 /* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
+extern uint8_t *buf1, *buf2;
 /* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
+extern uint8_t *buf3, *buf4;
 /* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
+extern pixel *pbuf1, *pbuf2;
 /* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
+extern pixel *pbuf3, *pbuf4;
 
-int quiet = 0;
+
 
 #define report( name ) { \
-    if( used_asm && !quiet ) \
+    if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
 
-#define BENCH_RUNS 100  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
-#define MAX_FUNCS 1000  // just has to be big enough to hold all the existing functions
-#define MAX_CPUS 30     // number of different combinations of cpu flags
-
-typedef struct
-{
-    void *pointer; // just for detecting duplicates
-    uint32_t cpu;
-    uint64_t cycles;
-    uint32_t den;
-} bench_t;
-
-typedef struct
-{
-    char *name;
-    bench_t vers[MAX_CPUS];
-} bench_func_t;
-
-int do_bench = 0;
-int bench_pattern_len = 0;
-const char *bench_pattern = "";
+extern int bench_pattern_len;
+extern const char *bench_pattern;
 char func_name[100];
-static bench_func_t benchs[MAX_FUNCS];
+extern  bench_func_t benchs[MAX_FUNCS];
 
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
 static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
@@ -101,6 +80,7 @@ static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
 
 #define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
 
+#define HAVE_X86_INLINE_ASM 1
 static inline uint32_t read_time(void)
 {
     uint32_t a = 0;
@@ -158,39 +138,40 @@ static int cmp_bench( const void *a, const void *b )
     }
 }
 
-static int check_intra( int cpu_ref, int cpu_new )
-{
+int check_intra( int cpu_ref, int cpu_new ){
+
     int ret = 0, ok = 1, used_asm = 0;
     ALIGNED_ARRAY_32( pixel, edge,[36] );
     ALIGNED_ARRAY_32( pixel, edge2,[36] );
     ALIGNED_ARRAY_32( pixel, fdec,[FDEC_STRIDE*20] );
+    
     struct
     {
-        x264_predict_t      predict_16x16[4+3];
-        x264_predict_t      predict_8x8c[4+3];
-        x264_predict_t      predict_8x16c[4+3];
-        x264_predict8x8_t   predict_8x8[9+3];
-        x264_predict_t      predict_4x4[9+3];
-        x264_predict_8x8_filter_t predict_8x8_filter;
+        vbench_predict_t      predict_16x16[4+3];
+        vbench_predict_t      predict_8x8c[4+3];
+        vbench_predict_t      predict_8x16c[4+3];
+        vbench_predict8x8_t   predict_8x8[9+3];
+        vbench_predict_t      predict_4x4[9+3];
+        vbench_predict_8x8_filter_t predict_8x8_filter;
     } ip_c, ip_ref, ip_a;
 
-    x264_predict_16x16_init( 0, ip_c.predict_16x16 );
-    x264_predict_8x8c_init( 0, ip_c.predict_8x8c );
-    x264_predict_8x16c_init( 0, ip_c.predict_8x16c );
-    x264_predict_8x8_init( 0, ip_c.predict_8x8, &ip_c.predict_8x8_filter );
-    x264_predict_4x4_init( 0, ip_c.predict_4x4 );
+    vbench_predict_16x16_init( 0, ip_c.predict_16x16 );
+    vbench_predict_8x8c_init( 0, ip_c.predict_8x8c );
+    vbench_predict_8x16c_init( 0, ip_c.predict_8x16c );
+    vbench_predict_8x8_init( 0, ip_c.predict_8x8, &ip_c.predict_8x8_filter );
+    vbench_predict_4x4_init( 0, ip_c.predict_4x4 );
 
-    x264_predict_16x16_init( cpu_ref, ip_ref.predict_16x16 );
-    x264_predict_8x8c_init( cpu_ref, ip_ref.predict_8x8c );
-    x264_predict_8x16c_init( cpu_ref, ip_ref.predict_8x16c );
-    x264_predict_8x8_init( cpu_ref, ip_ref.predict_8x8, &ip_ref.predict_8x8_filter );
-    x264_predict_4x4_init( cpu_ref, ip_ref.predict_4x4 );
+    vbench_predict_16x16_init( cpu_ref, ip_ref.predict_16x16 );
+    vbench_predict_8x8c_init( cpu_ref, ip_ref.predict_8x8c );
+    vbench_predict_8x16c_init( cpu_ref, ip_ref.predict_8x16c );
+    vbench_predict_8x8_init( cpu_ref, ip_ref.predict_8x8, &ip_ref.predict_8x8_filter );
+    vbench_predict_4x4_init( cpu_ref, ip_ref.predict_4x4 );
 
-    x264_predict_16x16_init( cpu_new, ip_a.predict_16x16 );
-    x264_predict_8x8c_init( cpu_new, ip_a.predict_8x8c );
-    x264_predict_8x16c_init( cpu_new, ip_a.predict_8x16c );
-    x264_predict_8x8_init( cpu_new, ip_a.predict_8x8, &ip_a.predict_8x8_filter );
-    x264_predict_4x4_init( cpu_new, ip_a.predict_4x4 );
+    vbench_predict_16x16_init( cpu_new, ip_a.predict_16x16 );
+    vbench_predict_8x8c_init( cpu_new, ip_a.predict_8x8c );
+    vbench_predict_8x16c_init( cpu_new, ip_a.predict_8x16c );
+    vbench_predict_8x8_init( cpu_new, ip_a.predict_8x8, &ip_a.predict_8x8_filter );
+    vbench_predict_4x4_init( cpu_new, ip_a.predict_4x4 );
 
     memcpy( fdec, pbuf1, 32*20 * sizeof(pixel) );\
 
@@ -203,7 +184,7 @@ static int check_intra( int cpu_ref, int cpu_new )
         used_asm = 1;\
         memcpy( pbuf3, fdec, FDEC_STRIDE*20 * sizeof(pixel) );\
         memcpy( pbuf4, fdec, FDEC_STRIDE*20 * sizeof(pixel) );\
-        for( int a = 0; a < (do_bench ? 64/sizeof(pixel) : 1); a += align )\
+        for( int a = 0; a < ( 64/sizeof(pixel) ); a += align )\
         {\
             call_c##bench( ip_c.name[dir], pbuf3+48+a, ##__VA_ARGS__ );\
             call_a##bench( ip_a.name[dir], pbuf4+48+a, ##__VA_ARGS__ );\
@@ -306,9 +287,4 @@ static int check_intra( int cpu_ref, int cpu_new )
 }
 
 
-int run_benchmarks(int i){
-    /* 32-byte alignment is guaranteed whenever it's useful, 
-     * but some functions also vary in speed depending on %64 */
-    return x264_stack_pagealign(check_all_flags, i*32 );
-}
 
