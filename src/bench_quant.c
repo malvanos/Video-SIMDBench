@@ -67,6 +67,14 @@ extern  bench_func_t benchs[MAX_FUNCS];
 
 #define HAVE_X86_INLINE_ASM 1
 
+#define report( name ) { \
+    if( used_asm ) \
+        fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
+    if( !ok ) ret = -1; \
+}
+
+
+
 
 static inline uint32_t read_time(void)
 {
@@ -291,30 +299,30 @@ int check_quant( int cpu_ref, int cpu_new )
         TEST_QUANT( quant_4x4, CQM_4PY, 4, 4, 2 );
         TEST_QUANT( quant_4x4x4, CQM_4IY, 4, 8, 16 );
         TEST_QUANT( quant_4x4x4, CQM_4PY, 4, 8, 16 );
-        TEST_QUANT_DC( quant_4x4_dc, **h->quant4_mf[CQM_4IY] );
-        TEST_QUANT_DC( quant_2x2_dc, **h->quant4_mf[CQM_4IC] );
+        TEST_QUANT_DC( quant_4x4_dc, **quant4_mf[CQM_4IY] );
+        TEST_QUANT_DC( quant_2x2_dc, **quant4_mf[CQM_4IC] );
 
-#if 0
+
 #define TEST_DEQUANT( qname, dqname, block, w ) \
         if( qf_a.dqname != qf_ref.dqname ) \
         { \
             set_func_name( "%s_%s", #dqname, i_cqm?"cqm":"flat" ); \
             used_asms[1] = 1; \
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- ) \
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- ) \
             { \
                 INIT_QUANT##w(1, w*w) \
-                qf_c.qname( dct1, h->quant##w##_mf[block][qp], h->quant##w##_bias[block][qp] ); \
+                qf_c.qname( dct1, quant##w##_mf[block][qp], quant##w##_bias[block][qp] ); \
                 memcpy( dct2, dct1, w*w*sizeof(dctcoef) ); \
-                call_c1( qf_c.dqname, dct1, h->dequant##w##_mf[block], qp ); \
-                call_a1( qf_a.dqname, dct2, h->dequant##w##_mf[block], qp ); \
+                call_c1( qf_c.dqname, dct1, dequant##w##_mf[block], qp ); \
+                call_a1( qf_a.dqname, dct2, dequant##w##_mf[block], qp ); \
                 if( memcmp( dct1, dct2, w*w*sizeof(dctcoef) ) ) \
                 { \
                     oks[1] = 0; \
                     fprintf( stderr, #dqname "(qp=%d, cqm=%d, block="#block"): [FAILED]\n", qp, i_cqm ); \
                     break; \
                 } \
-                call_c2( qf_c.dqname, dct1, h->dequant##w##_mf[block], qp ); \
-                call_a2( qf_a.dqname, dct2, h->dequant##w##_mf[block], qp ); \
+                call_c2( qf_c.dqname, dct1, dequant##w##_mf[block], qp ); \
+                call_a2( qf_a.dqname, dct2, dequant##w##_mf[block], qp ); \
             } \
         }
 
@@ -328,21 +336,21 @@ int check_quant( int cpu_ref, int cpu_new )
         { \
             set_func_name( "%s_%s", #dqname, i_cqm?"cqm":"flat" ); \
             used_asms[1] = 1; \
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- ) \
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- ) \
             { \
                 for( int i = 0; i < 16; i++ ) \
                     dct1[i] = rand()%(PIXEL_MAX*16*2+1) - PIXEL_MAX*16; \
-                qf_c.qname( dct1, h->quant##w##_mf[block][qp][0]>>1, h->quant##w##_bias[block][qp][0]>>1 ); \
+                qf_c.qname( dct1, quant##w##_mf[block][qp][0]>>1, quant##w##_bias[block][qp][0]>>1 ); \
                 memcpy( dct2, dct1, w*w*sizeof(dctcoef) ); \
-                call_c1( qf_c.dqname, dct1, h->dequant##w##_mf[block], qp ); \
-                call_a1( qf_a.dqname, dct2, h->dequant##w##_mf[block], qp ); \
+                call_c1( qf_c.dqname, dct1, dequant##w##_mf[block], qp ); \
+                call_a1( qf_a.dqname, dct2, dequant##w##_mf[block], qp ); \
                 if( memcmp( dct1, dct2, w*w*sizeof(dctcoef) ) ) \
                 { \
                     oks[1] = 0; \
                     fprintf( stderr, #dqname "(qp=%d, cqm=%d, block="#block"): [FAILED]\n", qp, i_cqm ); \
                 } \
-                call_c2( qf_c.dqname, dct1, h->dequant##w##_mf[block], qp ); \
-                call_a2( qf_a.dqname, dct2, h->dequant##w##_mf[block], qp ); \
+                call_c2( qf_c.dqname, dct1, dequant##w##_mf[block], qp ); \
+                call_a2( qf_a.dqname, dct2, dequant##w##_mf[block], qp ); \
             } \
         }
 
@@ -352,14 +360,14 @@ int check_quant( int cpu_ref, int cpu_new )
         {
             set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- )
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- )
             {
                 for( int i = 0; i < 8; i++ )
                     dct1[i] = rand()%(PIXEL_MAX*16*2+1) - PIXEL_MAX*16;
-                qf_c.quant_2x2_dc( &dct1[0], h->quant4_mf[CQM_4IC][qp+3][0]>>1, h->quant4_bias[CQM_4IC][qp+3][0]>>1 );
-                qf_c.quant_2x2_dc( &dct1[4], h->quant4_mf[CQM_4IC][qp+3][0]>>1, h->quant4_bias[CQM_4IC][qp+3][0]>>1 );
-                call_c( qf_c.idct_dequant_2x4_dc, dct1, dct3, h->dequant4_mf[CQM_4IC], qp+3 );
-                call_a( qf_a.idct_dequant_2x4_dc, dct1, dct4, h->dequant4_mf[CQM_4IC], qp+3 );
+                qf_c.quant_2x2_dc( &dct1[0], quant4_mf[CQM_4IC][qp+3][0]>>1, quant4_bias[CQM_4IC][qp+3][0]>>1 );
+                qf_c.quant_2x2_dc( &dct1[4], quant4_mf[CQM_4IC][qp+3][0]>>1, quant4_bias[CQM_4IC][qp+3][0]>>1 );
+                call_c( qf_c.idct_dequant_2x4_dc, dct1, dct3, dequant4_mf[CQM_4IC], qp+3 );
+                call_a( qf_a.idct_dequant_2x4_dc, dct1, dct4, dequant4_mf[CQM_4IC], qp+3 );
                 for( int i = 0; i < 8; i++ )
                     if( dct3[i][0] != dct4[i][0] )
                     {
@@ -374,23 +382,23 @@ int check_quant( int cpu_ref, int cpu_new )
         {
             set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- )
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- )
             {
                 for( int i = 0; i < 8; i++ )
                     dct1[i] = rand()%(PIXEL_MAX*16*2+1) - PIXEL_MAX*16;
-                qf_c.quant_2x2_dc( &dct1[0], h->quant4_mf[CQM_4IC][qp+3][0]>>1, h->quant4_bias[CQM_4IC][qp+3][0]>>1 );
-                qf_c.quant_2x2_dc( &dct1[4], h->quant4_mf[CQM_4IC][qp+3][0]>>1, h->quant4_bias[CQM_4IC][qp+3][0]>>1 );
+                qf_c.quant_2x2_dc( &dct1[0], quant4_mf[CQM_4IC][qp+3][0]>>1, quant4_bias[CQM_4IC][qp+3][0]>>1 );
+                qf_c.quant_2x2_dc( &dct1[4], quant4_mf[CQM_4IC][qp+3][0]>>1, quant4_bias[CQM_4IC][qp+3][0]>>1 );
                 memcpy( dct2, dct1, 8*sizeof(dctcoef) );
-                call_c1( qf_c.idct_dequant_2x4_dconly, dct1, h->dequant4_mf[CQM_4IC], qp+3 );
-                call_a1( qf_a.idct_dequant_2x4_dconly, dct2, h->dequant4_mf[CQM_4IC], qp+3 );
+                call_c1( qf_c.idct_dequant_2x4_dconly, dct1, dequant4_mf[CQM_4IC], qp+3 );
+                call_a1( qf_a.idct_dequant_2x4_dconly, dct2, dequant4_mf[CQM_4IC], qp+3 );
                 if( memcmp( dct1, dct2, 8*sizeof(dctcoef) ) )
                 {
                     oks[1] = 0;
                     fprintf( stderr, "idct_dequant_2x4_dconly (qp=%d, cqm=%d): [FAILED]\n", qp, i_cqm );
                     break;
                 }
-                call_c2( qf_c.idct_dequant_2x4_dconly, dct1, h->dequant4_mf[CQM_4IC], qp+3 );
-                call_a2( qf_a.idct_dequant_2x4_dconly, dct2, h->dequant4_mf[CQM_4IC], qp+3 );
+                call_c2( qf_c.idct_dequant_2x4_dconly, dct1, dequant4_mf[CQM_4IC], qp+3 );
+                call_a2( qf_a.idct_dequant_2x4_dconly, dct2, dequant4_mf[CQM_4IC], qp+3 );
             }
         }
 
@@ -399,20 +407,20 @@ int check_quant( int cpu_ref, int cpu_new )
         { \
             set_func_name( #optname ); \
             used_asms[2] = 1; \
-            for( int qp = h->param.rc.i_qp_max; qp >= h->param.rc.i_qp_min; qp-- ) \
+            for( int qp = i_qp_max; qp >= i_qp_min; qp-- ) \
             { \
                 int qpdc = qp + (size == 8 ? 3 : 0); \
-                int dmf = h->dequant4_mf[CQM_4IC][qpdc%6][0] << qpdc/6; \
+                int dmf = dequant4_mf[CQM_4IC][qpdc%6][0] << qpdc/6; \
                 if( dmf > 32*64 ) \
                     continue; \
                 for( int i = 16; ; i <<= 1 ) \
                 { \
                     int res_c, res_asm; \
-                    int max = X264_MIN( i, PIXEL_MAX*16 ); \
+                    int max = MIN( i, PIXEL_MAX*16 ); \
                     for( int j = 0; j < size; j++ ) \
                         dct1[j] = rand()%(max*2+1) - max; \
                     for( int j = 0; i <= size; j += 4 ) \
-                        qf_c.quant_2x2_dc( &dct1[j], h->quant4_mf[CQM_4IC][qpdc][0]>>1, h->quant4_bias[CQM_4IC][qpdc][0]>>1 ); \
+                        qf_c.quant_2x2_dc( &dct1[j], quant4_mf[CQM_4IC][qpdc][0]>>1, quant4_bias[CQM_4IC][qpdc][0]>>1 ); \
                     memcpy( dct2, dct1, size*sizeof(dctcoef) ); \
                     res_c   = call_c1( qf_c.optname, dct1, dmf ); \
                     res_asm = call_a1( qf_a.optname, dct2, dmf ); \
@@ -431,10 +439,9 @@ int check_quant( int cpu_ref, int cpu_new )
 
         TEST_OPTIMIZE_CHROMA_DC( optimize_chroma_2x2_dc, 4 );
         TEST_OPTIMIZE_CHROMA_DC( optimize_chroma_2x4_dc, 8 );
-#endif
+
         //x264_cqm_delete( h );
     }
-#if 0
     ok = oks[0]; used_asm = used_asms[0];
     report( "quant :" );
 
@@ -486,7 +493,7 @@ int check_quant( int cpu_ref, int cpu_new )
                 dct1[0] = 0; \
             int result_c = call_c( qf_c.decname, dct1 ); \
             int result_a = call_a( qf_a.decname, dct1 ); \
-            if( X264_MIN(result_c,thresh) != X264_MIN(result_a,thresh) ) \
+            if( MIN(result_c,thresh) != MIN(result_a,thresh) ) \
             { \
                 ok = 0; \
                 fprintf( stderr, #decname ": [FAILED]\n" ); \
@@ -541,12 +548,12 @@ int check_quant( int cpu_ref, int cpu_new )
         used_asm = 1; \
         for( int i = 0; i < 100; i++ ) \
         { \
-            x264_run_level_t runlevel_c, runlevel_a; \
+            vbench_run_level_t runlevel_c, runlevel_a; \
             int nnz = 0; \
             int max = rand() & (size-1); \
             memset( dct1, 0, size*sizeof(dctcoef) ); \
-            memcpy( &runlevel_a, buf1+i, sizeof(x264_run_level_t) ); \
-            memcpy( &runlevel_c, buf1+i, sizeof(x264_run_level_t) ); \
+            memcpy( &runlevel_a, buf1+i, sizeof(vbench_run_level_t) ); \
+            memcpy( &runlevel_c, buf1+i, sizeof(vbench_run_level_t) ); \
             for( int idx = ac; idx < max; idx++ ) \
                 nnz |= dct1[idx] = !(rand()&3) + (!(rand()&15))*rand(); \
             if( !nnz ) \
@@ -572,7 +579,5 @@ int check_quant( int cpu_ref, int cpu_new )
     report( "coeff_level_run :" );
  
     return ret;
-#endif
-    return 0;
 }
 
