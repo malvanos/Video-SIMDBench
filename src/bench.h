@@ -113,6 +113,31 @@ typedef struct vbench_weight_t
 } ALIGNED_16( vbench_weight_t );
 
 
+typedef struct
+{
+    /* state */
+    int i_low;
+    int i_range;
+
+    /* bit stream */
+    int i_queue; //stored with an offset of -8 for faster asm
+    int i_bytes_outstanding;
+
+    uint8_t *p_start;
+    uint8_t *p;
+    uint8_t *p_end;
+
+    /* aligned for memcpy_aligned starting here */
+    ALIGNED_16( int f8_bits_encoded ); // only if using x264_cabac_size_decision()
+
+    /* context */
+    uint8_t state[1024];
+
+    /* for 16-byte alignment */
+    uint8_t padding[12];
+} vbench_cabac_t;
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -484,6 +509,19 @@ typedef struct
             int16_t mv[2][SCAN8_LUMA_SIZE][2], uint8_t bs[2][8][4], int mvy_limit,
             int bframe );
 } vbench_deblock_function_t;
+
+
+typedef struct
+{
+    uint8_t *(*nal_escape) ( uint8_t *dst, uint8_t *src, uint8_t *end );
+    void (*cabac_block_residual_internal)( dctcoef *l, int b_interlaced,
+            intptr_t ctx_block_cat, vbench_cabac_t *cb );
+    void (*cabac_block_residual_rd_internal)( dctcoef *l, int b_interlaced,
+            intptr_t ctx_block_cat, vbench_cabac_t *cb );
+    void (*cabac_block_residual_8x8_rd_internal)( dctcoef *l, int b_interlaced,
+            intptr_t ctx_block_cat, vbench_cabac_t *cb );
+} vbench_bitstream_function_t;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
