@@ -1597,11 +1597,11 @@ static ALWAYS_INLINE int vbench_cabac_size_decision_noup2( uint8_t *state, long 
 /* Faster RDO by merging sigmap and level coding. Note that for 8x8dct and chroma 4:2:2 dc this is
  * slightly incorrect because the sigmap is not reversible (contexts are repeated). However, there
  * is nearly no quality penalty for this (~0.001db) and the speed boost (~30%) is worth it. */
-static void ALWAYS_INLINE x264_cabac_block_residual_internal(vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc )
+static void ALWAYS_INLINE vbench_cabac_block_residual_internal(vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc, int interlaced )
 {
-    const uint8_t *sig_offset = asm_significant_coeff_flag_offset_8x8[MB_INTERLACED];
-    int ctx_sig = asm_significant_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
-    int ctx_last = asm_last_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
+    const uint8_t *sig_offset = asm_significant_coeff_flag_offset_8x8[interlaced];
+    int ctx_sig = asm_significant_coeff_flag_offset[interlaced][ctx_block_cat];
+    int ctx_last = asm_last_coeff_flag_offset[interlaced][ctx_block_cat];
     int ctx_level = asm_coeff_abs_level_m1_offset[ctx_block_cat];
     int last = quantf->coeff_last[ctx_block_cat]( l );
     int coeff_abs = abs(l[last]);
@@ -1682,29 +1682,29 @@ static void ALWAYS_INLINE x264_cabac_block_residual_internal(vbench_quant_functi
     }
 }
 
-void x264_cabac_block_residual_8x8_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+void vbench_cabac_block_residual_8x8_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l , int interlaced )
 {
-    x264_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 1, 0 );
+    vbench_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 1, 0, interlaced );
 }
-void x264_cabac_block_residual_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+void vbench_cabac_block_residual_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l , int interlaced )
 {
-    x264_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 0, 0 );
+    vbench_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 0, 0, interlaced );
 }
 
-static ALWAYS_INLINE void x264_cabac_block_residual_8x8( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+void vbench_cabac_block_residual_8x8( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int interlaced )
 {
 #if ARCH_X86_64 && HAVE_MMX
-    bsf->cabac_block_residual_8x8_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+    bsf->cabac_block_residual_8x8_rd_internal( l, interlaced, ctx_block_cat, cb );
 #else
-    x264_cabac_block_residual_8x8_rd_c( quantf, cb, ctx_block_cat, l );
+    vbench_cabac_block_residual_8x8_rd_c( quantf, cb, ctx_block_cat, l );
 #endif
 }
-static ALWAYS_INLINE void x264_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf,  vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+void vbench_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf,  vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int interlaced)
 {
 #if ARCH_X86_64 && HAVE_MMX
-    bsf->cabac_block_residual_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+    bsf->cabac_block_residual_rd_internal( l, interlaced, ctx_block_cat, cb );
 #else
-    x264_cabac_block_residual_rd_c( quantf, cb, ctx_block_cat, l );
+    vbench_cabac_block_residual_rd_c( quantf, cb, ctx_block_cat, l );
 #endif
 }
 

@@ -251,11 +251,11 @@ DECL_CABAC(asm)
 #define run_cabac_terminal_asm run_cabac_terminal_c
 #endif
 
-extern const uint8_t x264_count_cat_m1[14];
 void x264_cabac_block_residual_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 void x264_cabac_block_residual_8x8_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 void x264_cabac_block_residual_rd_c( x264_t *h, x264_cabac_t *cb, int ctx_block_cat, dctcoef *l );
 #endif
+extern const uint8_t asm_count_cat_m1[14];
 
 int check_cabac( int cpu_ref, int cpu_new )
 {
@@ -288,7 +288,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                     int nz = 0;\
                     while( !nz )\
                     {\
-                        for( int k = 0; k <= vbech_count_cat_m1[ctx_block_cat]; k++ )\
+                        for( int k = 0; k <= asm_count_cat_m1[ctx_block_cat]; k++ )\
                         {\
                             /* Very rough distribution that covers possible inputs */\
                             int rnd = rand();\
@@ -300,7 +300,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                             nz |= dct[0][ac+k] = dct[1][ac+k] = coef * ((rand()&1) ? 1 : -1);\
                         }\
                     }\
-                    h.mb.b_interlaced = i;\
+                    int b_interlaced = i;\
                     vbench_cabac_t cb[2];\
                     vbench_cabac_context_init( &cb[0], SLICE_TYPE_P, 26, 0 );\
                     vbench_cabac_context_init( &cb[1], SLICE_TYPE_P, 26, 0 );\
@@ -309,7 +309,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                     cb[0].f8_bits_encoded = 0;\
                     cb[1].f8_bits_encoded = 0;\
                     if( !rd ) memcpy( bitstream[1], bitstream[0], 0x400 );\
-                    call_c1( vbench_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                    call_c1( vbench_##name##_c, &bs_a, &quantf, &cb[0], ctx_block_cat, dct[0]+ac, i );\
                     call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
                     ok = cb[0].f8_bits_encoded == cb[1].f8_bits_encoded && !memcmp(cb[0].state, cb[1].state, 1024);\
                     if( !rd ) ok |= !memcmp( bitstream[1], bitstream[0], 0x400 ) && !memcmp( &cb[1], &cb[0], offsetof(vbench_cabac_t, p_start) );\
@@ -323,7 +323,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                     }\
                     if( (j&15) == 0 )\
                     {\
-                        call_c2( vbench_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                        call_c2( vbench_##name##_c,  &bs_a, &quantf, &cb[0], ctx_block_cat, dct[0]+ac, i );\
                         call_a2( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
                     }\
                 }\
@@ -333,10 +333,11 @@ int check_cabac( int cpu_ref, int cpu_new )
 }\
 name##fail:
 
-#if 0
-    CABAC_RESIDUAL( cabac_block_residual, 0, DCT_LUMA_8x8, 0 )
-    report( "cabac residual:" );
+//static ALWAYS_INLINE void vbench_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf,  vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int interlaced)
+//    CABAC_RESIDUAL( cabac_block_residual, 0, DCT_LUMA_8x8, 0 )
+//    report( "cabac residual:" );
 
+#if 0
     ok = 1; used_asm = 0;
     CABAC_RESIDUAL( cabac_block_residual_rd, 0, DCT_LUMA_8x8-1, 1 )
     CABAC_RESIDUAL( cabac_block_residual_8x8_rd, DCT_LUMA_8x8, DCT_LUMA_8x8, 1 )
