@@ -271,7 +271,7 @@ int check_cabac( int cpu_ref, int cpu_new )
 
 #define CABAC_RESIDUAL(name, start, end, rd)\
 {\
-    if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || (cpu_new&X264_CPU_SSE2_IS_SLOW)) )\
+    if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || (cpu_new&CPU_SSE2_IS_SLOW)) )\
     {\
         used_asm = 1;\
         set_func_name( #name );\
@@ -288,7 +288,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                     int nz = 0;\
                     while( !nz )\
                     {\
-                        for( int k = 0; k <= x264_count_cat_m1[ctx_block_cat]; k++ )\
+                        for( int k = 0; k <= vbech_count_cat_m1[ctx_block_cat]; k++ )\
                         {\
                             /* Very rough distribution that covers possible inputs */\
                             int rnd = rand();\
@@ -301,18 +301,18 @@ int check_cabac( int cpu_ref, int cpu_new )
                         }\
                     }\
                     h.mb.b_interlaced = i;\
-                    x264_cabac_t cb[2];\
-                    x264_cabac_context_init( &h, &cb[0], SLICE_TYPE_P, 26, 0 );\
-                    x264_cabac_context_init( &h, &cb[1], SLICE_TYPE_P, 26, 0 );\
-                    x264_cabac_encode_init( &cb[0], bitstream[0], bitstream[0]+0xfff0 );\
-                    x264_cabac_encode_init( &cb[1], bitstream[1], bitstream[1]+0xfff0 );\
+                    vbench_cabac_t cb[2];\
+                    vbench_cabac_context_init( &cb[0], SLICE_TYPE_P, 26, 0 );\
+                    vbench_cabac_context_init( &cb[1], SLICE_TYPE_P, 26, 0 );\
+                    vbench_cabac_encode_init( &cb[0], bitstream[0], bitstream[0]+0xfff0 );\
+                    vbench_cabac_encode_init( &cb[1], bitstream[1], bitstream[1]+0xfff0 );\
                     cb[0].f8_bits_encoded = 0;\
                     cb[1].f8_bits_encoded = 0;\
                     if( !rd ) memcpy( bitstream[1], bitstream[0], 0x400 );\
-                    call_c1( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                    call_c1( vbench_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
                     call_a1( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
                     ok = cb[0].f8_bits_encoded == cb[1].f8_bits_encoded && !memcmp(cb[0].state, cb[1].state, 1024);\
-                    if( !rd ) ok |= !memcmp( bitstream[1], bitstream[0], 0x400 ) && !memcmp( &cb[1], &cb[0], offsetof(x264_cabac_t, p_start) );\
+                    if( !rd ) ok |= !memcmp( bitstream[1], bitstream[0], 0x400 ) && !memcmp( &cb[1], &cb[0], offsetof(vbench_cabac_t, p_start) );\
                     if( !ok )\
                     {\
                         fprintf( stderr, #name " :  [FAILED] ctx_block_cat %d", (int)ctx_block_cat );\
@@ -323,7 +323,7 @@ int check_cabac( int cpu_ref, int cpu_new )
                     }\
                     if( (j&15) == 0 )\
                     {\
-                        call_c2( x264_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
+                        call_c2( vbench_##name##_c, &h, &cb[0], ctx_block_cat, dct[0]+ac );\
                         call_a2( bs_a.name##_internal, dct[1]+ac, i, ctx_block_cat, &cb[1] );\
                     }\
                 }\

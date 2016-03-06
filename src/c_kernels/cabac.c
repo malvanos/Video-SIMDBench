@@ -1528,6 +1528,186 @@ void vbench_cabac_encode_terminal_c( vbench_cabac_t *cb )
     vbench_cabac_encode_renorm( cb );
 }
 
+// node ctx: 0..3: abslevel1 (with abslevelgt1 == 0).
+//           4..7: abslevelgt1 + 3 (and abslevel1 doesn't matter).
+/* map node ctx => cabac ctx for level=1 */
+static const uint8_t coeff_abs_level1_ctx[8] = { 1, 2, 3, 4, 0, 0, 0, 0 };
+/* map node ctx => cabac ctx for level>1 */
+static const uint8_t coeff_abs_levelgt1_ctx[8] = { 5, 5, 5, 5, 6, 7, 8, 9 };
+/* 4:2:2 chroma dc uses a slightly different state machine for some reason, also note that
+ * 4:2:0 chroma dc doesn't use the last state so it has identical output with both arrays. */
+static const uint8_t coeff_abs_levelgt1_ctx_chroma_dc[8] = { 5, 5, 5, 5, 6, 7, 8, 8 };
+
+static const uint8_t coeff_abs_level_transition[2][8] = {
+/* update node ctx after coding a level=1 */
+    { 1, 2, 3, 3, 4, 5, 6, 7 },
+/* update node ctx after coding a level>1 */
+    { 4, 4, 4, 4, 5, 6, 7, 7 }
+};
+
+static ALWAYS_INLINE int vbench_cabac_pos( vbench_cabac_t *cb )
+{
+        return (cb->p - cb->p_start + cb->i_bytes_outstanding) * 8 + cb->i_queue;
+}
+
+/* internal only. these don't write the bitstream, just calculate bit cost: */
+
+static ALWAYS_INLINE void vbench_cabac_size_decision( vbench_cabac_t *cb, long i_ctx, long b )
+{
+        int i_state = cb->state[i_ctx];
+            cb->state[i_ctx] = vbench_cabac_transition[i_state][b];
+                cb->f8_bits_encoded += asm_cabac_entropy[i_state^b];
+}
+
+static ALWAYS_INLINE int vbench_cabac_size_decision2( uint8_t *state, long b )
+{
+        int i_state = *state;
+            *state = vbench_cabac_transition[i_state][b];
+                return asm_cabac_entropy[i_state^b];
+}
+
+static ALWAYS_INLINE void vbench_cabac_size_decision_noup( vbench_cabac_t *cb, long i_ctx, long b )
+{
+        int i_state = cb->state[i_ctx];
+            cb->f8_bits_encoded += asm_cabac_entropy[i_state^b];
+}
+
+static ALWAYS_INLINE int vbench_cabac_size_decision_noup2( uint8_t *state, long b )
+{
+        return asm_cabac_entropy[*state^b];
+}
+
+#if HAVE_MMX
+#define vbench_cabac_encode_decision vbench_cabac_encode_decision_asm
+#define vbench_cabac_encode_bypass asm_cabac_encode_bypass_asm
+#define vbench_cabac_encode_terminal vbench_cabac_encode_terminal_asm
+#elif defined(ARCH_AARCH64)
+#define vbench_cabac_encode_decision vbench_cabac_encode_decision_asm
+#define vbench_cabac_encode_bypass asm_cabac_encode_bypass_asm
+#define vbench_cabac_encode_terminal vbench_cabac_encode_terminal_asm
+#else
+#define vbench_cabac_encode_decision vbench_cabac_encode_decision_c
+#define vbench_cabac_encode_bypass vbench_cabac_encode_bypass_c
+#define vbench_cabac_encode_terminal vbench_cabac_encode_terminal_c
+#endif
+
+
+#define vbench_cabac_encode_decision(c,x,v) vbench_cabac_size_decision(c,x,v)
+
+/* Faster RDO by merging sigmap and level coding. Note that for 8x8dct and chroma 4:2:2 dc this is
+ * slightly incorrect because the sigmap is not reversible (contexts are repeated). However, there
+ * is nearly no quality penalty for this (~0.001db) and the speed boost (~30%) is worth it. */
+static void ALWAYS_INLINE x264_cabac_block_residual_internal(vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int b_8x8, int chroma422dc )
+{
+    const uint8_t *sig_offset = asm_significant_coeff_flag_offset_8x8[MB_INTERLACED];
+    int ctx_sig = asm_significant_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
+    int ctx_last = asm_last_coeff_flag_offset[MB_INTERLACED][ctx_block_cat];
+    int ctx_level = asm_coeff_abs_level_m1_offset[ctx_block_cat];
+    int last = quantf->coeff_last[ctx_block_cat]( l );
+    int coeff_abs = abs(l[last]);
+    int ctx = coeff_abs_level1_ctx[0] + ctx_level;
+    int node_ctx;
+    const uint8_t *levelgt1_ctx = chroma422dc ? coeff_abs_levelgt1_ctx_chroma_dc : coeff_abs_levelgt1_ctx;
+
+    if( last != (b_8x8 ? 63 : chroma422dc ? 7 : asm_count_cat_m1[ctx_block_cat]) )
+    {
+        vbench_cabac_encode_decision( cb, ctx_sig + (b_8x8 ? sig_offset[last] :
+                                    chroma422dc ? asm_coeff_flag_offset_chroma_422_dc[last] : last), 1 );
+        vbench_cabac_encode_decision( cb, ctx_last + (b_8x8 ? asm_last_coeff_flag_offset_8x8[last] :
+                                    chroma422dc ? asm_coeff_flag_offset_chroma_422_dc[last] : last), 1 );
+    }
+
+    if( coeff_abs > 1 )
+    {
+        vbench_cabac_encode_decision( cb, ctx, 1 );
+        ctx = levelgt1_ctx[0] + ctx_level;
+        if( coeff_abs < 15 )
+        {
+            cb->f8_bits_encoded += asm_cabac_size_unary[coeff_abs-1][cb->state[ctx]];
+            cb->state[ctx] = asm_cabac_transition_unary[coeff_abs-1][cb->state[ctx]];
+        }
+        else
+        {
+            cb->f8_bits_encoded += asm_cabac_size_unary[14][cb->state[ctx]];
+            cb->state[ctx] = asm_cabac_transition_unary[14][cb->state[ctx]];
+            vbench_cabac_encode_ue_bypass( cb, 0, coeff_abs - 15 );
+        }
+        node_ctx = coeff_abs_level_transition[1][0];
+    }
+    else
+    {
+        vbench_cabac_encode_decision( cb, ctx, 0 );
+        node_ctx = coeff_abs_level_transition[0][0];
+        vbench_cabac_encode_bypass( cb, 0 ); // sign
+    }
+
+    for( int i = last-1 ; i >= 0; i-- )
+    {
+        if( l[i] )
+        {
+            coeff_abs = abs(l[i]);
+            vbench_cabac_encode_decision( cb, ctx_sig + (b_8x8 ? sig_offset[i] :
+                                        chroma422dc ? asm_coeff_flag_offset_chroma_422_dc[i] : i), 1 );
+            vbench_cabac_encode_decision( cb, ctx_last + (b_8x8 ? asm_last_coeff_flag_offset_8x8[i] :
+                                        chroma422dc ? asm_coeff_flag_offset_chroma_422_dc[i] : i), 0 );
+            ctx = coeff_abs_level1_ctx[node_ctx] + ctx_level;
+
+            if( coeff_abs > 1 )
+            {
+                vbench_cabac_encode_decision( cb, ctx, 1 );
+                ctx = levelgt1_ctx[node_ctx] + ctx_level;
+                if( coeff_abs < 15 )
+                {
+                    cb->f8_bits_encoded += asm_cabac_size_unary[coeff_abs-1][cb->state[ctx]];
+                    cb->state[ctx] = asm_cabac_transition_unary[coeff_abs-1][cb->state[ctx]];
+                }
+                else
+                {
+                    cb->f8_bits_encoded += asm_cabac_size_unary[14][cb->state[ctx]];
+                    cb->state[ctx] = asm_cabac_transition_unary[14][cb->state[ctx]];
+                    vbench_cabac_encode_ue_bypass( cb, 0, coeff_abs - 15 );
+                }
+                node_ctx = coeff_abs_level_transition[1][node_ctx];
+            }
+            else
+            {
+                vbench_cabac_encode_decision( cb, ctx, 0 );
+                node_ctx = coeff_abs_level_transition[0][node_ctx];
+                vbench_cabac_encode_bypass( cb, 0 );
+            }
+        }
+        else
+            vbench_cabac_encode_decision( cb, ctx_sig + (b_8x8 ? sig_offset[i] :
+                                        chroma422dc ? asm_coeff_flag_offset_chroma_422_dc[i] : i), 0 );
+    }
+}
+
+void x264_cabac_block_residual_8x8_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+    x264_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 1, 0 );
+}
+void x264_cabac_block_residual_rd_c( vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+    x264_cabac_block_residual_internal( quantf, cb, ctx_block_cat, l, 0, 0 );
+}
+
+static ALWAYS_INLINE void x264_cabac_block_residual_8x8( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+#if ARCH_X86_64 && HAVE_MMX
+    bsf->cabac_block_residual_8x8_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+#else
+    x264_cabac_block_residual_8x8_rd_c( quantf, cb, ctx_block_cat, l );
+#endif
+}
+static ALWAYS_INLINE void x264_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf,  vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l )
+{
+#if ARCH_X86_64 && HAVE_MMX
+    bsf->cabac_block_residual_rd_internal( l, MB_INTERLACED, ctx_block_cat, cb );
+#else
+    x264_cabac_block_residual_rd_c( quantf, cb, ctx_block_cat, l );
+#endif
+}
+
 #if 0
 void vbench_cabac_encode_flush( x264_t *h, vbench_cabac_t *cb )
 {

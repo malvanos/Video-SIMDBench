@@ -49,6 +49,12 @@ typedef uint16_t udctcoef;
 #define QP_MAX (QP_MAX_SPEC+18)
 #define QP_MAX_MAX (51+2*6+18)
 
+
+#   define MB_INTERLACED 0
+#   define SLICE_MBAFF 0
+#   define PARAM_INTERLACED 0
+
+
 #define LOWRES_COST_MASK ((1<<14)-1)
 #define LOWRES_COST_SHIFT 14
 
