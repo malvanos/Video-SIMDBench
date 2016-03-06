@@ -120,7 +120,7 @@ static int cmp_bench( const void *a, const void *b )
     }
 }
 
-static void print_bench(void)
+static void print_bench_native(void)
 {
     uint16_t nops[10000];
     int nfuncs, nop_time=0;
@@ -140,17 +140,18 @@ static void print_bench(void)
 
     qsort( benchs, nfuncs, sizeof(bench_func_t), cmp_bench );
 
-    for( int i = 0; i < nfuncs; i++ )
+    for( int i = 0; i < nfuncs; i++ ){
+        printf( "%s : ", benchs[i].name);
         for( int j = 0; j < MAX_CPUS && (!j || benchs[i].vers[j].cpu); j++ )
         {
             int k;
             bench_t *b = &benchs[i].vers[j];
-            if( !b->den )
-                continue;
+         ///   if( !b->den )
+            //    continue;
             for( k = 0; k < j && benchs[i].vers[k].pointer != b->pointer; k++ );
             if( k < j )
                 continue;
-            printf( "%s_%s%s: %ld\n", benchs[i].name,
+            printf( "    %s%s: %ld", 
 #if HAVE_MMX
                     b->cpu&VSIMD_CPU_AVX2 ? "avx2" :
                     b->cpu&VSIMD_CPU_FMA3 ? "fma3" :
@@ -194,7 +195,70 @@ static void print_bench(void)
                     "",
                     (int64_t)(10*b->cycles/b->den - nop_time)/4 );
         }
+        printf("\n");
+    }
 }
+
+static void print_bench(void)
+{
+    uint16_t nops[10000];
+    int nfuncs, nop_time=0;
+
+    for( int i = 0; i < 10000; i++ )
+    {
+        uint32_t t = read_time();
+        nops[i] = read_time() - t;
+    }
+    qsort( nops, 10000, sizeof(uint16_t), cmp_nop );
+    for( int i = 500; i < 9500; i++ )
+        nop_time += nops[i];
+    nop_time /= 900;
+    printf( "nop: %d\n", nop_time );
+
+    for( nfuncs = 0; nfuncs < MAX_FUNCS && benchs[nfuncs].name; nfuncs++ );
+
+    qsort( benchs, nfuncs, sizeof(bench_func_t), cmp_bench );
+
+    int64_t results[32] = {0};
+
+    printf( "                                 C\t MMX\t SSE\t SSE2\t SSE3\t SSSE3\t SSE4\t SSE42\t AVX\t XOP\t FMA4\t FMA3\t AVX2\n")  ;
+    for( int i = 0; i < nfuncs; i++ ){
+        printf( "%30s : \t", benchs[i].name);
+
+     for( int j = 0; j < MAX_CPUS && (!j || benchs[i].vers[j].cpu); j++ )
+        {
+            int k;
+            bench_t *b = &benchs[i].vers[j];
+            for( k = 0; k < j && benchs[i].vers[k].pointer != b->pointer; k++ );
+            if( k < j )
+                continue;
+
+            if (b->cpu&VSIMD_CPU_AVX2) results[12] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_FMA3) results[11] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_FMA4) results[10] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_XOP) results[9] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_AVX) results[8] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSE42) results[7] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSE4) results[6] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSSE3) results[5] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSE3) results[4] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSE2) results[3] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_SSE) results[2] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else if (b->cpu&VSIMD_CPU_MMX) results[1] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+            else  results[0] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+
+        }
+
+
+        for( int j = 0; j < 13; j++ )
+        {
+            printf("%ld\t", results[j] );
+        }
+        memset(results, 0, 32*sizeof(int64_t));
+        printf("\n");
+    }
+}
+
 
 
 int64_t mdate( void )
