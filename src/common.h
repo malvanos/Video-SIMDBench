@@ -157,7 +157,12 @@ static const uint8_t x264_scan8[16*3 + 3] =
     0+ 0*8, 0+ 5*8, 0+10*8
 };
 
-
+enum slice_type_e
+{
+    SLICE_TYPE_P  = 0,
+    SLICE_TYPE_B  = 1,
+    SLICE_TYPE_I  = 2,
+};
 
 
 

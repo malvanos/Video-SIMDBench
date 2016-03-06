@@ -131,6 +131,44 @@
 #define WORD_SIZE sizeof(void*)
 
 
+/* For values with 4 bits or less. */
+static int ALWAYS_INLINE vbench_ctz_4bit( uint32_t x )
+{
+    static uint8_t lut[16] = {4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0};
+    return lut[x];
+}
+
+#if defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 3)
+#define x264_clz(x) __builtin_clz(x)
+#define x264_ctz(x) __builtin_ctz(x)
+#else
+static int ALWAYS_INLINE vbench_clz( uint32_t x )
+{
+    static uint8_t lut[16] = {4,3,2,2,1,1,1,1,0,0,0,0,0,0,0,0};
+    int y, z = (((x >> 16) - 1) >> 27) & 16;
+    x >>= z^16;
+    z += y = ((x - 0x100) >> 28) & 8;
+    x >>= y^8;
+    z += y = ((x - 0x10) >> 29) & 4;
+    x >>= y^4;
+    return z + lut[x];
+}
+
+static int ALWAYS_INLINE vbench_ctz( uint32_t x )
+{
+    static uint8_t lut[16] = {4,0,1,0,2,0,1,0,3,0,1,0,2,0,1,0};
+    int y, z = (((x & 0xffff) - 1) >> 27) & 16;
+    x >>= z;
+    z += y = (((x & 0xff) - 1) >> 28) & 8;
+    x >>= y;
+    z += y = (((x & 0xf) - 1) >> 29) & 4;
+    x >>= y;
+    return z + lut[x&0xf];
+}
+#endif
+
+
+
 #define asm __asm__
 
 
