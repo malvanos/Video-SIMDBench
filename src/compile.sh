@@ -37,16 +37,19 @@ yasm -I.  -DARCH_X86_64=1 -f elf64 -Worphan-labels -DSTACK_ALIGNMENT=32 -DHIGH_B
 
 
 
-
 #fake.sh icc  -O3 -vec-report=5 -std=c99 -DARCH_X86_64=1 -DHAVE_MMX \
 
+#clang-3.8 -O3 -std=c99 -DARCH_X86_64=1 -DHAVE_MMX \
+
+#gcc-5  -O3 -mtune=core-avx2 -march=core-avx2 -ftree-vectorize  -ftree-vectorizer-verbose=5 -funroll-all-loops -fopt-info-vec-missed  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX 
 
 
-#gcc -g -Wall -O0 --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX \
-#gcc-5  -O3 -mtune=core2 -march=core2 -ftree-vectorize  -ftree-vectorizer-verbose=5 -funroll-all-loops -fopt-info-vec-missed  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX \
+
+#gcc-5  -O3 -fno-tree-vectorize  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX \
 
 
-gcc-5  -O3 -fno-tree-vectorize  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX \
+
+gcc-5  -O3 -mtune=core-avx2 -march=core-avx2 -ftree-vectorize  -ftree-vectorizer-verbose=5 -funroll-all-loops -fopt-info-vec-all  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX  \
     cpu-detect.o checkasm-a.o predict-a.o const-a.o pixel-a.o  sad-a.o dct-a.o dct-64.o quant-a.o trellis-64.o  cabac-a.o mc-a.o mc-a2.o deblock-a.o  bitstream-a.o  \
     ./asm/x86/predict-c.c ./asm/x86/mc-c.c \
     ./c_kernels/pixel.c ./c_kernels/predict.c ./c_kernels/quant.c  ./c_kernels/dct.c  ./c_kernels/mc.c ./c_kernels/deblock.c ./c_kernels/bitstream.c ./c_kernels/cabac.c \
