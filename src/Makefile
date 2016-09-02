@@ -1,8 +1,35 @@
 
+# Preprocessor Flags:
+#      - SYS_WINDOWS
+#      - ARCH_ARM
+#      - ARCH_X86
+#      - ARCH_X86_64
+#      - ARCH_PPC
+#      - ARCH_AARCH64 
+#      - ARCH_MIPS
+#      - HAVE_X86_INLINE_ASM
+#      - HAVE_MMX
 
+
+### clang
+#CC=clang-3.8 
+#CFLAGS=-c -Wall -O3   -std=c99  -DARCH_X86_64=1 -DHAVE_MMX  -I./
+#CFLAGS=-c -Wall -O3  -fno-vectorize    -std=c99  -DARCH_X86_64=1 -DHAVE_MMX  -I./
+
+
+### icc
+#CC=icc
+#CFLAGS=-c -Wall -O3  -vec-report=5 -std=c99  -DARCH_X86_64=1 -DHAVE_MMX  -I./
+#CFLAGS=-c -Wall -O3  -no-vec  -std=c99  -DARCH_X86_64=1 -DHAVE_MMX  -I./
+
+### GCC
 CC=gcc
-CFLAGS=-c -Wall -O3 -fno-tree-vectorize  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX  -I./
-LDFLAGS= -lm
+CFLAGS=-c -Wall -O3 -mtune=core-avx2 -march=core-avx2 -ftree-vectorize  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX  -I./
+#CFLAGS=-c -Wall -O3 -fno-tree-vectorize  --std=gnu99 -DARCH_X86_64=1 -DHAVE_MMX  -I./
+
+
+# -O5 is generic
+LDFLAGS= -lm -O5
 SOURCES=  asm/x86/predict-c.c  	\
 	  asm/x86/mc-c.c 	\
           c_kernels/pixel.c	\
