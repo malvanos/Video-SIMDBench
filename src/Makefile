@@ -97,5 +97,6 @@ assm: $(ASMSOURCES)
 
 clean:
 	rm -rf $(ASMOBJECTS) $(OBJECTS)
+	rm -rf bench
 
 
