@@ -391,16 +391,6 @@ static double vbench_clip3f( double v, double f_min, double f_max )
     return ( (v < f_min) ? f_min : (v > f_max) ? f_max : v );
 }
 
-static int vbench_median( int a, int b, int c )
-{
-    int t = (a-b)&((a-b)>>31);
-    a -= t;
-    b += t;
-    b -= (b-c)&((b-c)>>31);
-    b += (a-b)&((a-b)>>31);
-    return b;
-}
-
 
 
 
