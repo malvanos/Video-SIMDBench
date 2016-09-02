@@ -224,8 +224,8 @@ enum slice_type_e
 
 
 
-#define BENCH_RUNS 10  // tradeoff between accuracy and speed
-#define BENCH_ALIGNS 16 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
+#define BENCH_RUNS 100  // tradeoff between accuracy and speed
+#define BENCH_ALIGNS 32 // number of stack+heap data alignments (another accuracy vs speed tradeoff)
 #define MAX_FUNCS 8192  // just has to be big enough to hold all the existing functions
 #define MAX_CPUS 64     // number of different combinations of cpu flags
 
