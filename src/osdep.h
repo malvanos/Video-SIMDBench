@@ -176,7 +176,7 @@ static int ALWAYS_INLINE vbench_ctz( uint32_t x )
 /* There is no way to forbid the compiler from using float instructions
  *  * before the emms so miscompilation could theoretically occur in the
  *   * unlikely event that the compiler reorders emms and float instructions. */
-#if HAVE_X86_INLINE_ASM
+#if ARCH_X86_64
 /* Clobbering memory makes the compiler less likely to reorder code. */
 #define vbench_emms() asm volatile( "emms":::"memory","st","st(1)","st(2)", \
                                           "st(3)","st(4)","st(5)","st(6)","st(7)" )
@@ -187,6 +187,28 @@ static int ALWAYS_INLINE vbench_ctz( uint32_t x )
 #define vbench_emms()
 #endif
 
+
+
+static inline uint32_t read_time(void)
+{
+    uint32_t a = 0;
+#if ARCH_X86_64
+    asm volatile( "lfence \n"
+                  "rdtsc  \n"
+                  : "=a"(a) :: "edx", "memory" );
+#elif ARCH_PPC
+    asm volatile( "mftb %0" : "=r"(a) :: "memory" );
+#elif ARCH_ARM     // ARMv7 only
+    asm volatile( "mrc p15, 0, %0, c9, c13, 0" : "=r"(a) :: "memory" );
+#elif ARCH_AARCH64
+    uint64_t b = 0;
+    asm volatile( "mrs %0, pmccntr_el0" : "=r"(b) :: "memory" );
+    a = b;
+#elif ARCH_MIPS
+    asm volatile( "rdhwr %0, $2" : "=r"(a) :: "memory" );
+#endif
+    return a;
+}
 
 
 #endif // OSDEP
