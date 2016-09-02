@@ -91,6 +91,32 @@ void asm_cabac_encode_ue_bypass( void *cb, int exp_bits, int val )
 
 
 
+#define DECL_CABAC_ASM() \
+static void run_cabac_decision_asm( uint8_t *dst )\
+{\
+    vbench_cabac_t cb;\
+    vbench_cabac_context_init( &cb, SLICE_TYPE_P, 26, 0 );\
+    vbench_cabac_encode_init( &cb, dst, dst+0xff0 );\
+    for( int i = 0; i < 0x1000; i++ )\
+        asm_cabac_encode_decision_asm( &cb, buf1[i]>>1, buf1[i]&1 );\
+}\
+static void run_cabac_bypass_asm( uint8_t *dst )\
+{\
+    vbench_cabac_t cb;\
+    vbench_cabac_context_init( &cb, SLICE_TYPE_P, 26, 0 );\
+    vbench_cabac_encode_init( &cb, dst, dst+0xff0 );\
+    for( int i = 0; i < 0x1000; i++ )\
+        asm_cabac_encode_bypass_asm( &cb, buf1[i]&1 );\
+}\
+static void run_cabac_terminal_asm( uint8_t *dst )\
+{\
+    vbench_cabac_t cb;\
+    vbench_cabac_context_init( &cb, SLICE_TYPE_P, 26, 0 );\
+    vbench_cabac_encode_init( &cb, dst, dst+0xff0 );\
+    for( int i = 0; i < 0x1000; i++ )\
+        asm_cabac_encode_terminal_asm( &cb );\
+}
+
 
 #define DECL_CABAC(cpu) \
 static void run_cabac_decision_##cpu( uint8_t *dst )\
@@ -117,22 +143,20 @@ static void run_cabac_terminal_##cpu( uint8_t *dst )\
     for( int i = 0; i < 0x1000; i++ )\
         vbench_cabac_encode_terminal_##cpu( &cb );\
 }
+
+
 DECL_CABAC(c)
 #if HAVE_MMX
-DECL_CABAC(asm)
+DECL_CABAC_ASM()
 #elif defined(ARCH_AARCH64)
-DECL_CABAC(asm)
+DECL_CABAC_ASM()
 #else
 #define run_cabac_decision_asm run_cabac_decision_c
 #define run_cabac_bypass_asm run_cabac_bypass_c
 #define run_cabac_terminal_asm run_cabac_terminal_c
 #endif
 
-#if 0
-void x264_cabac_block_residual_c( x264_t *h, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l );
-void x264_cabac_block_residual_8x8_rd_c( x264_t *h, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l );
-void x264_cabac_block_residual_rd_c( x264_t *h, vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l );
-#endif
+
 
 static bench_t* get_bench( const char *name, int cpu )
 {
@@ -245,17 +269,17 @@ name##fail:
 
     if( cpu_ref || run_cabac_decision_c == run_cabac_decision_asm )
         return ret;
-#if 0
     ok = 1; used_asm = 0;
-    x264_cabac_init( &h );
+    vbench_cabac_init( );
 
     set_func_name( "cabac_encode_decision" );
     memcpy( buf4, buf3, 0x1000 );
-    call_c( run_cabac_decision_c, &h, buf3 );
-    call_a( run_cabac_decision_asm, &h, buf4 );
+    call_c( run_cabac_decision_c, buf3 );
+    call_a( run_cabac_decision_asm,  buf4 );
     ok = !memcmp( buf3, buf4, 0x1000 );
     report( "cabac decision:" );
 
+#if 0
     set_func_name( "cabac_encode_bypass" );
     memcpy( buf4, buf3, 0x1000 );
     call_c( run_cabac_bypass_c, &h, buf3 );
