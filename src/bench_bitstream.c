@@ -125,7 +125,6 @@ int check_bitstream( int cpu_ref, int cpu_new )
     vbench_bitstream_init( 0, &bs_c );
     vbench_bitstream_init( cpu_ref, &bs_ref );
     vbench_bitstream_init( cpu_new, &bs_a );
-#if 0 
     if( bs_a.nal_escape != bs_ref.nal_escape )
     {
         int size = 0x4000;
@@ -161,7 +160,6 @@ int check_bitstream( int cpu_ref, int cpu_new )
         free(output2);
     }
     report( "nal escape:" );
-#endif
     return ret;
 }
 
