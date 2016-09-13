@@ -197,7 +197,7 @@ static void print_bench(void)
 
     int64_t results[32] = {0};
 
-    printf( "                                 C\t MMX\t SSE\t SSE2\t SSE3\t SSSE3\t SSE4\t SSE42\t AVX\t XOP\t FMA4\t FMA3\t AVX2\n")  ;
+    printf( "                                 \tC\tMMX\tSSE\tSSE2\tSSE3\tSSSE3\tSSE4\tSSE42\tAVX\tXOP\tFMA4\tFMA3\tAVX2\n")  ;
     for( int i = 0; i < nfuncs; i++ ){
         printf( "%30s : \t", benchs[i].name);
 
