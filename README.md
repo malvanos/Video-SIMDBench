@@ -1,56 +1,84 @@
-# Video-SIMDBench
+# Video-SIMDBench 2.0
 
-Video-SIMDBench: A benchmark for measuring the auto-vectorization performance
-of compilers in video applications. It runs the C (compiler-vectorized) kernels
-of an x264-style video codec pipeline — pixel SAD/SSD/SATD, DCT/IDCT, motion
-compensation, intra prediction, deblocking, quantization, CABAC/bitstream —
-and prints a timing table (cycles per call, C column by default; SIMD columns
+A benchmark for measuring the auto-vectorization performance of compilers in
+video applications. It runs the C (compiler-vectorized) kernels of real video
+codecs — pixel SAD/SSD/SATD, DCT/IDCT, motion compensation, intra prediction,
+loop filtering / deblocking, quantization, entropy coding — and prints a
+timing table (cycles per call; the `C` column is always there, SIMD columns
 appear when asm kernels are built).
 
-## Build (CMake, primary)
+Version 2.0 ports the current C kernels of **x264**, **x265** and **dav1d** on
+top of the modernized harness (CMake build, works on x86_64 and arm64, macOS
+and Linux).
+
+## What to clone
+
+The ported kernels in `kernels/` were taken from these upstream repos.
+Clone them into `third_party/` (reference only, not needed to build):
+
+```sh
+./fetch_deps.sh
+```
+
+or manually:
+
+```sh
+mkdir -p third_party
+git clone --depth 1 https://code.videolan.org/videolan/x264.git  third_party/x264
+git clone --depth 1 https://bitbucket.org/multicoreware/x265_git.git third_party/x265
+git clone --depth 1 https://code.videolan.org/videolan/dav1d.git third_party/dav1d
+```
+
+(GitHub mirrors also work if you have access: `github.com/videolan/x264`,
+`github.com/videolan/dav1d`, `github.com/multicoreware/x265_git`.)
+
+## Compile
+
+Requirements: CMake >= 3.16, a C99 compiler and a C++17 compiler
+(Apple clang or GCC).
 
 ```sh
 cmake -S . -B build
 cmake --build build -j8
 ```
 
-Requirements: CMake >= 3.16 and a C99 compiler (Apple clang / GCC). On x86_64
-Linux with `nasm` installed, `-DVBENCH_ASM=ON` additionally assembles the x86
-asm kernels from `src/asm/x86/*.asm` (off by default, and always off on Apple).
+This builds the `vbench` executable from `src/` plus every `kernels/<codec>/`
+package found (x264, x265, dav1d). On x86_64 Linux with `nasm` installed,
+`-DVBENCH_ASM=ON` additionally assembles the x86 asm kernels (off by default).
 
-A generated platform header `src/vbench_config.h` (SYS_\*/ARCH_\*/HAVE_\* macros)
-is produced by CMake `configure_file` and included first by `src/common.h`.
-
-The legacy `src/Makefile` / `src/compile.sh` still work as an alternative
-(C kernels only, portable — no `-march=core-avx2` outside x86):
-
-```sh
-cd src && make          # or: ./compile.sh
-```
+Legacy alternative (C kernels only): `cd src && make` or `./compile.sh`.
 
 ## Run
 
 ```sh
 ./build/vbench --bench              # run all checks + timing table
-./build/vbench --bench=sad          # only kernels whose name starts with "sad"
-./build/vbench --bench 12345        # fixed random seed (arg after --bench is the seed)
+./build/vbench --bench=x264:        # only x264 kernels
+./build/vbench --bench=dav1d:       # only dav1d kernels
+./build/vbench --bench 12345        # fixed random seed
 ```
 
-`--bench=<pattern>` selects kernels by name prefix. The run prints
-`VideoBench: All tests passed` when the correctness checks pass, followed by
-the timing table (first column `C` = C kernels).
+`--bench=<pattern>` filters kernels by name prefix. A successful run prints
+`VideoBench: All tests passed` followed by the timing table, e.g.:
 
-## Codec kernel packages
+```
+            x264: satd 16x16 :   14   0  0 ...
+            x265: dct 32x32 :    5358 0  0 ...
+           dav1d: cdef 8x8 :     173  0  0 ...
+```
 
-Ported codec kernels live in `kernels/<codec>/` (see `PORTING.md`). The root
-`CMakeLists.txt` automatically picks up every `kernels/<codec>/` directory that
-contains a `CMakeLists.txt`, builds it as a static library, links it into
-`vbench`, and defines `VBENCH_HAVE_<CODEC>=1`, which makes
-`src/bench_codecs.c` call that codec's `vbench_codec_<codec>()` bench module.
-The codec's kernels then show up in the timing table with `<codec>:` name
-prefixes — no changes to the harness are needed.
+## Layout
 
-Currently ported: `kernels/x264/` (42 kernels), `kernels/x265/` (40),
-`kernels/dav1d/` (27, 8bpc C kernels). The upstream sources they were taken
-from are shallow-cloned into `third_party/` (reference only, gitignored);
-re-fetch them any time with `./fetch_deps.sh`.
+```
+├── CMakeLists.txt        # build; auto-discovers kernels/<codec>/
+├── fetch_deps.sh         # clones the upstream repos into third_party/
+├── PORTING.md            # how to add a new codec kernel package
+├── src/                  # the benchmark harness (x264-derived bench modules)
+├── kernels/x264/         # 42 ported x264 C kernels   + bench_x264.c
+├── kernels/x265/         # 40 ported x265 C++ kernels + bench_x265.cpp
+├── kernels/dav1d/        # 27 ported dav1d 8bpc C kernels + bench_dav1d.c
+└── third_party/          # upstream clones (gitignored, fetch_deps.sh)
+```
+
+Adding another codec: create `kernels/<codec>/` with the ported sources, a
+`bench_<codec>.c` implementing `vbench_codec_<codec>()`, and a
+`CMakeLists.txt` — see `PORTING.md`. No harness changes needed.
