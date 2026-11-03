@@ -14,19 +14,16 @@ Video-SIMDBench/
 ├── src/                      # existing harness + bench modules (agent A owns)
 │   ├── bench_codecs.c        # new: dispatches to codec bench modules (agent A)
 │   └── ...
-├── third_party/<codec>/      # shallow clone of upstream (each codec agent owns its own)
-└── kernels/<codec>/          # ported kernels + bench module (each codec agent owns its own)
+└── kernels/<codec>/          # copied upstream kernel sources (symbols prefixed) + bench module
     ├── CMakeLists.txt
     ├── <ported upstream sources, symbols prefixed vb<codec>_...>
     └── bench_<codec>.c       # implements int vbench_codec_<codec>(int cpu_ref, int cpu_new)
 ```
 
-File ownership (do not edit files outside your list — other agents own them):
-
-- Agent A (build): root `CMakeLists.txt`, everything in `src/`, `README.md`, `.gitignore`.
-- Agent B (x264): `third_party/x264/`, `kernels/x264/`.
-- Agent C (x265): `third_party/x265/`, `kernels/x265/`.
-- Agent D (dav1d): `third_party/dav1d/`, `kernels/dav1d/`.
+The tree is self-contained: codec sources are copied into `kernels/<codec>/`,
+nothing is cloned or fetched at build time. When porting a new codec, clone
+the upstream repo anywhere outside this repo (e.g. /tmp) purely as a
+reference, then copy the needed files in.
 
 ## Harness API available to codec bench modules (implemented in src/bench.h)
 
@@ -109,8 +106,7 @@ target_link_libraries(vbench PRIVATE kernels_<codec>)
 
 ## Porting rules (keep it simple — do not over-engineer)
 
-1. Shallow-clone the upstream repo into `third_party/<codec>/` (reference).
-2. Copy the upstream C/C++ kernel sources you need into `kernels/<codec>/`.
+1. Copy the upstream C/C++ kernel sources you need into `kernels/<codec>/` (self-contained; no external deps).
 3. Mechanically prefix every *global* symbol so nothing clashes with the
    existing harness or other codecs: e.g. `x264_` -> `vbx264_`,
    `dav1d_` -> `vbdav1d_`. For x265 (C++, `namespace x265`) no rename is

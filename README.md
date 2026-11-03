@@ -7,30 +7,10 @@ loop filtering / deblocking, quantization, entropy coding — and prints a
 timing table (cycles per call; the `C` column is always there, SIMD columns
 appear when asm kernels are built).
 
-Version 2.0 ports the current C kernels of **x264**, **x265** and **dav1d** on
-top of the modernized harness (CMake build, works on x86_64 and arm64, macOS
-and Linux).
-
-## What to clone
-
-The ported kernels in `kernels/` were taken from these upstream repos.
-Clone them into `third_party/` (reference only, not needed to build):
-
-```sh
-./fetch_deps.sh
-```
-
-or manually:
-
-```sh
-mkdir -p third_party
-git clone --depth 1 https://code.videolan.org/videolan/x264.git  third_party/x264
-git clone --depth 1 https://bitbucket.org/multicoreware/x265_git.git third_party/x265
-git clone --depth 1 https://code.videolan.org/videolan/dav1d.git third_party/dav1d
-```
-
-(GitHub mirrors also work if you have access: `github.com/videolan/x264`,
-`github.com/videolan/dav1d`, `github.com/multicoreware/x265_git`.)
+Version 2.0 embeds the current C kernels of **x264**, **x265** and **dav1d**
+directly in this repository (copied, not linked) on top of the modernized
+harness (CMake build, works on x86_64 and arm64, macOS and Linux). No external
+dependencies are needed to build.
 
 ## Compile
 
@@ -70,15 +50,19 @@ Legacy alternative (C kernels only): `cd src && make` or `./compile.sh`.
 
 ```
 ├── CMakeLists.txt        # build; auto-discovers kernels/<codec>/
-├── fetch_deps.sh         # clones the upstream repos into third_party/
 ├── PORTING.md            # how to add a new codec kernel package
 ├── src/                  # the benchmark harness (x264-derived bench modules)
-├── kernels/x264/         # 42 ported x264 C kernels   + bench_x264.c
-├── kernels/x265/         # 40 ported x265 C++ kernels + bench_x265.cpp
-├── kernels/dav1d/        # 27 ported dav1d 8bpc C kernels + bench_dav1d.c
-└── third_party/          # upstream clones (gitignored, fetch_deps.sh)
+├── kernels/x264/         # 42 embedded x264 C kernels    + bench_x264.c   (upstream: code.videolan.org/videolan/x264)
+├── kernels/x265/         # 40 embedded x265 C++ kernels  + bench_x265.cpp (upstream: bitbucket.org/multicoreware/x265_git)
+├── kernels/dav1d/        # 27 embedded dav1d 8bpc C kernels + bench_dav1d.c (upstream: code.videolan.org/videolan/dav1d)
+└── LICENSE               # GPL (harness, derived from x264); kernels keep their upstream licenses in each kernels/<codec>/ dir
 ```
 
-Adding another codec: create `kernels/<codec>/` with the ported sources, a
+The codec kernel sources are copied into `kernels/<codec>/` (with symbols
+prefixed, e.g. `x264_` → `vbx264_`) together with their upstream LICENSE/COPYING
+files, so the tree is fully self-contained — nothing is cloned or fetched at
+build time.
+
+Adding another codec: create `kernels/<codec>/` with the copied sources, a
 `bench_<codec>.c` implementing `vbench_codec_<codec>()`, and a
 `CMakeLists.txt` — see `PORTING.md`. No harness changes needed.
