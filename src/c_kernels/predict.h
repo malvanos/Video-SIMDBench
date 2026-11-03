@@ -27,9 +27,12 @@
 #ifndef PREDICT_H
 #define PREDICT_H
 
+#ifndef VBENCH_PREDICT_TYPEDEFS
+#define VBENCH_PREDICT_TYPEDEFS
 typedef void (*vbench_predict_t)( pixel *src );
 typedef void (*vbench_predict8x8_t)( pixel *src, pixel edge[36] );
 typedef void (*vbench_predict_8x8_filter_t) ( pixel *src, pixel edge[36], int i_neighbor, int i_filters );
+#endif
 
 enum intra_chroma_pred_e
 {

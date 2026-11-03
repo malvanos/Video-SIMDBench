@@ -49,15 +49,6 @@
 #include "macroblock.h"
 
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
-
 int quiet = 0;
 
 #define report( name ) { \
@@ -66,36 +57,6 @@ int quiet = 0;
     if( !ok ) ret = -1; \
 }
 
-
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
-static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
-static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_8x8c_names[7] = { "dc", "h", "v", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr", "vr", "hd", "vl", "hu", "dcl", "dct", "dc8" };
-static const char **intra_predict_8x8_names = intra_predict_4x4_names;
-static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
 
 
 #define call_c1(func,...) func(__VA_ARGS__)
@@ -171,7 +132,7 @@ int check_dct( int cpu_ref, int cpu_new )
     }
 
 #define TEST_DCT( name, t1, t2, size ) \
-    if( dct_asm.name != dct_ref.name ) \
+    if( (dct_asm.name != dct_ref.name || (!VBENCH_HAVE_ASM && dct_asm.name)) ) \
     { \
         set_func_name( #name ); \
         used_asm = 1; \
@@ -236,7 +197,7 @@ int check_dct( int cpu_ref, int cpu_new )
     //vbench_cqm_delete( dequant4_mf, dequant8_mf, unquant4_mf, unquant8_mf, quant4_mf,   quant8_mf,    quant4_bias,    quant8_bias,  quant4_bias0,  quant8_bias0,   nr_offset_emergency  );
 
 #define TEST_IDCT( name, src ) \
-    if( dct_asm.name != dct_ref.name ) \
+    if( (dct_asm.name != dct_ref.name || (!VBENCH_HAVE_ASM && dct_asm.name)) ) \
     { \
         set_func_name( #name ); \
         used_asm = 1; \
@@ -270,7 +231,7 @@ int check_dct( int cpu_ref, int cpu_new )
 
 #define TEST_DCTDC( name )\
     ok = 1; used_asm = 0;\
-    if( dct_asm.name != dct_ref.name )\
+    if( (dct_asm.name != dct_ref.name || (!VBENCH_HAVE_ASM && dct_asm.name)) )\
     {\
         set_func_name( #name );\
         used_asm = 1;\
@@ -298,7 +259,7 @@ int check_dct( int cpu_ref, int cpu_new )
 
 #define TEST_DCTDC_CHROMA( name )\
     ok = 1; used_asm = 0;\
-    if( dct_asm.name != dct_ref.name )\
+    if( (dct_asm.name != dct_ref.name || (!VBENCH_HAVE_ASM && dct_asm.name)) )\
     {\
         set_func_name( #name );\
         used_asm = 1;\
@@ -647,7 +608,7 @@ int vbench_cqm_init( uint8_t *scaling_list[8],  uint8_t   *chroma_qp_table )
     }
     /* Emergency mode denoising. */
     vbench_emms();
-    nr_offset_emergency = memalign( NATIVE_ALIGN,  sizeof(*nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
+    nr_offset_emergency = vbench_memalign( NATIVE_ALIGN,  sizeof(*nr_offset_emergency)*(QP_MAX-QP_MAX_SPEC) );
     for( int q = 0; q < QP_MAX - QP_MAX_SPEC; q++ )
         for( int cat = 0; cat < 3 + CHROMA444; cat++ )
         {

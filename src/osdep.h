@@ -29,6 +29,10 @@
 #ifndef OSDEP_H
 #define OSDEP_H
 
+/* Generated platform config (SYS_x / ARCH_x / HAVE_x macros). osdep.h is often
+ * included before common.h, so pull it in here as well. */
+#include "vbench_config.h"
+
 #ifdef __INTEL_COMPILER
 #include <mathimf.h>
 #else
@@ -202,7 +206,13 @@ static inline uint32_t read_time(void)
     asm volatile( "mrc p15, 0, %0, c9, c13, 0" : "=r"(a) :: "memory" );
 #elif ARCH_AARCH64
     uint64_t b = 0;
+#if defined(__APPLE__)
+    /* pmccntr_el0 is not accessible from EL0 on Apple Silicon (it traps);
+     * the virtual counter cntvct_el0 is always readable. */
+    asm volatile( "mrs %0, cntvct_el0" : "=r"(b) :: "memory" );
+#else
     asm volatile( "mrs %0, pmccntr_el0" : "=r"(b) :: "memory" );
+#endif
     a = b;
 #elif ARCH_MIPS
     asm volatile( "rdhwr %0, $2" : "=r"(a) :: "memory" );

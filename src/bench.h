@@ -168,8 +168,44 @@ static const struct { uint8_t w, h; } vbech_pixel_size[12] =
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////////////////
+// Shared harness globals and API — defined once in bench.c / main.c (see PORTING.md)
+extern char func_name[100];
+extern bench_func_t benchs[MAX_FUNCS];
+extern int bench_pattern_len;
+extern const char *bench_pattern;
+/* buf1, buf2: initialised to random data and shouldn't write into them */
+extern uint8_t *buf1, *buf2;
+/* buf3, buf4: used to store output */
+extern uint8_t *buf3, *buf4;
+/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
+extern pixel *pbuf1, *pbuf2;
+/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
+extern pixel *pbuf3, *pbuf4;
+
+#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
+bench_t *get_bench( const char *name, int cpu );
+
+/* bench modules, one per kernel family (bench_*.c) */
+int check_pixel( int cpu_ref, int cpu_new );
+int check_dct( int cpu_ref, int cpu_new );
+int check_mc( int cpu_ref, int cpu_new );
+int check_intra( int cpu_ref, int cpu_new );
+int check_deblock( int cpu_ref, int cpu_new );
+int check_quant( int cpu_ref, int cpu_new );
+int check_cabac( int cpu_ref, int cpu_new );
+int check_bitstream( int cpu_ref, int cpu_new );
+/* dispatches to the kernels/<codec>/ bench modules (src/bench_codecs.c) */
+int check_codec_kernels( int cpu_ref, int cpu_new );
+/* implemented by kernels/<codec>/bench_<codec>.c when that codec is present */
+int vbench_codec_x264( int cpu_ref, int cpu_new );
+int vbench_codec_x265( int cpu_ref, int cpu_new );
+int vbench_codec_dav1d( int cpu_ref, int cpu_new );
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
 #define call_c1(func,...) func(__VA_ARGS__)
-#if ARCH_X86_64
+#if ARCH_X86_64 && VBENCH_HAVE_ASM
 /* Evil hack: detect incorrect assumptions that 32-bit ints are zero-extended to 64-bit.
  * This is done by clobbering the stack with junk around the stack pointer and calling the
  * assembly function through checkasm_call with added dummy arguments which forces all
@@ -184,9 +220,11 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
     uint64_t r = (rand() & 0xffff) * 0x0001000100010001ULL; \
     asm_checkasm_stack_clobber( r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r ); /* max_args+6 */ \
     asm_checkasm_call(( intptr_t(*)())func, &ok, 0, 0, 0, 0, __VA_ARGS__ ); })
-#elif ARCH_X86 || (ARCH_AARCH64 && !defined(__APPLE__)) || ARCH_ARM
+#elif (ARCH_X86 || ARCH_ARM || (ARCH_AARCH64 && !defined(__APPLE__))) && VBENCH_HAVE_ASM
 #define call_a1(func,...) checkasm_call( (intptr_t(*)())func, &ok, __VA_ARGS__ )
 #else
+/* No assembly kernels linked for this build (e.g. Apple arm64, where the
+ * asm path must not be used): fall back to a plain C call. */
 #define call_a1 call_c1
 #endif
 
@@ -233,9 +271,12 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef VBENCH_PREDICT_TYPEDEFS
+#define VBENCH_PREDICT_TYPEDEFS
 typedef void (*vbench_predict_t)( pixel *src );
 typedef void (*vbench_predict8x8_t)( pixel *src, pixel edge[36] );
 typedef void (*vbench_predict_8x8_filter_t) ( pixel *src, pixel edge[36], int i_neighbor, int i_filters );
+#endif
 
 
 // SSD assumes all args aligned
@@ -526,10 +567,22 @@ typedef struct
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
+/* kernel init functions (implemented in c_kernels/) */
+void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf );
+void vbench_dct_init( int cpu, vbench_dct_function_t *dctf );
+void vbench_zigzag_init( int cpu, vbench_zigzag_function_t *pf_progressive, vbench_zigzag_function_t *pf_interlaced );
+int  vbench_cqm_init( uint8_t *scaling_list[8], uint8_t *chroma_qp_table );
+void vbench_quant_init( int i_cqm_preset, int cpu, vbench_quant_function_t *pf );
+void vbench_mc_init( int cpu, vbench_mc_functions_t *pf, int cpu_independent );
+void vbench_deblock_init( int cpu, vbench_deblock_function_t *pf, int b_mbaff );
+void vbench_bitstream_init( int cpu, vbench_bitstream_function_t *pf );
+void vbench_predict_16x16_init( int cpu, vbench_predict_t pf[7] );
+void vbench_predict_8x8c_init( int cpu, vbench_predict_t pf[7] );
+void vbench_predict_8x16c_init( int cpu, vbench_predict_t pf[7] );
+void vbench_predict_8x8_init( int cpu, vbench_predict8x8_t pf[12], vbench_predict_8x8_filter_t *predict_filter );
+void vbench_predict_4x4_init( int cpu, vbench_predict_t pf[12] );
+void vbench_cabac_context_init( vbench_cabac_t *cb, int i_slice_type, int i_qp, int i_model );
+void vbench_cabac_encode_init( vbench_cabac_t *cb, uint8_t *p_data, uint8_t *p_end );
 
 int run_benchmarks(int i);
 

@@ -48,24 +48,6 @@
 #include "osdep.h"
 #include "macroblock.h"
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-extern uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-extern uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-extern pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-extern pixel *pbuf3, *pbuf4;
-
-
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
 #define report( name ) { \
     if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
@@ -73,44 +55,6 @@ extern  bench_func_t benchs[MAX_FUNCS];
 }
 
 
-
-
-
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
-
-static int cmp_nop( const void *a, const void *b )
-{
-    return *(uint16_t*)a - *(uint16_t*)b;
-}
-
-static int cmp_bench( const void *a, const void *b )
-{
-    // asciibetical sort except preserving numbers
-    const char *sa = ((bench_func_t*)a)->name;
-    const char *sb = ((bench_func_t*)b)->name;
-    for( ;; sa++, sb++ )
-    {
-        if( !*sa && !*sb )
-            return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
-        if( *sa != *sb )
-            return *sa - *sb;
-    }
-}
 
 
 
@@ -223,7 +167,7 @@ int check_quant( int cpu_ref, int cpu_new )
         }
 
 #define TEST_QUANT_DC( name, cqm ) \
-        if( qf_a.name != qf_ref.name ) \
+        if( (qf_a.name != qf_ref.name || (!VBENCH_HAVE_ASM && qf_a.name)) ) \
         { \
             set_func_name( #name ); \
             used_asms[0] = 1; \
@@ -249,7 +193,7 @@ int check_quant( int cpu_ref, int cpu_new )
         }
 
 #define TEST_QUANT( qname, block, type, w, maxj ) \
-        if( qf_a.qname != qf_ref.qname ) \
+        if( (qf_a.qname != qf_ref.qname || (!VBENCH_HAVE_ASM && qf_a.qname)) ) \
         { \
             set_func_name( #qname ); \
             used_asms[0] = 1; \
@@ -283,7 +227,7 @@ int check_quant( int cpu_ref, int cpu_new )
 
 
 #define TEST_DEQUANT( qname, dqname, block, w ) \
-        if( qf_a.dqname != qf_ref.dqname ) \
+        if( (qf_a.dqname != qf_ref.dqname || (!VBENCH_HAVE_ASM && qf_a.dqname)) ) \
         { \
             set_func_name( "%s_%s", #dqname, i_cqm?"cqm":"flat" ); \
             used_asms[1] = 1; \
@@ -311,7 +255,7 @@ int check_quant( int cpu_ref, int cpu_new )
         TEST_DEQUANT( quant_4x4, dequant_4x4, CQM_4PY, 4 );
 
 #define TEST_DEQUANT_DC( qname, dqname, block, w ) \
-        if( qf_a.dqname != qf_ref.dqname ) \
+        if( (qf_a.dqname != qf_ref.dqname || (!VBENCH_HAVE_ASM && qf_a.dqname)) ) \
         { \
             set_func_name( "%s_%s", #dqname, i_cqm?"cqm":"flat" ); \
             used_asms[1] = 1; \
@@ -335,7 +279,7 @@ int check_quant( int cpu_ref, int cpu_new )
 
         TEST_DEQUANT_DC( quant_4x4_dc, dequant_4x4_dc, CQM_4IY, 4 );
 
-        if( qf_a.idct_dequant_2x4_dc != qf_ref.idct_dequant_2x4_dc )
+        if( (qf_a.idct_dequant_2x4_dc != qf_ref.idct_dequant_2x4_dc || (!VBENCH_HAVE_ASM && qf_a.idct_dequant_2x4_dc)) )
         {
             set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
@@ -357,7 +301,7 @@ int check_quant( int cpu_ref, int cpu_new )
             }
         }
 
-        if( qf_a.idct_dequant_2x4_dconly != qf_ref.idct_dequant_2x4_dconly )
+        if( (qf_a.idct_dequant_2x4_dconly != qf_ref.idct_dequant_2x4_dconly || (!VBENCH_HAVE_ASM && qf_a.idct_dequant_2x4_dconly)) )
         {
             set_func_name( "idct_dequant_2x4_dc_%s", i_cqm?"cqm":"flat" );
             used_asms[1] = 1;
@@ -382,7 +326,7 @@ int check_quant( int cpu_ref, int cpu_new )
         }
 
 #define TEST_OPTIMIZE_CHROMA_DC( optname, size ) \
-        if( qf_a.optname != qf_ref.optname ) \
+        if( (qf_a.optname != qf_ref.optname || (!VBENCH_HAVE_ASM && qf_a.optname)) ) \
         { \
             set_func_name( #optname ); \
             used_asms[2] = 1; \
@@ -431,7 +375,7 @@ int check_quant( int cpu_ref, int cpu_new )
     report( "optimize chroma dc :" );
 
     ok = 1; used_asm = 0;
-    if( qf_a.denoise_dct != qf_ref.denoise_dct )
+    if( (qf_a.denoise_dct != qf_ref.denoise_dct || (!VBENCH_HAVE_ASM && qf_a.denoise_dct)) )
     {
         used_asm = 1;
         for( int size = 16; size <= 64; size += 48 )
@@ -451,7 +395,7 @@ int check_quant( int cpu_ref, int cpu_new )
     report( "denoise dct :" );
 
 #define TEST_DECIMATE( decname, w, ac, thresh ) \
-    if( qf_a.decname != qf_ref.decname ) \
+    if( (qf_a.decname != qf_ref.decname || (!VBENCH_HAVE_ASM && qf_a.decname)) ) \
     { \
         set_func_name( #decname ); \
         used_asm = 1; \
@@ -488,7 +432,7 @@ int check_quant( int cpu_ref, int cpu_new )
     report( "decimate_score :" );
 
 #define TEST_LAST( last, lastname, size, ac ) \
-    if( qf_a.last != qf_ref.last ) \
+    if( (qf_a.last != qf_ref.last || (!VBENCH_HAVE_ASM && qf_a.last)) ) \
     { \
         set_func_name( #lastname ); \
         used_asm = 1; \
@@ -521,7 +465,7 @@ int check_quant( int cpu_ref, int cpu_new )
     report( "coeff_last :" );
 
 #define TEST_LEVELRUN( lastname, name, size, ac ) \
-    if( qf_a.lastname != qf_ref.lastname ) \
+    if( (qf_a.lastname != qf_ref.lastname || (!VBENCH_HAVE_ASM && qf_a.lastname)) ) \
     { \
         set_func_name( #name ); \
         used_asm = 1; \

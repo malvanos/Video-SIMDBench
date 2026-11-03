@@ -1581,7 +1581,7 @@ static ALWAYS_INLINE int vbench_cabac_size_decision_noup2( uint8_t *state, long 
 #define vbench_cabac_encode_decision vbench_cabac_encode_decision_asm
 #define vbench_cabac_encode_bypass asm_cabac_encode_bypass_asm
 #define vbench_cabac_encode_terminal vbench_cabac_encode_terminal_asm
-#elif defined(ARCH_AARCH64)
+#elif defined(ARCH_AARCH64) && VBENCH_HAVE_ASM
 #define vbench_cabac_encode_decision vbench_cabac_encode_decision_asm
 #define vbench_cabac_encode_bypass asm_cabac_encode_bypass_asm
 #define vbench_cabac_encode_terminal vbench_cabac_encode_terminal_asm
@@ -1696,7 +1696,7 @@ void vbench_cabac_block_residual_8x8( vbench_bitstream_function_t *bsf, vbench_q
 #if ARCH_X86_64 && HAVE_MMX
     bsf->cabac_block_residual_8x8_rd_internal( l, interlaced, ctx_block_cat, cb );
 #else
-    vbench_cabac_block_residual_8x8_rd_c( quantf, cb, ctx_block_cat, l );
+    vbench_cabac_block_residual_8x8_rd_c( quantf, cb, ctx_block_cat, l, interlaced );
 #endif
 }
 void vbench_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant_function_t *quantf,  vbench_cabac_t *cb, int ctx_block_cat, dctcoef *l, int interlaced)
@@ -1704,7 +1704,7 @@ void vbench_cabac_block_residual( vbench_bitstream_function_t *bsf, vbench_quant
 #if ARCH_X86_64 && HAVE_MMX
     bsf->cabac_block_residual_rd_internal( l, interlaced, ctx_block_cat, cb );
 #else
-    vbench_cabac_block_residual_rd_c( quantf, cb, ctx_block_cat, l );
+    vbench_cabac_block_residual_rd_c( quantf, cb, ctx_block_cat, l, interlaced );
 #endif
 }
 

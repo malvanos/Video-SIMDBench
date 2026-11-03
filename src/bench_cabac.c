@@ -51,9 +51,6 @@
 #include "c_kernels/pixel.h"
 #include "c_kernels/predict.h"
 
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
 //void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val )
 void asm_cabac_encode_ue_bypass( void *cb, int exp_bits, int val )
 {
@@ -75,42 +72,6 @@ void asm_cabac_encode_ue_bypass( void *cb, int exp_bits, int val )
 }
 
 #if 0
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
-
-static int cmp_nop( const void *a, const void *b )
-{
-    return *(uint16_t*)a - *(uint16_t*)b;
-}
-
-static int cmp_bench( const void *a, const void *b )
-{
-    // asciibetical sort except preserving numbers
-    const char *sa = ((bench_func_t*)a)->name;
-    const char *sb = ((bench_func_t*)b)->name;
-    for( ;; sa++, sb++ )
-    {
-        if( !*sa && !*sb )
-            return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
-        if( *sa != *sb )
-            return *sa - *sb;
-    }
-}
-
 #if ARCH_X86 || ARCH_X86_64
 int x264_stack_pagealign( int (*func)(), int align );
 
@@ -121,7 +82,7 @@ intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #define x264_stack_pagealign( func, align ) func()
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
 intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
@@ -222,7 +183,7 @@ static void run_cabac_terminal_##cpu( x264_t *h, uint8_t *dst )\
 DECL_CABAC(c)
 #if HAVE_MMX
 DECL_CABAC(asm)
-#elif defined(ARCH_AARCH64)
+#elif defined(ARCH_AARCH64) && VBENCH_HAVE_ASM
 DECL_CABAC(asm)
 #else
 #define run_cabac_decision_asm run_cabac_decision_c
@@ -250,7 +211,7 @@ int check_cabac( int cpu_ref, int cpu_new )
 
 #define CABAC_RESIDUAL(name, start, end, rd)\
 {\
-    if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || (cpu_new&CPU_SSE2_IS_SLOW)) )\
+    if( bs_a.name##_internal && (bs_a.name##_internal != bs_ref.name##_internal || !VBENCH_HAVE_ASM || (cpu_new&CPU_SSE2_IS_SLOW)) )\
     {\
         used_asm = 1;\
         set_func_name( #name );\

@@ -96,85 +96,6 @@ static int cmp_bench( const void *a, const void *b )
     }
 }
 
-static void print_bench_native(void)
-{
-    uint16_t nops[10000];
-    int nfuncs, nop_time=0;
-
-    for( int i = 0; i < 10000; i++ )
-    {
-        uint32_t t = read_time();
-        nops[i] = read_time() - t;
-    }
-    qsort( nops, 10000, sizeof(uint16_t), cmp_nop );
-    for( int i = 500; i < 9500; i++ )
-        nop_time += nops[i];
-    nop_time /= 900;
-    printf( "nop: %d\n", nop_time );
-
-    for( nfuncs = 0; nfuncs < MAX_FUNCS && benchs[nfuncs].name; nfuncs++ );
-
-    qsort( benchs, nfuncs, sizeof(bench_func_t), cmp_bench );
-
-    for( int i = 0; i < nfuncs; i++ ){
-        printf( "%s : ", benchs[i].name);
-        for( int j = 0; j < MAX_CPUS && (!j || benchs[i].vers[j].cpu); j++ )
-        {
-            int k;
-            bench_t *b = &benchs[i].vers[j];
-         ///   if( !b->den )
-            //    continue;
-            for( k = 0; k < j && benchs[i].vers[k].pointer != b->pointer; k++ );
-            if( k < j )
-                continue;
-            printf( "    %s%s: %ld", 
-#if HAVE_MMX
-                    b->cpu&VSIMD_CPU_AVX2 ? "avx2" :
-                    b->cpu&VSIMD_CPU_FMA3 ? "fma3" :
-                    b->cpu&VSIMD_CPU_FMA4 ? "fma4" :
-                    b->cpu&VSIMD_CPU_XOP ? "xop" :
-                    b->cpu&VSIMD_CPU_AVX ? "avx" :
-                    b->cpu&VSIMD_CPU_SSE42 ? "sse42" :
-                    b->cpu&VSIMD_CPU_SSE4 ? "sse4" :
-                    b->cpu&VSIMD_CPU_SSSE3 ? "ssse3" :
-                    b->cpu&VSIMD_CPU_SSE3 ? "sse3" :
-                    /* print sse2slow only if there's also a sse2fast version of the same func */
-                    b->cpu&VSIMD_CPU_SSE2_IS_SLOW && j<MAX_CPUS-1 && b[1].cpu&VSIMD_CPU_SSE2_IS_FAST && !(b[1].cpu&VSIMD_CPU_SSE3) ? "sse2slow" :
-                    b->cpu&VSIMD_CPU_SSE2 ? "sse2" :
-                    b->cpu&VSIMD_CPU_SSE ? "sse" :
-                    b->cpu&VSIMD_CPU_MMX ? "mmx" :
-#elif ARCH_PPC
-                    b->cpu&VSIMD_CPU_ALTIVEC ? "altivec" :
-#elif ARCH_ARM
-                    b->cpu&VSIMD_CPU_NEON ? "neon" :
-                    b->cpu&VSIMD_CPU_ARMV6 ? "armv6" :
-#elif ARCH_AARCH64
-                    b->cpu&VSIMD_CPU_NEON ? "neon" :
-                    b->cpu&VSIMD_CPU_ARMV8 ? "armv8" :
-#elif ARCH_MIPS
-                    b->cpu&VSIMD_CPU_MSA ? "msa" :
-#endif
-                    "c",
-#if HAVE_MMX
-                    b->cpu&VSIMD_CPU_CACHELINE_32 ? "_c32" :
-                    b->cpu&VSIMD_CPU_SLOW_ATOM && b->cpu&VSIMD_CPU_CACHELINE_64 ? "_c64_atom" :
-                    b->cpu&VSIMD_CPU_CACHELINE_64 ? "_c64" :
-                    b->cpu&VSIMD_CPU_SLOW_SHUFFLE ? "_slowshuffle" :
-                    b->cpu&VSIMD_CPU_LZCNT ? "_lzcnt" :
-                    b->cpu&VSIMD_CPU_BMI2 ? "_bmi2" :
-                    b->cpu&VSIMD_CPU_BMI1 ? "_bmi1" :
-                    b->cpu&VSIMD_CPU_SLOW_CTZ ? "_slow_ctz" :
-                    b->cpu&VSIMD_CPU_SLOW_ATOM ? "_atom" :
-#elif ARCH_ARM
-                    b->cpu&VSIMD_CPU_FAST_NEON_MRC ? "_fast_mrc" :
-#endif
-                    "",
-                    (int64_t)(10*b->cycles/b->den - nop_time)/4 );
-        }
-        printf("\n");
-    }
-}
-
 static void print_bench(void)
 {
     uint16_t nops[10000];
@@ -228,7 +149,7 @@ static void print_bench(void)
 
         for( int j = 0; j < 13; j++ )
         {
-            printf("%ld\t", results[j] );
+            printf("%ld\t", (long)results[j] );
         }
         memset(results, 0, 32*sizeof(int64_t));
         printf("\n");
@@ -275,8 +196,8 @@ int main(int argc, char *argv[])
     fprintf( stderr, "VideoBench: using random seed %u\n", seed );
     srand( seed );
 
-    buf1 = memalign(32, 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );
-    pbuf1 = memalign(32, 0x1e00*sizeof(pixel) + 32*BENCH_ALIGNS );
+    buf1 = vbench_memalign(32, 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );
+    pbuf1 = vbench_memalign(32, 0x1e00*sizeof(pixel) + 32*BENCH_ALIGNS );
     if( !buf1 || !pbuf1 )
     {
         fprintf( stderr, "malloc failed, unable to initiate tests!\n" );

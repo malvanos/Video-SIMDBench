@@ -49,17 +49,6 @@
 
 
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-extern uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-extern uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-extern pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-extern pixel *pbuf3, *pbuf4;
-
-
-
 #define report( name ) { \
     if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
@@ -67,39 +56,11 @@ extern pixel *pbuf3, *pbuf4;
 }
 
 
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
-static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_8x8c_names[7] = { "dc", "h", "v", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr", "vr", "hd", "vl", "hu", "dcl", "dct", "dc8" };
-static const char **intra_predict_8x8_names = intra_predict_4x4_names;
-static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
 
 const uint8_t vbench_hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
 const uint8_t vbench_hpel_ref1[16] = {0,0,1,0,2,2,3,2,2,2,3,2,2,2,3,2};
 
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
 extern vbench_weight_t vbench_weight_none[3];
 int check_mc( int cpu_ref, int cpu_new )
 {
@@ -122,7 +83,7 @@ int check_mc( int cpu_ref, int cpu_new )
     vbench_pixel_init( 0, &pixf );
 
 #define MC_TEST_LUMA( w, h ) \
-        if( mc_a.mc_luma != mc_ref.mc_luma && !(w&(w-1)) && h<=16 ) \
+        if( (mc_a.mc_luma != mc_ref.mc_luma || (!VBENCH_HAVE_ASM && mc_a.mc_luma)) && !(w&(w-1)) && h<=16 ) \
         { \
             const vbench_weight_t *weight = vbench_weight_none; \
             set_func_name( "mc_luma_%dx%d", w, h ); \
@@ -137,7 +98,7 @@ int check_mc( int cpu_ref, int cpu_new )
                 ok = 0; \
             } \
         } \
-        if( mc_a.get_ref != mc_ref.get_ref ) \
+        if( (mc_a.get_ref != mc_ref.get_ref || (!VBENCH_HAVE_ASM && mc_a.get_ref)) ) \
         { \
             pixel *ref = dst2; \
             intptr_t ref_stride = 32; \
@@ -159,7 +120,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
 
 #define MC_TEST_CHROMA( w, h ) \
-        if( mc_a.mc_chroma != mc_ref.mc_chroma ) \
+        if( (mc_a.mc_chroma != mc_ref.mc_chroma || (!VBENCH_HAVE_ASM && mc_a.mc_chroma)) ) \
         { \
             set_func_name( "mc_chroma_%dx%d", w, h ); \
             used_asm = 1; \
@@ -220,7 +181,7 @@ int check_mc( int cpu_ref, int cpu_new )
     { \
         memcpy( pbuf3, pbuf1+320, 320 * sizeof(pixel) ); \
         memcpy( pbuf4, pbuf1+320, 320 * sizeof(pixel) ); \
-        if( mc_a.name[i] != mc_ref.name[i] ) \
+        if( (mc_a.name[i] != mc_ref.name[i] || (!VBENCH_HAVE_ASM && mc_a.name[i])) ) \
         { \
             set_func_name( "%s_%s", #name, pixel_names[i] ); \
             used_asm = 1; \
@@ -254,7 +215,7 @@ int check_mc( int cpu_ref, int cpu_new )
         /* w12 is the same as w16 in some cases */ \
         if( i == 3 && mc_a.name[i] == mc_a.name[i+1] ) \
             continue; \
-        if( mc_a.name[i] != mc_ref.name[i] ) \
+        if( (mc_a.name[i] != mc_ref.name[i] || (!VBENCH_HAVE_ASM && mc_a.name[i])) ) \
         { \
             set_func_name( "%s_w%d", #name, j ); \
             used_asm = 1; \
@@ -319,7 +280,7 @@ int check_mc( int cpu_ref, int cpu_new )
     ok = 1; used_asm = 0;
     for( int height = 8; height <= 16; height += 8 )
     {
-        if( mc_a.store_interleave_chroma != mc_ref.store_interleave_chroma )
+        if( (mc_a.store_interleave_chroma != mc_ref.store_interleave_chroma || (!VBENCH_HAVE_ASM && mc_a.store_interleave_chroma)) )
         {
             set_func_name( "store_interleave_chroma" );
             used_asm = 1;
@@ -334,7 +295,7 @@ int check_mc( int cpu_ref, int cpu_new )
                 break;
             }
         }
-        if( mc_a.load_deinterleave_chroma_fenc != mc_ref.load_deinterleave_chroma_fenc )
+        if( (mc_a.load_deinterleave_chroma_fenc != mc_ref.load_deinterleave_chroma_fenc || (!VBENCH_HAVE_ASM && mc_a.load_deinterleave_chroma_fenc)) )
         {
             set_func_name( "load_deinterleave_chroma_fenc" );
             used_asm = 1;
@@ -347,7 +308,7 @@ int check_mc( int cpu_ref, int cpu_new )
                 break;
             }
         }
-        if( mc_a.load_deinterleave_chroma_fdec != mc_ref.load_deinterleave_chroma_fdec )
+        if( (mc_a.load_deinterleave_chroma_fdec != mc_ref.load_deinterleave_chroma_fdec || (!VBENCH_HAVE_ASM && mc_a.load_deinterleave_chroma_fdec)) )
         {
             set_func_name( "load_deinterleave_chroma_fdec" );
             used_asm = 1;
@@ -367,7 +328,7 @@ int check_mc( int cpu_ref, int cpu_new )
         int w, h, src_stride;
     } plane_specs[] = { {2,2,2}, {8,6,8}, {20,31,24}, {32,8,40}, {256,10,272}, {504,7,505}, {528,6,528}, {256,10,-256}, {263,9,-264}, {1904,1,0} };
     ok = 1; used_asm = 0;
-    if( mc_a.plane_copy != mc_ref.plane_copy )
+    if( (mc_a.plane_copy != mc_ref.plane_copy || (!VBENCH_HAVE_ASM && mc_a.plane_copy)) )
     {
         set_func_name( "plane_copy" );
         used_asm = 1;
@@ -393,7 +354,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
-    if( mc_a.plane_copy_swap != mc_ref.plane_copy_swap )
+    if( (mc_a.plane_copy_swap != mc_ref.plane_copy_swap || (!VBENCH_HAVE_ASM && mc_a.plane_copy_swap)) )
     {
         set_func_name( "plane_copy_swap" );
         used_asm = 1;
@@ -419,7 +380,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
-    if( mc_a.plane_copy_interleave != mc_ref.plane_copy_interleave )
+    if( (mc_a.plane_copy_interleave != mc_ref.plane_copy_interleave || (!VBENCH_HAVE_ASM && mc_a.plane_copy_interleave)) )
     {
         set_func_name( "plane_copy_interleave" );
         used_asm = 1;
@@ -445,7 +406,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
-    if( mc_a.plane_copy_deinterleave != mc_ref.plane_copy_deinterleave )
+    if( (mc_a.plane_copy_deinterleave != mc_ref.plane_copy_deinterleave || (!VBENCH_HAVE_ASM && mc_a.plane_copy_deinterleave)) )
     {
         set_func_name( "plane_copy_deinterleave" );
         used_asm = 1;
@@ -471,7 +432,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
-    if( mc_a.plane_copy_deinterleave_rgb != mc_ref.plane_copy_deinterleave_rgb )
+    if( (mc_a.plane_copy_deinterleave_rgb != mc_ref.plane_copy_deinterleave_rgb || (!VBENCH_HAVE_ASM && mc_a.plane_copy_deinterleave_rgb)) )
     {
         set_func_name( "plane_copy_deinterleave_rgb" );
         used_asm = 1;
@@ -503,7 +464,7 @@ int check_mc( int cpu_ref, int cpu_new )
     }
     report( "plane_copy :" );
 
-    if( mc_a.plane_copy_deinterleave_v210 != mc_ref.plane_copy_deinterleave_v210 )
+    if( (mc_a.plane_copy_deinterleave_v210 != mc_ref.plane_copy_deinterleave_v210 || (!VBENCH_HAVE_ASM && mc_a.plane_copy_deinterleave_v210)) )
     {
         set_func_name( "plane_copy_deinterleave_v210" );
         ok = 1; used_asm = 1;
@@ -530,7 +491,7 @@ int check_mc( int cpu_ref, int cpu_new )
         report( "v210 :" );
     }
 
-    if( mc_a.hpel_filter != mc_ref.hpel_filter )
+    if( (mc_a.hpel_filter != mc_ref.hpel_filter || (!VBENCH_HAVE_ASM && mc_a.hpel_filter)) )
     {
         pixel *srchpel = pbuf1+8+2*64;
         pixel *dstc[3] = { pbuf3+8, pbuf3+8+16*64, pbuf3+8+32*64 };
@@ -560,7 +521,7 @@ int check_mc( int cpu_ref, int cpu_new )
         report( "hpel filter :" );
     }
 
-    if( mc_a.frame_init_lowres_core != mc_ref.frame_init_lowres_core )
+    if( (mc_a.frame_init_lowres_core != mc_ref.frame_init_lowres_core || (!VBENCH_HAVE_ASM && mc_a.frame_init_lowres_core)) )
     {
         pixel *dstc[4] = { pbuf3, pbuf3+1024, pbuf3+2048, pbuf3+3072 };
         pixel *dsta[4] = { pbuf4, pbuf4+1024, pbuf4+2048, pbuf4+3072 };
@@ -593,7 +554,7 @@ int check_mc( int cpu_ref, int cpu_new )
     }
 
 #define INTEGRAL_INIT( name, size, offset, cmp_len, ... )\
-    if( mc_a.name != mc_ref.name )\
+    if( (mc_a.name != mc_ref.name || (!VBENCH_HAVE_ASM && mc_a.name)) )\
     {\
         intptr_t stride = 96;\
         set_func_name( #name );\
@@ -618,7 +579,7 @@ int check_mc( int cpu_ref, int cpu_new )
     report( "integral init :" );
 
     ok = 1; used_asm = 0;
-    if( mc_a.mbtree_propagate_cost != mc_ref.mbtree_propagate_cost )
+    if( (mc_a.mbtree_propagate_cost != mc_ref.mbtree_propagate_cost || (!VBENCH_HAVE_ASM && mc_a.mbtree_propagate_cost)) )
     {
         used_asm = 1;
         vbench_emms();
@@ -654,7 +615,7 @@ int check_mc( int cpu_ref, int cpu_new )
         }
     }
 
-    if( mc_a.mbtree_propagate_list != mc_ref.mbtree_propagate_list )
+    if( (mc_a.mbtree_propagate_list != mc_ref.mbtree_propagate_list || (!VBENCH_HAVE_ASM && mc_a.mbtree_propagate_list)) )
     {
         used_asm = 1;
         for( int i = 0; i < 8; i++ )
@@ -707,7 +668,7 @@ int check_mc( int cpu_ref, int cpu_new )
     }
     report( "mbtree :" );
 
-    if( mc_a.memcpy_aligned != mc_ref.memcpy_aligned )
+    if( (mc_a.memcpy_aligned != mc_ref.memcpy_aligned || (!VBENCH_HAVE_ASM && mc_a.memcpy_aligned)) )
     {
         set_func_name( "memcpy_aligned" );
         ok = 1; used_asm = 1;
@@ -726,7 +687,7 @@ int check_mc( int cpu_ref, int cpu_new )
         report( "memcpy aligned :" );
     }
 
-    if( mc_a.memzero_aligned != mc_ref.memzero_aligned )
+    if( (mc_a.memzero_aligned != mc_ref.memzero_aligned || (!VBENCH_HAVE_ASM && mc_a.memzero_aligned)) )
     {
         set_func_name( "memzero_aligned" );
         ok = 1; used_asm = 1;

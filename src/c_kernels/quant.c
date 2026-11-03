@@ -41,7 +41,7 @@
 #if ARCH_ARM
 #   include "arm/quant.h"
 #endif
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
 #   include "aarch64/quant.h"
 #endif
 #if ARCH_MIPS
@@ -747,14 +747,14 @@ void vbench_quant_init(int i_cqm_preset, int cpu, vbench_quant_function_t *pf )
     }
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     if( cpu&CPU_ARMV6 )
     {
         pf->coeff_last4 = asm_coeff_last4_arm;
         pf->coeff_last8 = asm_coeff_last8_arm;
     }
 #endif
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         pf->quant_2x2_dc   = asm_quant_2x2_dc_neon;
@@ -774,7 +774,7 @@ void vbench_quant_init(int i_cqm_preset, int cpu, vbench_quant_function_t *pf )
         pf->decimate_score64 = asm_decimate_score64_neon;
     }
 #endif
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     if( cpu&CPU_ARMV8 )
     {
         pf->coeff_last4 = asm_coeff_last4_aarch64;

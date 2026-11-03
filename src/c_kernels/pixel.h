@@ -505,5 +505,9 @@ int pixel_vsad_10b( pixel *src, intptr_t stride, int height );
 #undef DECL_X4
 #undef DECL_ADS
 
+float vbench_pixel_ssim_wxh( vbench_pixel_function_t *pixf,
+                             pixel *pix1, intptr_t stride1,
+                             pixel *pix2, intptr_t stride2,
+                             int width, int height, void *buf, int *cnt );
 
 #endif /* PIXEL_H */

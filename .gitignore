@@ -31,3 +31,15 @@
 # Debug files
 *.dSYM/
 *.swp
+
+# CMake build directory
+/build/
+
+# Generated platform config header (CMake configure_file / src/Makefile)
+/src/vbench_config.h
+
+# Legacy make/compile.sh output
+/src/bench
+
+# Upstream reference clones (re-fetch with ./fetch_deps.sh)
+/third_party/

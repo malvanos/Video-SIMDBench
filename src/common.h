@@ -2,11 +2,13 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+/* Generated platform config (SYS_x / ARCH_x / HAVE_x macros). Must come first. */
+#include "vbench_config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <malloc.h>
 #include <ctype.h>
 #include <inttypes.h>
 
@@ -14,6 +16,16 @@
 
 
 #include <assert.h>
+
+/* Portable aligned allocation: memalign() is a GNU extension and
+ * <malloc.h> does not exist on macOS, so use posix_memalign(). */
+static inline void *vbench_memalign( size_t alignment, size_t size )
+{
+    void *p = NULL;
+    if( posix_memalign( &p, alignment, size ) != 0 )
+        return NULL;
+    return p;
+}
 
 typedef uint16_t pixel_10b;
 typedef uint64_t pixel4_10b;
@@ -371,27 +383,27 @@ int check_pixel( int cpu_ref, int cpu_new );
 
 
 
-static pixel vbench_clip_pixel( int x )
+static inline pixel vbench_clip_pixel( int x )
 {
     return ( (x & ~PIXEL_MAX) ? (-x)>>31 & PIXEL_MAX : x );
 }
 
-static pixel_10b vbench_clip_pixel_10b( int x )
+static inline pixel_10b vbench_clip_pixel_10b( int x )
 {
     return ( (x & ~PIXEL_MAX_10B) ? (-x)>>31 & PIXEL_MAX_10B : x );
 }
 
-static int vbench_clip3( int v, int i_min, int i_max )
+static inline int vbench_clip3( int v, int i_min, int i_max )
 {
     return ( (v < i_min) ? i_min : (v > i_max) ? i_max : v );
 }
 
-static double vbench_clip3f( double v, double f_min, double f_max )
+static inline double vbench_clip3f( double v, double f_min, double f_max )
 {
     return ( (v < f_min) ? f_min : (v > f_max) ? f_max : v );
 }
 
-static int vbench_median( int a, int b, int c )
+static inline int vbench_median( int a, int b, int c )
 {
     int t = (a-b)&((a-b)>>31);
     a -= t;

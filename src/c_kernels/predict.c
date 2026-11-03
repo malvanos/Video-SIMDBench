@@ -928,11 +928,11 @@ void vbench_predict_16x16_init( int cpu, vbench_predict_t pf[7] )
         vbench_predict_16x16_init_altivec( pf );
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_predict_16x16_init_arm( cpu, pf );
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_predict_16x16_init_aarch64( cpu, pf );
 #endif
 
@@ -971,11 +971,11 @@ void vbench_predict_8x8c_init( int cpu, vbench_predict_t pf[7] )
         vbench_predict_8x8c_init_altivec( pf );
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_predict_8x8c_init_arm( cpu, pf );
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_predict_8x8c_init_aarch64( cpu, pf );
 #endif
 
@@ -1003,11 +1003,11 @@ void vbench_predict_8x16c_init( int cpu, vbench_predict_t pf[7] )
     vbench_predict_8x16c_init_mmx( cpu, pf );
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_predict_8x16c_init_arm( cpu, pf );
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_predict_8x16c_init_aarch64( cpu, pf );
 #endif
 }
@@ -1032,11 +1032,11 @@ void vbench_predict_8x8_init( int cpu, vbench_predict8x8_t pf[12], vbench_predic
     vbench_predict_8x8_init_mmx( cpu, pf, predict_filter );
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_predict_8x8_init_arm( cpu, pf, predict_filter );
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_predict_8x8_init_aarch64( cpu, pf, predict_filter );
 #endif
 
@@ -1069,11 +1069,11 @@ void vbench_predict_4x4_init( int cpu, vbench_predict_t pf[12] )
     vbench_predict_4x4_init_mmx( cpu, pf );
 #endif
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_predict_4x4_init_arm( cpu, pf );
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_predict_4x4_init_aarch64( cpu, pf );
 #endif
 }

@@ -51,16 +51,6 @@
 #include "c_kernels/pixel.h"
 #include "c_kernels/predict.h"
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-pixel *pbuf3, *pbuf4;
-
-
 #define report( name ) { \
     if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
@@ -69,57 +59,7 @@ pixel *pbuf3, *pbuf4;
 
 
 
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
 static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
-static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_8x8c_names[7] = { "dc", "h", "v", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr", "vr", "hd", "vl", "hu", "dcl", "dct", "dc8" };
-static const char **intra_predict_8x8_names = intra_predict_4x4_names;
-static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
-
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
-
-static int cmp_nop( const void *a, const void *b )
-{
-    return *(uint16_t*)a - *(uint16_t*)b;
-}
-
-static int cmp_bench( const void *a, const void *b )
-{
-    // asciibetical sort except preserving numbers
-    const char *sa = ((bench_func_t*)a)->name;
-    const char *sb = ((bench_func_t*)b)->name;
-    for( ;; sa++, sb++ )
-    {
-        if( !*sa && !*sb )
-            return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
-        if( *sa != *sb )
-            return *sa - *sb;
-    }
-}
 
 #if ARCH_X86 || ARCH_X86_64
 int vbench_stack_pagealign( int (*func)(), int align );
@@ -131,7 +71,7 @@ intptr_t vbench_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #define vbench_stack_pagealign( func, align ) func()
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
 intptr_t vbench_checkasm_call( intptr_t (*func)(), int *ok, ... );
 #endif
 
@@ -708,7 +648,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     }
 #endif //HAVE_MMX
 
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     if( cpu&CPU_ARMV6 )
     {
         pixf->sad[PIXEL_4x8] = asm_pixel_sad_4x8_armv6;
@@ -767,7 +707,7 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
     }
 #endif
 
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         INIT8( sad, _neon, asm_ );
@@ -900,7 +840,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     for( int i = 0; i < ARRAY_ELEMS(pixel_c.name); i++ ) \
     { \
         int res_c, res_asm; \
-        if( pixel_asm.name[i] != pixel_ref.name[i] ) \
+        if( (pixel_asm.name[i] != pixel_ref.name[i] || (!VBENCH_HAVE_ASM && pixel_asm.name[i])) ) \
         { \
             set_func_name( "%s_%s", #name, pixel_names[i] ); \
             used_asm = 1; \
@@ -938,7 +878,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     // FIXME FIXME TODO: IT does not work!
 #if 0
     ok = 1, used_asm = 0;
-    if( pixel_asm.sa8d_satd[PIXEL_16x16] != pixel_ref.sa8d_satd[PIXEL_16x16] )
+    if( (pixel_asm.sa8d_satd[PIXEL_16x16] != pixel_ref.sa8d_satd[PIXEL_16x16] || (!VBENCH_HAVE_ASM && pixel_asm.sa8d_satd[PIXEL_16x16])) )
     {
         set_func_name( "sa8d_satd_%s", pixel_names[PIXEL_16x16] );
         used_asm = 1;
@@ -982,7 +922,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     { \
         ALIGNED_16( int res_c[4] ) = {0}; \
         ALIGNED_16( int res_asm[4] ) = {0}; \
-        if( pixel_asm.sad_x##N[i] && pixel_asm.sad_x##N[i] != pixel_ref.sad_x##N[i] ) \
+        if( pixel_asm.sad_x##N[i] && (pixel_asm.sad_x##N[i] != pixel_ref.sad_x##N[i] || (!VBENCH_HAVE_ASM && pixel_asm.sad_x##N[i])) ) \
         { \
             set_func_name( "sad_x%d_%s", N, pixel_names[i] ); \
             used_asm = 1; \
@@ -1019,7 +959,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     TEST_PIXEL_X(4);
 
 #define TEST_PIXEL_VAR( i ) \
-    if( pixel_asm.var[i] != pixel_ref.var[i] ) \
+    if( (pixel_asm.var[i] != pixel_ref.var[i] || (!VBENCH_HAVE_ASM && pixel_asm.var[i])) ) \
     { \
         set_func_name( "%s_%s", "var", pixel_names[i] ); \
         used_asm = 1; \
@@ -1044,7 +984,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     report( "pixel var :" );
 
 #define TEST_PIXEL_VAR2( i ) \
-    if( pixel_asm.var2[i] != pixel_ref.var2[i] ) \
+    if( (pixel_asm.var2[i] != pixel_ref.var2[i] || (!VBENCH_HAVE_ASM && pixel_asm.var2[i])) ) \
     { \
         int res_c, res_asm, ssd_c, ssd_asm; \
         set_func_name( "%s_%s", "var2", pixel_names[i] ); \
@@ -1065,7 +1005,7 @@ int check_pixel( int cpu_ref, int cpu_new )
 
     ok = 1; used_asm = 0;
     for( int i = 0; i < 4; i++ )
-        if( pixel_asm.hadamard_ac[i] != pixel_ref.hadamard_ac[i] )
+        if( (pixel_asm.hadamard_ac[i] != pixel_ref.hadamard_ac[i] || (!VBENCH_HAVE_ASM && pixel_asm.hadamard_ac[i])) )
         {
             set_func_name( "hadamard_ac_%s", pixel_names[i] );
             used_asm = 1;
@@ -1093,7 +1033,7 @@ int check_pixel( int cpu_ref, int cpu_new )
         for( int j = 0; j < 16; j++ )
             pbuf4[16*i+j] = -((i+j)&1) & PIXEL_MAX;
     ok = 1; used_asm = 0;
-    if( pixel_asm.vsad != pixel_ref.vsad )
+    if( (pixel_asm.vsad != pixel_ref.vsad || (!VBENCH_HAVE_ASM && pixel_asm.vsad)) )
     {
         for( int h = 2; h <= 32; h += 2 )
         {
@@ -1119,7 +1059,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     report( "pixel vsad :" );
 
     ok = 1; used_asm = 0;
-    if( pixel_asm.asd8 != pixel_ref.asd8 )
+    if( (pixel_asm.asd8 != pixel_ref.asd8 || (!VBENCH_HAVE_ASM && pixel_asm.asd8)) )
     {
         set_func_name( "asd8" );
         used_asm = 1;
@@ -1134,7 +1074,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     report( "pixel asd :" );
 
 #define TEST_INTRA_X3( name, i8x8, ... ) \
-    if( pixel_asm.name && pixel_asm.name != pixel_ref.name ) \
+    if( pixel_asm.name && (pixel_asm.name != pixel_ref.name || (!VBENCH_HAVE_ASM && pixel_asm.name)) ) \
     { \
         ALIGNED_16( int res_c[3] ); \
         ALIGNED_16( int res_asm[3] ); \
@@ -1152,7 +1092,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     }
 
 #define TEST_INTRA_X9( name, cmp ) \
-    if( pixel_asm.name && pixel_asm.name != pixel_ref.name ) \
+    if( pixel_asm.name && (pixel_asm.name != pixel_ref.name || (!VBENCH_HAVE_ASM && pixel_asm.name)) ) \
     { \
         set_func_name( #name ); \
         used_asm = 1; \
@@ -1199,7 +1139,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     }
 
 #define TEST_INTRA8_X9( name, cmp ) \
-    if( pixel_asm.name && pixel_asm.name != pixel_ref.name ) \
+    if( pixel_asm.name && (pixel_asm.name != pixel_ref.name || (!VBENCH_HAVE_ASM && pixel_asm.name)) ) \
     { \
         set_func_name( #name ); \
         used_asm = 1; \
@@ -1289,7 +1229,7 @@ int check_pixel( int cpu_ref, int cpu_new )
     report( "intra sad_x9 :" );
 
     ok = 1; used_asm = 0;
-    if( pixel_asm.ssd_nv12_core != pixel_ref.ssd_nv12_core )
+    if( (pixel_asm.ssd_nv12_core != pixel_ref.ssd_nv12_core || (!VBENCH_HAVE_ASM && pixel_asm.ssd_nv12_core)) )
     {
         used_asm = 1;
         set_func_name( "ssd_nv12" );
@@ -1311,8 +1251,8 @@ int check_pixel( int cpu_ref, int cpu_new )
 
     report( "ssd_nv12 :" );
 
-    if( pixel_asm.ssim_4x4x2_core != pixel_ref.ssim_4x4x2_core ||
-        pixel_asm.ssim_end4 != pixel_ref.ssim_end4 )
+    if( (pixel_asm.ssim_4x4x2_core != pixel_ref.ssim_4x4x2_core || (!VBENCH_HAVE_ASM && pixel_asm.ssim_4x4x2_core)) ||
+        (pixel_asm.ssim_end4 != pixel_ref.ssim_end4 || (!VBENCH_HAVE_ASM && pixel_asm.ssim_end4)) )
     {
         int cnt;
         float res_c, res_a;

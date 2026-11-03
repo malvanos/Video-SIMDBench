@@ -45,7 +45,9 @@
 
 #include "common.h"
 #include "osdep.h"
+#include "bench.h"
 #include "pixel.h"
+#include "predict.h"
 
 
 /****************************************************************************
@@ -1022,7 +1024,7 @@ INTRA_MBCMP_8x8_C(sa8d,, _c, vbench_)
 INTRA_MBCMP_8x8( sad, _mmx2,  _c, asm_)
 INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2, asm_)
 #endif
-#if !HIGH_BIT_DEPTH && (HAVE_ARMV6 || ARCH_AARCH64)
+#if !HIGH_BIT_DEPTH && (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
 INTRA_MBCMP_8x8( sad, _neon, _neon )
 INTRA_MBCMP_8x8(sa8d, _neon, _neon )
 #endif
@@ -1108,7 +1110,7 @@ INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _avx, _mmx2, asm_ )
 INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _xop, _mmx2, asm_ )
 #endif
 #endif
-#if !HIGH_BIT_DEPTH && HAVE_ARMV6
+#if !HIGH_BIT_DEPTH && HAVE_ARMV6 && VBENCH_HAVE_ASM
 INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _armv6, asm_ )
 INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _armv6, asm_ )
 INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
@@ -1118,7 +1120,7 @@ INTRA_MBCMP(satd,  8x16, dc, h,  v, c, _neon, _c, asm_ )
 INTRA_MBCMP( sad, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
 INTRA_MBCMP(satd, 16x16,  v, h, dc,  , _neon, _neon, asm_ )
 #endif
-#if !HIGH_BIT_DEPTH && ARCH_AARCH64
+#if !HIGH_BIT_DEPTH && ARCH_AARCH64 && VBENCH_HAVE_ASM
 INTRA_MBCMP( sad,  4x4,   v, h, dc,  , _neon, _neon, asm_ )
 INTRA_MBCMP(satd,  4x4,   v, h, dc,  , _neon, _neon, asm_ )
 INTRA_MBCMP( sad,  8x8,  dc, h,  v, c, _neon, _neon, asm_ )
@@ -1260,7 +1262,7 @@ float ssim_end4_10b( int sum0[5][4], int sum1[5][4], int width )
     return ssim;
 }
 
-float vbench_pixel_ssim_wxh( 
+float vbench_pixel_ssim_wxh( vbench_pixel_function_t *pixf,
                            pixel *pix1, intptr_t stride1,
                            pixel *pix2, intptr_t stride2,
                            int width, int height, void *buf, int *cnt )
@@ -1277,10 +1279,10 @@ float vbench_pixel_ssim_wxh(
         {
             XCHG( void*, sum0, sum1 );
             for( int x = 0; x < width; x+=2 )
-                ssim_4x4x2_core( &pix1[4*(x+z*stride1)], stride1, &pix2[4*(x+z*stride2)], stride2, &sum0[x] );
+                pixf->ssim_4x4x2_core( &pix1[4*(x+z*stride1)], stride1, &pix2[4*(x+z*stride2)], stride2, &sum0[x] );
         }
         for( int x = 0; x < width-1; x += 4 )
-            ssim += ssim_end4( sum0+x, sum1+x, MIN(4,width-x-1) );
+            ssim += pixf->ssim_end4( sum0+x, sum1+x, MIN(4,width-x-1) );
     }
     *cnt = (height-1) * (width-1);
     return ssim;

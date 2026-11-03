@@ -653,10 +653,10 @@ void vbench_mc_init( int cpu, vbench_mc_functions_t *pf, int cpu_independent )
     if( cpu&vbench_CPU_ALTIVEC )
         vbench_mc_altivec_init( pf );
 #endif
-#if HAVE_ARMV6
+#if HAVE_ARMV6 && VBENCH_HAVE_ASM
     vbench_mc_init_arm( cpu, pf );
 #endif
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     vbench_mc_init_aarch64( cpu, pf );
 #endif
 #if HAVE_MSA

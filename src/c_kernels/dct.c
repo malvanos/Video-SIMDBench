@@ -41,7 +41,7 @@
 #if ARCH_ARM
 #   include "asm/arm/dct.h"
 #endif
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
 #   include "asm/aarch64/dct.h"
 #endif
 #if ARCH_MIPS
@@ -736,7 +736,7 @@ void vbench_dct_init( int cpu, vbench_dct_function_t *dctf )
     }
 #endif
 
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         dctf->sub4x4_dct    = asm_sub4x4_dct_neon;
@@ -1034,11 +1034,11 @@ void vbench_zigzag_init( int cpu, vbench_zigzag_function_t *pf_progressive, vben
         pf_progressive->scan_4x4 = asm_zigzag_scan_4x4_frame_altivec;
     }
 #endif
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         pf_progressive->scan_4x4  = asm_zigzag_scan_4x4_frame_neon;
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
         pf_interlaced->scan_4x4   = asm_zigzag_scan_4x4_field_neon;
         pf_interlaced->scan_8x8   = asm_zigzag_scan_8x8_field_neon;
         pf_interlaced->sub_4x4    = asm_zigzag_sub_4x4_field_neon;
@@ -1093,7 +1093,7 @@ void vbench_zigzag_init( int cpu, vbench_zigzag_function_t *pf_progressive, vben
 #endif // HIGH_BIT_DEPTH
 #endif
 #if !HIGH_BIT_DEPTH
-#if ARCH_AARCH64
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         pf_interlaced->interleave_8x8_cavlc =

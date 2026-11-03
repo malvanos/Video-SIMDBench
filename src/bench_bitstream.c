@@ -49,24 +49,6 @@
 #include "osdep.h"
 #include "macroblock.h"
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-extern uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-extern uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-extern pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-extern pixel *pbuf3, *pbuf4;
-
-
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
 #define report( name ) { \
     if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
@@ -77,42 +59,6 @@ extern  bench_func_t benchs[MAX_FUNCS];
 
 
 
-
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
-
-static int cmp_nop( const void *a, const void *b )
-{
-    return *(uint16_t*)a - *(uint16_t*)b;
-}
-
-static int cmp_bench( const void *a, const void *b )
-{
-    // asciibetical sort except preserving numbers
-    const char *sa = ((bench_func_t*)a)->name;
-    const char *sb = ((bench_func_t*)b)->name;
-    for( ;; sa++, sb++ )
-    {
-        if( !*sa && !*sb )
-            return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
-        if( *sa != *sb )
-            return *sa - *sb;
-    }
-}
 
 int check_bitstream( int cpu_ref, int cpu_new )
 {
@@ -126,7 +72,7 @@ int check_bitstream( int cpu_ref, int cpu_new )
     vbench_bitstream_init( cpu_ref, &bs_ref );
     vbench_bitstream_init( cpu_new, &bs_a );
 #if 0 
-    if( bs_a.nal_escape != bs_ref.nal_escape )
+    if( (bs_a.nal_escape != bs_ref.nal_escape || (!VBENCH_HAVE_ASM && bs_a.nal_escape)) )
     {
         int size = 0x4000;
         uint8_t *input = malloc(size+100);

@@ -48,76 +48,11 @@
 #include "bench.h"
 #include "osdep.h"
 
-/* buf1, buf2: initialised to random data and shouldn't write into them */
-extern uint8_t *buf1, *buf2;
-/* buf3, buf4: used to store output */
-extern uint8_t *buf3, *buf4;
-/* pbuf1, pbuf2: initialised to random pixel data and shouldn't write into them. */
-extern pixel *pbuf1, *pbuf2;
-/* pbuf3, pbuf4: point to buf3, buf4, just for type convenience */
-extern pixel *pbuf3, *pbuf4;
-
-
-
 #define report( name ) { \
     if( used_asm ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
-
-extern int bench_pattern_len;
-extern const char *bench_pattern;
-char func_name[100];
-extern  bench_func_t benchs[MAX_FUNCS];
-
-
-
-static const char *pixel_names[12] = { "16x16", "16x8", "8x16", "8x8", "8x4", "4x8", "4x4", "4x16", "4x2", "2x8", "2x4", "2x2" };
-static const char *intra_predict_16x16_names[7] = { "v", "h", "dc", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_8x8c_names[7] = { "dc", "h", "v", "p", "dcl", "dct", "dc8" };
-static const char *intra_predict_4x4_names[12] = { "v", "h", "dc", "ddl", "ddr", "vr", "hd", "vl", "hu", "dcl", "dct", "dc8" };
-static const char **intra_predict_8x8_names = intra_predict_4x4_names;
-static const char **intra_predict_8x16c_names = intra_predict_8x8c_names;
-
-#define set_func_name(...) snprintf( func_name, sizeof(func_name), __VA_ARGS__ )
-
-
-static bench_t* get_bench( const char *name, int cpu )
-{
-    int i, j;
-    for( i = 0; benchs[i].name && strcmp(name, benchs[i].name); i++ )
-        assert( i < MAX_FUNCS );
-    if( !benchs[i].name )
-        benchs[i].name = strdup( name );
-    if( !cpu )
-        return &benchs[i].vers[0];
-    for( j = 1; benchs[i].vers[j].cpu && benchs[i].vers[j].cpu != cpu; j++ )
-        assert( j < MAX_CPUS );
-    benchs[i].vers[j].cpu = cpu;
-    return &benchs[i].vers[j];
-}
-
-static int cmp_nop( const void *a, const void *b )
-{
-    return *(uint16_t*)a - *(uint16_t*)b;
-}
-
-static int cmp_bench( const void *a, const void *b )
-{
-    // asciibetical sort except preserving numbers
-    const char *sa = ((bench_func_t*)a)->name;
-    const char *sb = ((bench_func_t*)b)->name;
-    for( ;; sa++, sb++ )
-    {
-        if( !*sa && !*sb )
-            return 0;
-        if( isdigit( *sa ) && isdigit( *sb ) && isdigit( sa[1] ) != isdigit( sb[1] ) )
-            return isdigit( sa[1] ) - isdigit( sb[1] );
-        if( *sa != *sb )
-            return *sa - *sb;
-    }
-}
-
 
 
 #define BIT_DEPTH 8
@@ -155,7 +90,7 @@ int check_deblock( int cpu_ref, int cpu_new )
             /* two distributions of random to excersize different failure modes */ \
             pbuf3[j] = rand() & (i&1 ? 0xf : PIXEL_MAX ); \
         memcpy( pbuf4, pbuf3, 1024 * sizeof(pixel) ); \
-        if( db_a.name != db_ref.name ) \
+        if( (db_a.name != db_ref.name || (!VBENCH_HAVE_ASM && db_a.name)) ) \
         { \
             set_func_name( #name ); \
             used_asm = 1; \
@@ -187,7 +122,7 @@ int check_deblock( int cpu_ref, int cpu_new )
     TEST_DEBLOCK( deblock_chroma_422_intra_mbaff, 0 );
     TEST_DEBLOCK( deblock_chroma_intra[1], 1 );
 
-    if( db_a.deblock_strength != db_ref.deblock_strength )
+    if( (db_a.deblock_strength != db_ref.deblock_strength || (!VBENCH_HAVE_ASM && db_a.deblock_strength)) )
     {
         for( int i = 0; i < 100; i++ )
         {

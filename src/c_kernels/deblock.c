@@ -740,7 +740,7 @@ void asm_deblock_v_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int b
 void asm_deblock_h_luma_altivec( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
 #endif // ARCH_PPC
 
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
 void asm_deblock_v_luma_neon  ( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
 void asm_deblock_h_luma_neon  ( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
 void asm_deblock_v_chroma_neon( uint8_t *pix, intptr_t stride, int alpha, int beta, int8_t *tc0 );
@@ -873,7 +873,7 @@ void vbench_deblock_init( int cpu, vbench_deblock_function_t *pf, int b_mbaff )
     }
 #endif // HAVE_ALTIVEC
 
-#if HAVE_ARMV6 || ARCH_AARCH64
+#if (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
     if( cpu&CPU_NEON )
     {
         pf->deblock_luma[1] = asm_deblock_v_luma_neon;
