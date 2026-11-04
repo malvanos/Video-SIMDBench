@@ -174,6 +174,7 @@ extern char func_name[100];
 extern bench_func_t benchs[MAX_FUNCS];
 extern int bench_pattern_len;
 extern const char *bench_pattern;
+extern int vbench_verbose; /* defined in bench.c; main.c clears it after the first alignment pass */
 /* buf1, buf2: initialised to random data and shouldn't write into them */
 extern uint8_t *buf1, *buf2;
 /* buf3, buf4: used to store output */

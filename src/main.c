@@ -38,6 +38,7 @@
 
 
 #include <ctype.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "osdep.h"
@@ -62,7 +63,7 @@ pixel *pbuf3, *pbuf4;
 
 
 #define report( name ) { \
-    if( used_asm  ) \
+    if( used_asm && vbench_verbose ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
@@ -266,10 +267,12 @@ int main(int argc, char *argv[])
         for( int i = 0; i < BENCH_ALIGNS && !ret; i++ )
         {
             INIT_POINTER_OFFSETS;
+            vbench_verbose = ( i == 0 ); /* print the [OK] check list only once */
             ret |=  run_benchmarks(i);
             buf1 += 32;
             pbuf1 += 32;
-            fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
+            if( isatty( 2 ) ) /* progress line only on a terminal, not in logs */
+                fprintf( stderr, "%d/%d\r", i+1, BENCH_ALIGNS );
         }
 
     if( ret )

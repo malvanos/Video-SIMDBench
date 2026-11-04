@@ -52,7 +52,7 @@
 #include "c_kernels/predict.h"
 
 #define report( name ) { \
-    if( used_asm ) \
+    if( used_asm && vbench_verbose ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }

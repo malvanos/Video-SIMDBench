@@ -50,7 +50,7 @@
 
 
 #define report( name ) { \
-    if( used_asm ) \
+    if( used_asm && vbench_verbose ) \
         fprintf( stderr, " - %-21s [%s]\n", name, ok ? "OK" : "FAILED" ); \
     if( !ok ) ret = -1; \
 }
@@ -58,6 +58,8 @@
 /* Shared harness globals (declared extern in bench.h; buf1..buf4,
  * pbuf1..pbuf4, bench_pattern_len, bench_pattern, benchs are defined in main.c) */
 char func_name[100];
+/* print per-check [OK] lines only on the first alignment pass */
+int vbench_verbose = 1;
 
 bench_t *get_bench( const char *name, int cpu )
 {
@@ -123,7 +125,7 @@ static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )
 #endif
     if( *cpu_new & VSIMD_CPU_SSE2_IS_FAST )
         *cpu_new &= ~VSIMD_CPU_SSE2_IS_SLOW;
-    fprintf( stderr, "VideoBench: %s\n", name );
+    if( vbench_verbose ) fprintf( stderr, "VideoBench: %s\n", name );
     return check_all_funcs( *cpu_ref, *cpu_new );
 }
 
