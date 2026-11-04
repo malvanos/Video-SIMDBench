@@ -118,7 +118,51 @@ static void print_bench(void)
 
     int64_t results[32] = {0};
 
-    printf( "                                 \tC\tMMX\tSSE\tSSE2\tSSE3\tSSSE3\tSSE4\tSSE42\tAVX\tXOP\tFMA4\tFMA3\tAVX2\n")  ;
+    /* columns: index 0 is always the C version; 1..12 map to x86 cpu flags.
+     * Only print the columns this CPU actually supports. */
+    static const struct { uint32_t flag; const char *name; } coldef[13] =
+    {
+        { 0, "C" },
+        { VSIMD_CPU_MMX,   "MMX"   }, { VSIMD_CPU_SSE,  "SSE"  },
+        { VSIMD_CPU_SSE2,  "SSE2"  }, { VSIMD_CPU_SSE3, "SSE3" },
+        { VSIMD_CPU_SSSE3, "SSSE3" }, { VSIMD_CPU_SSE4, "SSE4" },
+        { VSIMD_CPU_SSE42, "SSE42" }, { VSIMD_CPU_AVX,  "AVX"  },
+        { VSIMD_CPU_XOP,   "XOP"   }, { VSIMD_CPU_FMA4, "FMA4" },
+        { VSIMD_CPU_FMA3,  "FMA3"  }, { VSIMD_CPU_AVX2, "AVX2" }
+    };
+    uint32_t cpu = cpu_detect();
+    int col[13], ncol = 0;
+    col[ncol++] = 0;
+#if ARCH_X86 || ARCH_X86_64
+    /* x86 flag bits only mean something on x86 (they collide with the
+     * ARM/PPC flag numbering on other arches) */
+    for( int c = 1; c < 13; c++ )
+        if( cpu & coldef[c].flag )
+            col[ncol++] = c;
+#endif
+
+    printf( "CPU supported:" );
+#if ARCH_X86 || ARCH_X86_64
+    for( int c = 1; c < 13; c++ )
+        if( cpu & coldef[c].flag )
+            printf( " %s", coldef[c].name );
+#endif
+#if ARCH_ARM || ARCH_AARCH64
+    if( cpu & VSIMD_CPU_NEON )  printf( " NEON" );
+    if( cpu & VSIMD_CPU_ARMV8 ) printf( " ARMv8" );
+#endif
+#if ARCH_PPC
+    if( cpu & VSIMD_CPU_ALTIVEC ) printf( " Altivec" );
+#endif
+#if ARCH_MIPS
+    if( cpu & VSIMD_CPU_MSA ) printf( " MSA" );
+#endif
+    printf( "\n" );
+
+    printf( "%30s :", "" );
+    for( int j = 0; j < ncol; j++ )
+        printf( "\t%s", coldef[col[j]].name );
+    printf( "\n" );
     for( int i = 0; i < nfuncs; i++ ){
         printf( "%30s : \t", benchs[i].name);
 
@@ -147,9 +191,9 @@ static void print_bench(void)
         }
 
 
-        for( int j = 0; j < 13; j++ )
+        for( int j = 0; j < ncol; j++ )
         {
-            printf("%ld\t", (long)results[j] );
+            printf("%ld\t", (long)results[col[j]] );
         }
         memset(results, 0, 32*sizeof(int64_t));
         printf("\n");
