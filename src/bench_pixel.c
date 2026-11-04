@@ -664,8 +664,6 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         INIT7( sad_x4, _neon, asm_ );
         INIT7( ssd, _neon, asm_ );
         INIT7( satd, _neon, asm_ );
-        INIT7( satd_x3, _neon, asm_ );
-        INIT7( satd_x4, _neon, asm_ );
         INIT4( hadamard_ac, _neon, asm_ );
         pixf->sa8d[PIXEL_8x8]   = asm_pixel_sa8d_8x8_neon;
         pixf->sa8d[PIXEL_16x16] = asm_pixel_sa8d_16x16_neon;
@@ -675,13 +673,13 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         pixf->var[PIXEL_16x16]  = asm_pixel_var_16x16_neon;
         pixf->var2[PIXEL_8x8]   = asm_pixel_var2_8x8_neon;
         pixf->var2[PIXEL_8x16]  = asm_pixel_var2_8x16_neon;
-        pixf->vsad = pixel_vsad_neon;
-        pixf->asd8 = pixel_asd8_neon;
+        pixf->vsad = asm_pixel_vsad_neon;
+        pixf->asd8 = asm_pixel_asd8_neon;
 
         pixf->intra_sad_x3_4x4    = asm_intra_sad_x3_4x4_neon;
         pixf->intra_satd_x3_4x4   = asm_intra_satd_x3_4x4_neon;
-        pixf->intra_sad_x3_8x8    = asm_intra_sad_x3_8x8_neon;
-        pixf->intra_sa8d_x3_8x8   = asm_intra_sa8d_x3_8x8_neon;
+        pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_neon;
+        pixf->intra_sa8d_x3_8x8   = intra_sa8d_x3_8x8_neon;
         pixf->intra_sad_x3_8x8c   = asm_intra_sad_x3_8x8c_neon;
         pixf->intra_satd_x3_8x8c  = asm_intra_satd_x3_8x8c_neon;
         pixf->intra_sad_x3_8x16c  = asm_intra_sad_x3_8x16c_neon;
@@ -717,36 +715,34 @@ void vbench_pixel_init( int cpu, vbench_pixel_function_t *pixf )
         INIT7( sad_x4, _neon, asm_ );
         INIT8( ssd, _neon, asm_ );
         INIT8( satd, _neon, asm_ );
-        INIT7( satd_x3, _neon, asm_ );
-        INIT7( satd_x4, _neon, asm_ );
         INIT4( hadamard_ac, _neon, asm_ );
 
-        pixf->sa8d[PIXEL_8x8]   = pixel_sa8d_8x8_neon;
-        pixf->sa8d[PIXEL_16x16] = pixel_sa8d_16x16_neon;
-        pixf->sa8d_satd[PIXEL_16x16] = pixel_sa8d_satd_16x16_neon;
+        pixf->sa8d[PIXEL_8x8]   = asm_pixel_sa8d_8x8_neon;
+        pixf->sa8d[PIXEL_16x16] = asm_pixel_sa8d_16x16_neon;
+        pixf->sa8d_satd[PIXEL_16x16] = asm_pixel_sa8d_satd_16x16_neon;
 
-        pixf->var[PIXEL_8x8]    = pixel_var_8x8_neon;
-        pixf->var[PIXEL_8x16]   = pixel_var_8x16_neon;
-        pixf->var[PIXEL_16x16]  = pixel_var_16x16_neon;
-        pixf->var2[PIXEL_8x8]   = pixel_var2_8x8_neon;
-        pixf->var2[PIXEL_8x16]  = pixel_var2_8x16_neon;
-        pixf->vsad = pixel_vsad_neon;
-        pixf->asd8 = pixel_asd8_neon;
+        pixf->var[PIXEL_8x8]    = asm_pixel_var_8x8_neon;
+        pixf->var[PIXEL_8x16]   = asm_pixel_var_8x16_neon;
+        pixf->var[PIXEL_16x16]  = asm_pixel_var_16x16_neon;
+        pixf->var2[PIXEL_8x8]   = asm_pixel_var2_8x8_neon;
+        pixf->var2[PIXEL_8x16]  = asm_pixel_var2_8x16_neon;
+        pixf->vsad = asm_pixel_vsad_neon;
+        pixf->asd8 = asm_pixel_asd8_neon;
 
-        pixf->intra_sad_x3_4x4    = intra_sad_x3_4x4_neon;
-        pixf->intra_satd_x3_4x4   = intra_satd_x3_4x4_neon;
+        pixf->intra_sad_x3_4x4    = asm_intra_sad_x3_4x4_neon;
+        pixf->intra_satd_x3_4x4   = asm_intra_satd_x3_4x4_neon;
         pixf->intra_sad_x3_8x8    = intra_sad_x3_8x8_neon;
         pixf->intra_sa8d_x3_8x8   = intra_sa8d_x3_8x8_neon;
-        pixf->intra_sad_x3_8x8c   = intra_sad_x3_8x8c_neon;
-        pixf->intra_satd_x3_8x8c  = intra_satd_x3_8x8c_neon;
-        pixf->intra_sad_x3_8x16c  = intra_sad_x3_8x16c_neon;
-        pixf->intra_satd_x3_8x16c = intra_satd_x3_8x16c_neon;
-        pixf->intra_sad_x3_16x16  = intra_sad_x3_16x16_neon;
-        pixf->intra_satd_x3_16x16 = intra_satd_x3_16x16_neon;
+        pixf->intra_sad_x3_8x8c   = asm_intra_sad_x3_8x8c_neon;
+        pixf->intra_satd_x3_8x8c  = asm_intra_satd_x3_8x8c_neon;
+        pixf->intra_sad_x3_8x16c  = asm_intra_sad_x3_8x16c_neon;
+        pixf->intra_satd_x3_8x16c = asm_intra_satd_x3_8x16c_neon;
+        pixf->intra_sad_x3_16x16  = asm_intra_sad_x3_16x16_neon;
+        pixf->intra_satd_x3_16x16 = asm_intra_satd_x3_16x16_neon;
 
-        pixf->ssd_nv12_core     = pixel_ssd_nv12_core_neon;
-        pixf->ssim_4x4x2_core   = pixel_ssim_4x4x2_core_neon;
-        pixf->ssim_end4         = pixel_ssim_end4_neon;
+        pixf->ssd_nv12_core     = asm_pixel_ssd_nv12_core_neon;
+        pixf->ssim_4x4x2_core   = asm_pixel_ssim_4x4x2_core_neon;
+        pixf->ssim_end4         = asm_pixel_ssim_end4_neon;
     }
 #endif // ARCH_AARCH64
 

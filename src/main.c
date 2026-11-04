@@ -119,9 +119,12 @@ static void print_bench(void)
 
     int64_t results[32] = {0};
 
-    /* columns: index 0 is always the C version; 1..12 map to x86 cpu flags.
-     * Only print the columns this CPU actually supports. */
-    static const struct { uint32_t flag; const char *name; } coldef[13] =
+    /* columns: index 0 is always the C version; 1..12 map to x86 cpu flags,
+     * 13..15 to ARM, 16 PPC, 17 MIPS. Only the columns this CPU actually
+     * supports are printed (flag bits collide across arch families, so the
+     * ranges are selected per arch). */
+    enum { COL_C=0, COL_ARMV6=13, COL_ARMV8=14, COL_NEON=15, COL_ALTIVEC=16, COL_MSA=17, NCOLS=18 };
+    static const struct { uint32_t flag; const char *name; } coldef[NCOLS] =
     {
         { 0, "C" },
         { VSIMD_CPU_MMX,   "MMX"   }, { VSIMD_CPU_SSE,  "SSE"  },
@@ -129,35 +132,31 @@ static void print_bench(void)
         { VSIMD_CPU_SSSE3, "SSSE3" }, { VSIMD_CPU_SSE4, "SSE4" },
         { VSIMD_CPU_SSE42, "SSE42" }, { VSIMD_CPU_AVX,  "AVX"  },
         { VSIMD_CPU_XOP,   "XOP"   }, { VSIMD_CPU_FMA4, "FMA4" },
-        { VSIMD_CPU_FMA3,  "FMA3"  }, { VSIMD_CPU_AVX2, "AVX2" }
+        { VSIMD_CPU_FMA3,  "FMA3"  }, { VSIMD_CPU_AVX2, "AVX2" },
+        { VSIMD_CPU_ARMV6, "ARMv6" }, { VSIMD_CPU_ARMV8, "ARMv8" },
+        { VSIMD_CPU_NEON,  "NEON"  }, { VSIMD_CPU_ALTIVEC, "Altivec" },
+        { VSIMD_CPU_MSA,   "MSA"   }
     };
     uint32_t cpu = cpu_detect();
-    int col[13], ncol = 0;
-    col[ncol++] = 0;
+    int col[NCOLS], ncol = 0;
+    col[ncol++] = COL_C;
 #if ARCH_X86 || ARCH_X86_64
-    /* x86 flag bits only mean something on x86 (they collide with the
-     * ARM/PPC flag numbering on other arches) */
-    for( int c = 1; c < 13; c++ )
+    for( int c = 1; c <= 12; c++ )
         if( cpu & coldef[c].flag )
             col[ncol++] = c;
+#elif ARCH_ARM || ARCH_AARCH64
+    for( int c = COL_ARMV6; c <= COL_NEON; c++ )
+        if( cpu & coldef[c].flag )
+            col[ncol++] = c;
+#elif ARCH_PPC
+    if( cpu & VSIMD_CPU_ALTIVEC ) col[ncol++] = COL_ALTIVEC;
+#elif ARCH_MIPS
+    if( cpu & VSIMD_CPU_MSA ) col[ncol++] = COL_MSA;
 #endif
 
     printf( "CPU supported:" );
-#if ARCH_X86 || ARCH_X86_64
-    for( int c = 1; c < 13; c++ )
-        if( cpu & coldef[c].flag )
-            printf( " %s", coldef[c].name );
-#endif
-#if ARCH_ARM || ARCH_AARCH64
-    if( cpu & VSIMD_CPU_NEON )  printf( " NEON" );
-    if( cpu & VSIMD_CPU_ARMV8 ) printf( " ARMv8" );
-#endif
-#if ARCH_PPC
-    if( cpu & VSIMD_CPU_ALTIVEC ) printf( " Altivec" );
-#endif
-#if ARCH_MIPS
-    if( cpu & VSIMD_CPU_MSA ) printf( " MSA" );
-#endif
+    for( int j = 1; j < ncol; j++ )
+        printf( " %s", coldef[col[j]].name );
     printf( "\n" );
 
     printf( "%30s :", "" );
@@ -175,19 +174,34 @@ static void print_bench(void)
             if( k < j )
                 continue;
 
-            if (b->cpu&VSIMD_CPU_AVX2) results[12] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_FMA3) results[11] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_FMA4) results[10] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_XOP) results[9] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_AVX) results[8] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSE42) results[7] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSE4) results[6] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSSE3) results[5] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSE3) results[4] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSE2) results[3] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_SSE) results[2] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else if (b->cpu&VSIMD_CPU_MMX) results[1] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
-            else  results[0] = (int64_t)(10*b->cycles/b->den - nop_time)/4; 
+#if ARCH_X86 || ARCH_X86_64
+            if (b->cpu&VSIMD_CPU_AVX2) results[12] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_FMA3) results[11] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_FMA4) results[10] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_XOP) results[9] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_AVX) results[8] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSE42) results[7] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSE4) results[6] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSSE3) results[5] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSE3) results[4] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSE2) results[3] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_SSE) results[2] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_MMX) results[1] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else  results[0] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+#elif ARCH_ARM || ARCH_AARCH64
+            if (b->cpu&VSIMD_CPU_NEON) results[COL_NEON] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_ARMV8) results[COL_ARMV8] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else if (b->cpu&VSIMD_CPU_ARMV6) results[COL_ARMV6] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+#elif ARCH_PPC
+            if (b->cpu&VSIMD_CPU_ALTIVEC) results[COL_ALTIVEC] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+#elif ARCH_MIPS
+            if (b->cpu&VSIMD_CPU_MSA) results[COL_MSA] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+#else
+            results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+#endif
 
         }
 
@@ -239,6 +253,32 @@ int main(int argc, char *argv[])
 
     int seed = ( argc > 1 ) ? atoi(argv[1]) : mdate();
     fprintf( stderr, "VideoBench: using random seed %u\n", seed );
+#define VB_STR2(x) #x
+#define VB_STR(x) VB_STR2(x)
+#if defined(__clang__)
+#define VB_COMPILER "clang " __clang_version__
+#elif defined(__GNUC__)
+#define VB_COMPILER "gcc " VB_STR(__GNUC__) "." VB_STR(__GNUC_MINOR__) "." VB_STR(__GNUC_PATCHLEVEL__)
+#else
+#define VB_COMPILER "unknown"
+#endif
+#if ARCH_X86_64
+#define VB_ARCH "x86_64"
+#elif ARCH_X86
+#define VB_ARCH "x86"
+#elif ARCH_AARCH64
+#define VB_ARCH "aarch64"
+#elif ARCH_ARM
+#define VB_ARCH "arm"
+#elif ARCH_PPC
+#define VB_ARCH "ppc"
+#elif ARCH_MIPS
+#define VB_ARCH "mips"
+#else
+#define VB_ARCH "unknown"
+#endif
+    fprintf( stderr, "VideoBench: compiler %s, arch %s (%d-bit), cpu \"%s\", %d core(s)\n",
+             VB_COMPILER, VB_ARCH, (int)(8*sizeof(void*)), cpu_brand(), cpu_num_processors() );
     srand( seed );
 
     buf1 = vbench_memalign(32, 0x1e00 + 0x2000*sizeof(pixel) + 32*BENCH_ALIGNS );

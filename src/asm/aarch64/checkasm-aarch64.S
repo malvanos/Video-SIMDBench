@@ -23,9 +23,10 @@
  * For more information, contact us at licensing@x264.com.
  *****************************************************************************/
 
-#include "../common/aarch64/asm.S"
+#include "asm.S"
 
-.section .rodata
+ELF     .section .rodata
+MACH    .const_data
 .align 4
 register_init:
 .quad 0x21f86d66c8ca00ce
@@ -58,7 +59,7 @@ error_message:
 
 #define ARG_STACK ((8*(MAX_ARGS - 6) + 15) & ~15)
 
-function x264_checkasm_call, export=1
+function asm_checkasm_call, export=1
     stp         x29, x30, [sp, #-16]!
     mov         x29, sp
     stp         x19, x20, [sp, #-16]!

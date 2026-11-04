@@ -27,6 +27,10 @@
 #ifndef PREDICT_H
 #define PREDICT_H
 
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
+#   include "asm/aarch64/predict.h"
+#endif
+
 #ifndef VBENCH_PREDICT_TYPEDEFS
 #define VBENCH_PREDICT_TYPEDEFS
 typedef void (*vbench_predict_t)( pixel *src );

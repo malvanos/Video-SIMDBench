@@ -81,6 +81,9 @@ set(_asm_default OFF)
 if(NOT APPLE AND VBENCH_ARCH_X86_64 AND NASM_EXECUTABLE)
     set(_asm_default ON)
 endif()
+if(VBENCH_ARCH_AARCH64)
+    set(_asm_default ON)   # .S files assemble with the system compiler (clang/gcc)
+endif()
 option(VBENCH_ASM "Build architecture-specific assembly kernels" ${_asm_default})
 
 set(VBENCH_HAVE_ASM 0)
@@ -114,14 +117,25 @@ if(VBENCH_ASM)
         set(VBENCH_HAVE_ASM 1)
         set(VBENCH_HAVE_X86_ASM 1)
         set(VBENCH_HAVE_MMX 1)
-    elseif(VBENCH_ARCH_AARCH64 AND NOT APPLE)
+    elseif(VBENCH_ARCH_AARCH64)
         enable_language(ASM)
+        # the .S files include "config.h"; generate a shim that pulls in the
+        # platform config and adds the Mach-O specifics (symbol underscore
+        # prefix, no .func directive)
+        file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/asm-gen)
+        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/asm-gen/config.h
+            "#include \"vbench_config.h\"\n#if SYS_MACOSX\n#define PREFIX\n#define HAVE_AS_FUNC 0\n#else\n#define HAVE_AS_FUNC 1\n#endif\n")
         file(GLOB _asm_srcs ${CMAKE_CURRENT_SOURCE_DIR}/src/asm/aarch64/*.S)
         add_library(vbench_asm STATIC
             ${_asm_srcs}
             ${CMAKE_CURRENT_SOURCE_DIR}/src/asm/aarch64/mc-c.c
             ${CMAKE_CURRENT_SOURCE_DIR}/src/asm/aarch64/predict-c.c)
-        target_include_directories(vbench_asm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/asm)
+        target_include_directories(vbench_asm PRIVATE
+            ${CMAKE_CURRENT_BINARY_DIR}/asm-gen
+            ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/src/asm)
+        if(APPLE)
+            target_compile_options(vbench_asm PRIVATE -DPIC)  # Mach-O: no text relocations
+        endif()
         set(VBENCH_HAVE_ASM 1)
     else()
         message(WARNING "VBENCH_ASM=ON is not supported for this target; building C kernels only")
@@ -142,6 +156,15 @@ set(VBENCH_HAVE_MSA 0)
 set(VBENCH_HAVE_THREAD 0)
 set(VBENCH_HAVE_POSIXTHREAD 0)
 set(VBENCH_HAVE_CPU_COUNT 0)
+if(NOT WIN32)
+    set(VBENCH_HAVE_THREAD 1)
+endif()
+if(CMAKE_SYSTEM_NAME MATCHES "Linux|Darwin|FreeBSD|OpenBSD")
+    set(VBENCH_HAVE_POSIXTHREAD 1)
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(VBENCH_HAVE_CPU_COUNT 1)
+endif()
 set(VBENCH_BIT_DEPTH 8)
 set(VBENCH_HIGH_BIT_DEPTH 0)
 if(VBENCH_ARCH_X86_64 AND NOT APPLE AND VBENCH_HAVE_X86_ASM)

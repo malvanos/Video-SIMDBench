@@ -38,6 +38,9 @@
 #include "common.h"
 #include "bench.h"
 #include "asm/x86/mc.h"
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
+#   include "asm/aarch64/mc.h"
+#endif
 
 
 extern const uint8_t vbench_hpel_ref0[16];

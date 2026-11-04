@@ -163,11 +163,11 @@ void vbench_bitstream_init( int cpu, vbench_bitstream_function_t *pf )
 #endif
 #endif
 #if HAVE_ARMV6 && VBENCH_HAVE_ASM
-    if( cpu&asm_CPU_NEON )
+    if( cpu&VSIMD_CPU_NEON )
         pf->nal_escape = asm_nal_escape_neon;
 #endif
 #if ARCH_AARCH64 && VBENCH_HAVE_ASM
-    if( cpu&asm_CPU_NEON )
+    if( cpu&VSIMD_CPU_NEON )
         pf->nal_escape = asm_nal_escape_neon;
 #endif
 }

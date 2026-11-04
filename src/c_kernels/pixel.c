@@ -1025,8 +1025,8 @@ INTRA_MBCMP_8x8( sad, _mmx2,  _c, asm_)
 INTRA_MBCMP_8x8(sa8d, _sse2,  _sse2, asm_)
 #endif
 #if !HIGH_BIT_DEPTH && (HAVE_ARMV6 || ARCH_AARCH64) && VBENCH_HAVE_ASM
-INTRA_MBCMP_8x8( sad, _neon, _neon )
-INTRA_MBCMP_8x8(sa8d, _neon, _neon )
+INTRA_MBCMP_8x8( sad, _neon, _neon, asm_ )
+INTRA_MBCMP_8x8(sa8d, _neon, _neon, asm_ )
 #endif
 
 #define INTRA_MBCMP_C( mbcmp, size, pred1, pred2, pred3, chroma, cpu, cpu2, prefix )\

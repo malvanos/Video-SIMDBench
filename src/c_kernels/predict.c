@@ -34,6 +34,9 @@
 #include "bench.h"
 #include "predict.h"
 #include "macroblock.h"
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
+#   include "asm/aarch64/predict.h"
+#endif
 
 
 

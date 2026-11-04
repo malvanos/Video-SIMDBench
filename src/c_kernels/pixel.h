@@ -1,6 +1,20 @@
 #ifndef PIXEL_H
 #define PIXEL_H
 
+#if ARCH_AARCH64 && VBENCH_HAVE_ASM
+#   include "asm/aarch64/pixel.h"
+    void asm_intra_sad_x3_4x4_neon    ( pixel *, pixel *, int * );
+    void asm_intra_satd_x3_4x4_neon   ( pixel *, pixel *, int * );
+    void intra_sad_x3_8x8_neon      ( pixel *, pixel *, int * );
+    void intra_sa8d_x3_8x8_neon     ( pixel *, pixel *, int * );
+    void asm_intra_sad_x3_8x8c_neon   ( pixel *, pixel *, int * );
+    void asm_intra_satd_x3_8x8c_neon  ( pixel *, pixel *, int * );
+    void asm_intra_sad_x3_8x16c_neon  ( pixel *, pixel *, int * );
+    void asm_intra_satd_x3_8x16c_neon ( pixel *, pixel *, int * );
+    void asm_intra_sad_x3_16x16_neon  ( pixel *, pixel *, int * );
+    void asm_intra_satd_x3_16x16_neon ( pixel *, pixel *, int * );
+#endif
+
 #define PIXEL_SAD_CD( name, lx, ly ) \
 int name( pixel *pix1, intptr_t i_stride_pix1,  \
           pixel *pix2, intptr_t i_stride_pix2 ) ;

@@ -360,6 +360,8 @@ extern const cpu_name_t cpu_names[];
 
 
 uint32_t cpu_detect( void );
+const char *cpu_brand( void );
+int cpu_num_processors( void );
 
 
 #if ARCH_X86 || ARCH_X86_64

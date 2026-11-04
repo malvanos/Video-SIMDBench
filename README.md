@@ -23,8 +23,9 @@ cmake --build build -j8
 ```
 
 This builds the `vbench` executable from `src/` plus every `kernels/<codec>/`
-package found (x264, x265, dav1d). On x86_64 Linux with `nasm` installed,
-`-DVBENCH_ASM=ON` additionally assembles the x86 asm kernels (off by default).
+package found (x264, x265, dav1d). Architecture-specific assembly kernels are
+built by default on aarch64 (NEON, via the system compiler) and on x86_64
+Linux when `nasm` is installed (`-DVBENCH_ASM=OFF` to disable).
 
 Legacy alternative (C kernels only): `cd src && make` or `./compile.sh`.
 
@@ -37,13 +38,20 @@ Legacy alternative (C kernels only): `cd src && make` or `./compile.sh`.
 ./build/vbench --bench 12345        # fixed random seed
 ```
 
-`--bench=<pattern>` filters kernels by name prefix. A successful run prints
-`VideoBench: All tests passed` followed by the timing table, e.g.:
+`--bench=<pattern>` filters kernels by name prefix. Each run prints the
+compiler, architecture, CPU model and core count, a `CPU supported:` summary,
+then `VideoBench: All tests passed` and the timing table. Only the ISA columns
+the CPU actually supports are printed (on arm64: `C`, `ARMv8`, `NEON`; on x86:
+`C`, `MMX` … `AVX2` as available), e.g.:
 
 ```
-            x264: satd 16x16 :   14   0  0 ...
-            x265: dct 32x32 :    5358 0  0 ...
-           dav1d: cdef 8x8 :     173  0  0 ...
+VideoBench: compiler clang 21.0.0 (...), arch aarch64 (64-bit), cpu "Apple M2 Pro", 10 core(s)
+CPU supported: ARMv8 NEON
+                               :  C  ARMv8  NEON
+                    satd_16x16 :  14      0      6
+            x264: satd 16x16  :   1      0      0
+            x265: dct 32x32  :  808      0      0
+           dav1d: cdef 8x8    :  168      0      0
 ```
 
 ## Layout

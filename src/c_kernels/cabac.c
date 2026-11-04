@@ -1577,6 +1577,12 @@ static ALWAYS_INLINE int vbench_cabac_size_decision_noup2( uint8_t *state, long 
         return asm_cabac_entropy[*state^b];
 }
 
+#if defined(ARCH_AARCH64) && VBENCH_HAVE_ASM
+void asm_cabac_encode_decision_asm( vbench_cabac_t *cb, int ctx, int bit );
+void asm_cabac_encode_bypass_asm( vbench_cabac_t *cb, int bit );
+void asm_cabac_encode_terminal_asm( vbench_cabac_t *cb, int bit );
+#endif
+
 #if HAVE_MMX
 #define vbench_cabac_encode_decision vbench_cabac_encode_decision_asm
 #define vbench_cabac_encode_bypass asm_cabac_encode_bypass_asm

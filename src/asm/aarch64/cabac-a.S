@@ -26,12 +26,12 @@
 #include "asm.S"
 #include "asm-offsets.h"
 
-// w11 holds x264_cabac_t.i_low
-// w12 holds x264_cabac_t.i_range
+// w11 holds vbench_cabac_t.i_low
+// w12 holds vbench_cabac_t.i_range
 
-function x264_cabac_encode_decision_asm, export=1
-    movrel      x8,  X(x264_cabac_range_lps)
-    movrel      x9,  X(x264_cabac_transition)
+function asm_cabac_encode_decision_asm, export=1
+    movrel      x8,  X(asm_cabac_range_lps)
+    movrel      x9,  X(asm_cabac_transition)
     add         w10, w1, #CABAC_STATE
     ldrb        w3,  [x0,  x10]         // i_state
     ldr         w12, [x0,  #CABAC_I_RANGE]
@@ -101,7 +101,7 @@ cabac_putbyte:
     ret
 endfunc
 
-function x264_cabac_encode_bypass_asm, export=1
+function asm_cabac_encode_bypass_asm, export=1
     ldr         w12, [x0, #CABAC_I_RANGE]
     ldr         w11, [x0, #CABAC_I_LOW]
     ldr         w2,  [x0, #CABAC_I_QUEUE]
@@ -114,7 +114,7 @@ function x264_cabac_encode_bypass_asm, export=1
     ret
 endfunc
 
-function x264_cabac_encode_terminal_asm, export=1
+function asm_cabac_encode_terminal_asm, export=1
     ldr         w12, [x0, #CABAC_I_RANGE]
     ldr         w11, [x0, #CABAC_I_LOW]
     sub         w12, w12, #2

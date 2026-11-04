@@ -507,3 +507,39 @@ int cpu_num_processors( void )
     return 1;
 #endif
 }
+
+const char *cpu_brand( void )
+{
+#if SYS_MACOSX
+    static char brand[64] = {0};
+    size_t len = sizeof(brand);
+    if( sysctlbyname( "machdep.cpu.brand_string", brand, &len, NULL, 0 ) || !brand[0] )
+        return "unknown";
+    return brand;
+#elif SYS_LINUX
+    static char brand[128] = {0};
+    FILE *f = fopen( "/proc/cpuinfo", "r" );
+    if( f )
+    {
+        char line[256];
+        while( fgets( line, sizeof(line), f ) )
+            if( !strncmp( line, "model name", 10 ) )
+            {
+                char *p = strchr( line, ':' );
+                if( p )
+                {
+                    p++;
+                    while( *p == ' ' ) p++;
+                    char *e = p + strlen( p );
+                    while( e > p && (e[-1] == '\n' || e[-1] == '\r') ) *--e = 0;
+                    snprintf( brand, sizeof(brand), "%s", p );
+                }
+                break;
+            }
+        fclose( f );
+    }
+    return brand[0] ? brand : "unknown";
+#else
+    return "unknown";
+#endif
+}
