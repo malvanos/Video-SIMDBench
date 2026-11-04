@@ -118,6 +118,7 @@ static void print_bench(void)
     qsort( benchs, nfuncs, sizeof(bench_func_t), cmp_bench );
 
     int64_t results[32] = {0};
+    int have[32] = {0};
 
     /* columns: index 0 is always the C version; 1..12 map to x86 cpu flags,
      * 13..15 to ARM, 16 PPC, 17 MIPS. Only the columns this CPU actually
@@ -174,43 +175,44 @@ static void print_bench(void)
             if( k < j )
                 continue;
 
+            int c = COL_C;
 #if ARCH_X86 || ARCH_X86_64
-            if (b->cpu&VSIMD_CPU_AVX2) results[12] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_FMA3) results[11] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_FMA4) results[10] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_XOP) results[9] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_AVX) results[8] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSE42) results[7] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSE4) results[6] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSSE3) results[5] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSE3) results[4] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSE2) results[3] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_SSE) results[2] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_MMX) results[1] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else  results[0] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            if (b->cpu&VSIMD_CPU_AVX2) c = 12;
+            else if (b->cpu&VSIMD_CPU_FMA3) c = 11;
+            else if (b->cpu&VSIMD_CPU_FMA4) c = 10;
+            else if (b->cpu&VSIMD_CPU_XOP) c = 9;
+            else if (b->cpu&VSIMD_CPU_AVX) c = 8;
+            else if (b->cpu&VSIMD_CPU_SSE42) c = 7;
+            else if (b->cpu&VSIMD_CPU_SSE4) c = 6;
+            else if (b->cpu&VSIMD_CPU_SSSE3) c = 5;
+            else if (b->cpu&VSIMD_CPU_SSE3) c = 4;
+            else if (b->cpu&VSIMD_CPU_SSE2) c = 3;
+            else if (b->cpu&VSIMD_CPU_SSE) c = 2;
+            else if (b->cpu&VSIMD_CPU_MMX) c = 1;
 #elif ARCH_ARM || ARCH_AARCH64
-            if (b->cpu&VSIMD_CPU_NEON) results[COL_NEON] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_ARMV8) results[COL_ARMV8] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else if (b->cpu&VSIMD_CPU_ARMV6) results[COL_ARMV6] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            if (b->cpu&VSIMD_CPU_NEON) c = COL_NEON;
+            else if (b->cpu&VSIMD_CPU_ARMV8) c = COL_ARMV8;
+            else if (b->cpu&VSIMD_CPU_ARMV6) c = COL_ARMV6;
 #elif ARCH_PPC
-            if (b->cpu&VSIMD_CPU_ALTIVEC) results[COL_ALTIVEC] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            if (b->cpu&VSIMD_CPU_ALTIVEC) c = COL_ALTIVEC;
 #elif ARCH_MIPS
-            if (b->cpu&VSIMD_CPU_MSA) results[COL_MSA] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-            else  results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
-#else
-            results[COL_C] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            if (b->cpu&VSIMD_CPU_MSA) c = COL_MSA;
 #endif
+            results[c] = (int64_t)(10*b->cycles/b->den - nop_time)/4;
+            have[c] = 1;
 
         }
 
 
         for( int j = 0; j < ncol; j++ )
         {
-            printf("%ld\t", (long)results[col[j]] );
+            if( have[col[j]] )
+                printf("%ld\t", (long)results[col[j]] );
+            else
+                printf("-\t");   /* no kernel registered for this cpu level */
         }
         memset(results, 0, 32*sizeof(int64_t));
+        memset(have, 0, sizeof(have));
         printf("\n");
     }
 }
