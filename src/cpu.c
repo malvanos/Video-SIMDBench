@@ -55,7 +55,7 @@
 
 const cpu_name_t cpu_names[] =
 {
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
 //  {"MMX",         CPU_MMX},  // we don't support asm on mmx1 cpus anymore
 //  {"CMOV",        CPU_CMOV}, // we require this unconditionally, so don't print it
 #define MMX2 CPU_MMX|CPU_MMX2|CPU_CMOV
@@ -125,11 +125,98 @@ static void sigill_handler( int sig )
 }
 #endif
 
+#if ARCH_X86 || ARCH_X86_64
 #if HAVE_MMX
 int pu_cpuid_test( void );
 void asm_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx );
 void asm_cpu_xgetbv( uint32_t op, uint32_t *eax, uint32_t *edx );
 int asm_cpu_cpuid_test();
+#else
+/* No x86 assembly kernels in this build (VBENCH_ASM=OFF, e.g. nasm missing):
+ * implement the cpuid helpers in plain C so that cpu_detect() still works.
+ * Portable across compilers, no compiler-specific builtins: GCC and Clang
+ * both ship <cpuid.h> (__get_cpuid), MSVC ships <intrin.h> (__cpuidex,
+ * _xgetbv). All call sites below use cpuid subleaf 0. */
+#if defined(_MSC_VER)
+#include <intrin.h>
+static void vb_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx )
+{
+    int r[4];
+    __cpuidex( r, (int)op, 0 );
+    *eax = (uint32_t)r[0]; *ebx = (uint32_t)r[1]; *ecx = (uint32_t)r[2]; *edx = (uint32_t)r[3];
+}
+static uint64_t vb_xgetbv( uint32_t op )
+{
+    return _xgetbv( op );
+}
+static int vb_cpuid_present( void )
+{
+    return 1; /* every CPU that can run an MSVC binary has CPUID */
+}
+#else
+#include <cpuid.h>
+static void vb_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx )
+{
+    /* __get_cpuid_count (subleaf-aware) is provided by GCC >= 6 and by all
+     * Clang versions shipping <cpuid.h>; plain __get_cpuid misbehaves for
+     * some leaves (e.g. leaf 7) on older GCC, so only use it as a fallback.
+     * All call sites use subleaf 0. */
+#if defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 6)
+    if( !__get_cpuid_count( op, 0, eax, ebx, ecx, edx ) )
+#else
+    if( !__get_cpuid( op, eax, ebx, ecx, edx ) )
+#endif
+        *eax = *ebx = *ecx = *edx = 0;
+}
+static uint64_t vb_xgetbv( uint32_t op )
+{
+    uint32_t lo, hi;
+    /* plain GCC-style inline asm, supported by both GCC and Clang */
+    __asm__ volatile( "xgetbv" : "=a"(lo), "=d"(hi) : "c"(op) );
+    return ((uint64_t)hi << 32) | lo;
+}
+#if ARCH_X86_64
+static int vb_cpuid_present( void )
+{
+    return 1; /* CPUID is guaranteed on x86-64 */
+}
+#else
+static int vb_cpuid_present( void )
+{
+    /* 32-bit x86: toggle the ID bit (21) in EFLAGS; if it sticks, CPUID exists */
+    uint32_t old, flipped;
+    __asm__ volatile( "pushfl\n\t"
+                      "popl %0\n\t"
+                      "movl %0, %1\n\t"
+                      "xorl $0x00200000, %1\n\t"
+                      "pushl %1\n\t"
+                      "popfl\n\t"
+                      "pushfl\n\t"
+                      "popl %1\n\t"
+                      "pushl %0\n\t"
+                      "popfl\n\t"
+                      : "=&r"(old), "=&r"(flipped) );
+    return ((old ^ flipped) & 0x00200000) != 0;
+}
+#endif
+#endif /* _MSC_VER */
+
+/* same signatures as the nasm versions in asm/x86/cpu-a.asm */
+void asm_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx )
+{
+    vb_cpuid( op, eax, ebx, ecx, edx );
+}
+void asm_cpu_xgetbv( uint32_t op, uint32_t *eax, uint32_t *edx )
+{
+    uint64_t r = vb_xgetbv( op );
+    *eax = (uint32_t)r;
+    *edx = (uint32_t)(r >> 32);
+}
+int asm_cpu_cpuid_test( void )
+{
+    return vb_cpuid_present();
+}
+#endif /* HAVE_MMX */
 
 uint32_t cpu_detect( void )
 {

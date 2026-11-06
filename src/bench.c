@@ -134,7 +134,9 @@ static int check_all_flags( void )
     int ret = 0;
     int cpu0 = 0, cpu1 = 0;
     uint32_t cpu_detect_rs = cpu_detect();
-#if HAVE_MMX
+#if ARCH_X86 || ARCH_X86_64
+    /* cpu_detect() works with or without asm kernels (cpu.c has a portable
+     * C cpuid fallback), so this walk runs for C-only x86 builds too. */
     if( cpu_detect_rs & VSIMD_CPU_MMX2 )
     {
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_MMX | VSIMD_CPU_MMX2, "MMX" );
@@ -231,6 +233,9 @@ static int check_all_flags( void )
         ret |= add_flags( &cpu0, &cpu1, VSIMD_CPU_BMI1|VSIMD_CPU_BMI2, "BMI2" );
         cpu1 &= ~(VSIMD_CPU_BMI1|VSIMD_CPU_BMI2);
     }
+    if( !cpu1 )
+        /* no SIMD flags detected at all: still register and bench the C kernels */
+        ret |= check_all_funcs( 0, 0 );
 #elif ARCH_PPC
     if( cpu_detect_rs & VSIMD_CPU_ALTIVEC )
     {
