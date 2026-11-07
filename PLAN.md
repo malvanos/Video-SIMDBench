@@ -92,21 +92,30 @@ Documented in `PORTING.md` ("Syncing" section), implemented as
    all checks must pass. The asm-offsets compile-time check fails the build if C
    and asm ever drift apart — that is the safety net.
 
-## Migration order
+## Status — implemented (master @ b92749e)
 
-1. Move `kernels/*` → `src/<codec>/`, switch to native upstream symbol names,
-   delete `src/c_kernels/` + `src/asm/`, rewire harness bench modules to `x264_`
-   (or fold them into `src/x264/bench_x264.c`). Verify `vbench --bench` still
-   passes with C + asm columns for x264.
-2. Sync upstream x264 asm (`common/x86`, `common/aarch64`) as proof of concept
-   — lowest risk, it is what the old asm was derived from.
-3. Add the `C-plain` column and the dual vec/scalar build; verify three numbers
-   per row.
-4. x265: sync C++ + asm; adapt `bench_x265.cpp` (its `call_c` redefinition
-   pattern extends to `call_cp`/`call_a`).
-5. dav1d: sync 8bpc C + asm; carry over the existing `config.h`/bitdepth shims.
-6. Write `src/tools/sync-<codec>.sh` per codec + the PORTING.md sync recipe;
-   hand the recipe to the agents.
+All steps done, verified on macOS arm64 (Apple M2 Pro, clang 21) with a clean
+build + `tools/verify.sh` (exit 0, `VideoBench: All tests passed`, 0 FAILED):
+
+1. Done — `kernels/*` → `src/<codec>/`; native upstream symbol names; the 2016
+   pair (`src/c_kernels/`, `src/asm/`, per-category `bench_*.c`, legacy
+   Makefile/compile.sh) deleted; harness now runs codec modules only.
+2. Done — upstream x264 asm (`common/{x86,aarch64}`) synced into `src/x264/`,
+   built by `cmake/vbench_asm.cmake`; x264 rows show NEON cells.
+3. Done — `C-plain` column (always printed after `C`) + dual vec/scalar build
+   per codec via `cmake/vbench_codec_dual.cmake`; scalar results compared to vec.
+4. Done — x265 asm (`source/common/{x86,aarch64}`) wired; on aarch64 the asm
+   covers the pixel/quant family (x265 4.2 moved mc/dct/intra to NEON
+   intrinsics in the C sources, so those rows have no separate asm kernel).
+5. Done — dav1d 8bpc asm (`src/{x86,arm/64}`) wired under `src/dav1d/src/`.
+6. Done — `src/tools/sync-{x264,x265,dav1d}.sh` + PORTING.md "Syncing with
+   upstream" recipe; `tools/verify.sh` regression script at repo root.
+
+Sample (arm64): `dav1d: mc put_8tap_regular 32x32 : C=209 C-plain=1200 NEON=73`.
+
+Remaining caveats: the x86_64/nasm asm paths are wired but unexercised here
+(no nasm on macOS) — check on a Linux x86_64 box; 32-bit arm and 16bpc asm are
+synced but not compiled; x265 SVE/dotprod/i8mm primitives are not compiled.
 
 ## Risks
 
@@ -117,9 +126,8 @@ Documented in `PORTING.md` ("Syncing" section), implemented as
 - If C and asm are ever synced separately, the asm-offsets check must fail the
   build — keep it enabled, never bypass it.
 
-## Open decisions
+## Open decisions — resolved
 
-- Column header names: `C-plain` / `C` / ISA names (vs e.g. `scalar`/`vec`).
-- Whether x265/dav1d scalar builds use `-fno-tree-vectorize -fno-slp-vectorize`
-  at `-O3` or plain `-O1` (the former isolates vectorization as the only
-  difference — recommended).
+- Column headers are `C-plain` / `C` / ISA names.
+- Scalar builds use `-O3 -fno-tree-vectorize -fno-slp-vectorize` (plus
+  `-fno-vectorize` on Clang), so vectorization is the only difference vs `C`.
