@@ -27,9 +27,9 @@
 #ifndef X264_PREDICT_H
 #define X264_PREDICT_H
 
-typedef void (*vbx264_predict_t)( pixel *src );
-typedef void (*vbx264_predict8x8_t)( pixel *src, pixel edge[36] );
-typedef void (*vbx264_predict_8x8_filter_t)( pixel *src, pixel edge[36], int i_neighbor, int i_filters );
+typedef void (*x264_predict_t)( pixel *src );
+typedef void (*x264_predict8x8_t)( pixel *src, pixel edge[36] );
+typedef void (*x264_predict_8x8_filter_t)( pixel *src, pixel edge[36], int i_neighbor, int i_filters );
 
 enum intra_chroma_pred_e
 {
@@ -42,7 +42,7 @@ enum intra_chroma_pred_e
     I_PRED_CHROMA_DC_TOP  = 5,
     I_PRED_CHROMA_DC_128  = 6
 };
-static const uint8_t vbx264_mb_chroma_pred_mode_fix[7] =
+static const uint8_t x264_mb_chroma_pred_mode_fix[7] =
 {
     I_PRED_CHROMA_DC, I_PRED_CHROMA_H, I_PRED_CHROMA_V, I_PRED_CHROMA_P,
     I_PRED_CHROMA_DC, I_PRED_CHROMA_DC,I_PRED_CHROMA_DC
@@ -59,7 +59,7 @@ enum intra16x16_pred_e
     I_PRED_16x16_DC_TOP  = 5,
     I_PRED_16x16_DC_128  = 6,
 };
-static const uint8_t vbx264_mb_pred_mode16x16_fix[7] =
+static const uint8_t x264_mb_pred_mode16x16_fix[7] =
 {
     I_PRED_16x16_V, I_PRED_16x16_H, I_PRED_16x16_DC, I_PRED_16x16_P,
     I_PRED_16x16_DC,I_PRED_16x16_DC,I_PRED_16x16_DC
@@ -81,7 +81,7 @@ enum intra4x4_pred_e
     I_PRED_4x4_DC_TOP  = 10,
     I_PRED_4x4_DC_128  = 11,
 };
-static const int8_t vbx264_mb_pred_mode4x4_fix[13] =
+static const int8_t x264_mb_pred_mode4x4_fix[13] =
 {
     -1,
     I_PRED_4x4_V,   I_PRED_4x4_H,   I_PRED_4x4_DC,
@@ -89,7 +89,7 @@ static const int8_t vbx264_mb_pred_mode4x4_fix[13] =
     I_PRED_4x4_HD,  I_PRED_4x4_VL,  I_PRED_4x4_HU,
     I_PRED_4x4_DC,  I_PRED_4x4_DC,  I_PRED_4x4_DC
 };
-#define vbx264_mb_pred_mode4x4_fix(t) vbx264_mb_pred_mode4x4_fix[(t)+1]
+#define x264_mb_pred_mode4x4_fix(t) x264_mb_pred_mode4x4_fix[(t)+1]
 
 /* must use the same numbering as intra4x4_pred_e */
 enum intra8x8_pred_e
@@ -109,52 +109,52 @@ enum intra8x8_pred_e
     I_PRED_8x8_DC_128  = 11,
 };
 
-#define vbx264_predict_8x8_dc_c vbx264_template(predict_8x8_dc_c)
-void vbx264_predict_8x8_dc_c  ( pixel *src, pixel edge[36] );
-#define vbx264_predict_8x8_h_c vbx264_template(predict_8x8_h_c)
-void vbx264_predict_8x8_h_c   ( pixel *src, pixel edge[36] );
-#define vbx264_predict_8x8_v_c vbx264_template(predict_8x8_v_c)
-void vbx264_predict_8x8_v_c   ( pixel *src, pixel edge[36] );
-#define vbx264_predict_4x4_dc_c vbx264_template(predict_4x4_dc_c)
-void vbx264_predict_4x4_dc_c  ( pixel *src );
-#define vbx264_predict_4x4_h_c vbx264_template(predict_4x4_h_c)
-void vbx264_predict_4x4_h_c   ( pixel *src );
-#define vbx264_predict_4x4_v_c vbx264_template(predict_4x4_v_c)
-void vbx264_predict_4x4_v_c   ( pixel *src );
-#define vbx264_predict_16x16_dc_c vbx264_template(predict_16x16_dc_c)
-void vbx264_predict_16x16_dc_c( pixel *src );
-#define vbx264_predict_16x16_h_c vbx264_template(predict_16x16_h_c)
-void vbx264_predict_16x16_h_c ( pixel *src );
-#define vbx264_predict_16x16_v_c vbx264_template(predict_16x16_v_c)
-void vbx264_predict_16x16_v_c ( pixel *src );
-#define vbx264_predict_16x16_p_c vbx264_template(predict_16x16_p_c)
-void vbx264_predict_16x16_p_c ( pixel *src );
-#define vbx264_predict_8x8c_dc_c vbx264_template(predict_8x8c_dc_c)
-void vbx264_predict_8x8c_dc_c ( pixel *src );
-#define vbx264_predict_8x8c_h_c vbx264_template(predict_8x8c_h_c)
-void vbx264_predict_8x8c_h_c  ( pixel *src );
-#define vbx264_predict_8x8c_v_c vbx264_template(predict_8x8c_v_c)
-void vbx264_predict_8x8c_v_c  ( pixel *src );
-#define vbx264_predict_8x8c_p_c vbx264_template(predict_8x8c_p_c)
-void vbx264_predict_8x8c_p_c  ( pixel *src );
-#define vbx264_predict_8x16c_dc_c vbx264_template(predict_8x16c_dc_c)
-void vbx264_predict_8x16c_dc_c( pixel *src );
-#define vbx264_predict_8x16c_h_c vbx264_template(predict_8x16c_h_c)
-void vbx264_predict_8x16c_h_c ( pixel *src );
-#define vbx264_predict_8x16c_v_c vbx264_template(predict_8x16c_v_c)
-void vbx264_predict_8x16c_v_c ( pixel *src );
-#define vbx264_predict_8x16c_p_c vbx264_template(predict_8x16c_p_c)
-void vbx264_predict_8x16c_p_c ( pixel *src );
+#define x264_predict_8x8_dc_c x264_template(predict_8x8_dc_c)
+void x264_predict_8x8_dc_c  ( pixel *src, pixel edge[36] );
+#define x264_predict_8x8_h_c x264_template(predict_8x8_h_c)
+void x264_predict_8x8_h_c   ( pixel *src, pixel edge[36] );
+#define x264_predict_8x8_v_c x264_template(predict_8x8_v_c)
+void x264_predict_8x8_v_c   ( pixel *src, pixel edge[36] );
+#define x264_predict_4x4_dc_c x264_template(predict_4x4_dc_c)
+void x264_predict_4x4_dc_c  ( pixel *src );
+#define x264_predict_4x4_h_c x264_template(predict_4x4_h_c)
+void x264_predict_4x4_h_c   ( pixel *src );
+#define x264_predict_4x4_v_c x264_template(predict_4x4_v_c)
+void x264_predict_4x4_v_c   ( pixel *src );
+#define x264_predict_16x16_dc_c x264_template(predict_16x16_dc_c)
+void x264_predict_16x16_dc_c( pixel *src );
+#define x264_predict_16x16_h_c x264_template(predict_16x16_h_c)
+void x264_predict_16x16_h_c ( pixel *src );
+#define x264_predict_16x16_v_c x264_template(predict_16x16_v_c)
+void x264_predict_16x16_v_c ( pixel *src );
+#define x264_predict_16x16_p_c x264_template(predict_16x16_p_c)
+void x264_predict_16x16_p_c ( pixel *src );
+#define x264_predict_8x8c_dc_c x264_template(predict_8x8c_dc_c)
+void x264_predict_8x8c_dc_c ( pixel *src );
+#define x264_predict_8x8c_h_c x264_template(predict_8x8c_h_c)
+void x264_predict_8x8c_h_c  ( pixel *src );
+#define x264_predict_8x8c_v_c x264_template(predict_8x8c_v_c)
+void x264_predict_8x8c_v_c  ( pixel *src );
+#define x264_predict_8x8c_p_c x264_template(predict_8x8c_p_c)
+void x264_predict_8x8c_p_c  ( pixel *src );
+#define x264_predict_8x16c_dc_c x264_template(predict_8x16c_dc_c)
+void x264_predict_8x16c_dc_c( pixel *src );
+#define x264_predict_8x16c_h_c x264_template(predict_8x16c_h_c)
+void x264_predict_8x16c_h_c ( pixel *src );
+#define x264_predict_8x16c_v_c x264_template(predict_8x16c_v_c)
+void x264_predict_8x16c_v_c ( pixel *src );
+#define x264_predict_8x16c_p_c x264_template(predict_8x16c_p_c)
+void x264_predict_8x16c_p_c ( pixel *src );
 
-#define vbx264_predict_16x16_init vbx264_template(predict_16x16_init)
-void vbx264_predict_16x16_init ( uint32_t cpu, vbx264_predict_t pf[7] );
-#define vbx264_predict_8x8c_init vbx264_template(predict_8x8c_init)
-void vbx264_predict_8x8c_init  ( uint32_t cpu, vbx264_predict_t pf[7] );
-#define vbx264_predict_8x16c_init vbx264_template(predict_8x16c_init)
-void vbx264_predict_8x16c_init ( uint32_t cpu, vbx264_predict_t pf[7] );
-#define vbx264_predict_4x4_init vbx264_template(predict_4x4_init)
-void vbx264_predict_4x4_init   ( uint32_t cpu, vbx264_predict_t pf[12] );
-#define vbx264_predict_8x8_init vbx264_template(predict_8x8_init)
-void vbx264_predict_8x8_init   ( uint32_t cpu, vbx264_predict8x8_t pf[12], vbx264_predict_8x8_filter_t *predict_filter );
+#define x264_predict_16x16_init x264_template(predict_16x16_init)
+void x264_predict_16x16_init ( uint32_t cpu, x264_predict_t pf[7] );
+#define x264_predict_8x8c_init x264_template(predict_8x8c_init)
+void x264_predict_8x8c_init  ( uint32_t cpu, x264_predict_t pf[7] );
+#define x264_predict_8x16c_init x264_template(predict_8x16c_init)
+void x264_predict_8x16c_init ( uint32_t cpu, x264_predict_t pf[7] );
+#define x264_predict_4x4_init x264_template(predict_4x4_init)
+void x264_predict_4x4_init   ( uint32_t cpu, x264_predict_t pf[12] );
+#define x264_predict_8x8_init x264_template(predict_8x8_init)
+void x264_predict_8x8_init   ( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter );
 
 #endif

@@ -23,20 +23,22 @@
 #      CMakeLists.txt, vb_shim.h). Anything not in the copy lists is left
 #      untouched, and nothing is ever deleted.
 #
-# Copied source files get the same mechanical transform the port was created
-# with (see PORTING.md):
-#     x264_ -> vbx264_            (still required: the harness src/c_kernels +
-#                                  src/asm still define x264_* symbols; drop
-#                                  this sed once PLAN.md migration step 1
-#                                  removes the 2016 pair and sync becomes a
-#                                  plain copy)
-#     #include "common.h" / "base.h" -> #include "vb_shim.h"
+# The copied files are a PLAIN copy of upstream: since src/x264 is now the
+# single x264 in the tree (the 2016 src/c_kernels + src/asm pair is deleted),
+# no symbol renaming is needed anymore — the package keeps the native
+# upstream x264_* symbol names, so diffs against upstream stay clean. The
+# only mechanical transform left is the include shim:
+#     #include "common.h" / "base.h" / "common/common.h" / "common/base.h"
+#         -> #include "vb_shim.h"
+# applied to the copied .c/.h files (also inside the asm dirs, whose C
+# helpers mc-c.c/predict-c.c/asm-offsets.c include upstream's common.h);
+# .asm/.S files are copied verbatim (they include the generated config.h).
 # Never edit synced files by hand — edit vb_shim.h instead.
 #
 # Acceptance after a sync (from the repo root):
 #     cmake --build build -j8 && ./build/vbench --bench=x264:
-#   the x264 rows must appear with the C column (and ISA columns once the
-#   asm is wired) and all checks must pass.
+#   the x264 rows must appear with the C, C-plain and ISA columns populated
+#   and all checks must pass.
 #
 set -euo pipefail
 
@@ -53,8 +55,7 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 DEST_DIR=$REPO_ROOT/src/$CODEC
 BUILD_DIR=${BUILD_DIR:-build}
 
-# Upstream path | dest path relative to src/x264/ | mode (sed = transformed, raw = verbatim)
-# mode defaults to sed when omitted.
+# Upstream path | dest path relative to src/x264/
 COPY_FILES=(
     "common/bitstream.c|bitstream.c"
     "common/cabac.c|cabac.c"
@@ -72,16 +73,16 @@ COPY_FILES=(
     "common/pixel.h|pixel.h"
     "common/predict.h|predict.h"
     "common/quant.h|quant.h"
-    "COPYING|LICENSE|raw"
+    "COPYING|LICENSE"
 )
 
-# Upstream dir | dest dir relative to src/x264/ — copied verbatim (asm moves
-# together with the C above; upstream also has ppc/mips/loongarch/opencl asm
-# dirs which this port does not use — add them here if that changes).
+# Upstream dirs copied into src/x264/ — the asm moves together with the C
+# above. .c/.h files inside get the include-shim rewrite; .asm/.S are copied
+# verbatim. (upstream also has arm/ppc/mips/loongarch/opencl asm dirs which
+# this port does not use — add them here if that changes.)
 COPY_DIRS=(
     "common/x86|x86"
     "common/aarch64|aarch64"
-    "common/arm|arm"
 )
 
 # Local-only files this script must never overwrite (or create). Anything under
@@ -104,11 +105,14 @@ is_protected() {
     return 1
 }
 
-# Mechanical transform applied to copied source files (stdout).
+# Mechanical transform applied to copied C sources/headers (stdout): plain
+# copy of upstream except the include shim (vb_shim.h replaces upstream's
+# common.h/base.h). No symbol renaming — the package uses native x264_* names.
 transform_file() {
-    sed -e 's/x264_/vbx264_/g' \
-        -e 's/#include "common.h"/#include "vb_shim.h"/' \
-        -e 's/#include "base.h"/#include "vb_shim.h"/' \
+    sed -e 's|#include "common/common.h"|#include "vb_shim.h"|' \
+        -e 's|#include "common/base.h"|#include "vb_shim.h"|' \
+        -e 's|#include "common.h"|#include "vb_shim.h"|' \
+        -e 's|#include "base.h"|#include "vb_shim.h"|' \
         "$1"
 }
 
@@ -122,8 +126,8 @@ check_dst() {
     fi
 }
 
-copy_file() { # <upstream-rel> <dest-rel> <mode>
-    local up_rel=$1 dst_rel=$2 mode=${3:-sed}
+copy_file() { # <upstream-rel> <dest-rel> <mode: shim|raw>
+    local up_rel=$1 dst_rel=$2 mode=$3
     local src=$UPSTREAM_DIR/$up_rel dst=$DEST_DIR/$dst_rel
     check_dst "$dst_rel"
     if [ ! -f "$src" ]; then
@@ -144,7 +148,7 @@ copy_file() { # <upstream-rel> <dest-rel> <mode>
     printf 'copied:   %-34s -> src/%s/%s\n' "$up_rel" "$CODEC" "$dst_rel"
 }
 
-copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (verbatim; never deletes)
+copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (per file; never deletes)
     local up_rel=$1 dst_rel=$2
     local src=$UPSTREAM_DIR/$up_rel dst=$DEST_DIR/$dst_rel
     check_dst "$dst_rel"
@@ -157,8 +161,24 @@ copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (verbatim; never deletes)
         return 0
     fi
     mkdir -p "$dst"
-    cp -a "$src/." "$dst/"
-    printf 'copied:   %-34s -> src/%s/%s/\n' "$up_rel" "$CODEC" "$dst_rel"
+    local f rel mode
+    while IFS= read -r -d '' f; do
+        rel=${f#"$src"/}
+        check_dst "$dst_rel/$rel"
+        case "$rel" in
+            *.c|*.h) mode=shim ;;
+            *)        mode=raw ;;
+        esac
+        if [ "$mode" = raw ]; then
+            mkdir -p "$(dirname "$dst/$rel")"
+            cp -a "$f" "$dst/$rel"
+        else
+            mkdir -p "$(dirname "$dst/$rel")"
+            transform_file "$f" > "$dst/$rel.vbsync.$$"
+            mv "$dst/$rel.vbsync.$$" "$dst/$rel"
+        fi
+        printf 'copied:   %-34s -> src/%s/%s\n' "$up_rel/$rel" "$CODEC" "$dst_rel/$rel"
+    done < <(find "$src" -type f -print0)
 }
 
 update_upstream() {
@@ -207,10 +227,14 @@ main() {
     echo ">>> syncing $CODEC @ $(git -C "$UPSTREAM_DIR" rev-parse --short HEAD) into $DEST_DIR"
     [ "$DRY_RUN" = 1 ] && echo ">>> DRY RUN — nothing will be written to the repo"
 
-    local entry up_rel dst_rel mode
+    local entry up_rel dst_rel
     for entry in "${COPY_FILES[@]}"; do
-        IFS='|' read -r up_rel dst_rel mode <<< "$entry"
-        copy_file "$up_rel" "$dst_rel" "${mode:-sed}"
+        IFS='|' read -r up_rel dst_rel <<< "$entry"
+        if [ "$dst_rel" = "LICENSE" ]; then
+            copy_file "$up_rel" "$dst_rel" raw
+        else
+            copy_file "$up_rel" "$dst_rel" shim
+        fi
     done
     for entry in "${COPY_DIRS[@]}"; do
         IFS='|' read -r up_rel dst_rel <<< "$entry"

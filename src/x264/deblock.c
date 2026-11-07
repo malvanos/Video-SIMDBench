@@ -92,19 +92,19 @@ static ALWAYS_INLINE void deblock_edge_luma_c( pixel *pix, intptr_t xstride, int
         if( abs( p2 - p0 ) < beta )
         {
             if( tc0 )
-                pix[-2*xstride] = p1 + vbx264_clip3( (( p2 + ((p0 + q0 + 1) >> 1)) >> 1) - p1, -tc0, tc0 );
+                pix[-2*xstride] = p1 + x264_clip3( (( p2 + ((p0 + q0 + 1) >> 1)) >> 1) - p1, -tc0, tc0 );
             tc++;
         }
         if( abs( q2 - q0 ) < beta )
         {
             if( tc0 )
-                pix[ 1*xstride] = q1 + vbx264_clip3( (( q2 + ((p0 + q0 + 1) >> 1)) >> 1) - q1, -tc0, tc0 );
+                pix[ 1*xstride] = q1 + x264_clip3( (( q2 + ((p0 + q0 + 1) >> 1)) >> 1) - q1, -tc0, tc0 );
             tc++;
         }
 
-        delta = vbx264_clip3( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
-        pix[-1*xstride] = vbx264_clip_pixel( p0 + delta );    /* p0' */
-        pix[ 0*xstride] = vbx264_clip_pixel( q0 - delta );    /* q0' */
+        delta = x264_clip3( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
+        pix[-1*xstride] = x264_clip_pixel( p0 + delta );    /* p0' */
+        pix[ 0*xstride] = x264_clip_pixel( q0 - delta );    /* q0' */
     }
 }
 static inline void deblock_luma_c( pixel *pix, intptr_t xstride, intptr_t ystride, int alpha, int beta, int8_t *tc0 )
@@ -143,9 +143,9 @@ static ALWAYS_INLINE void deblock_edge_chroma_c( pixel *pix, intptr_t xstride, i
 
     if( abs( p0 - q0 ) < alpha && abs( p1 - p0 ) < beta && abs( q1 - q0 ) < beta )
     {
-        int delta = vbx264_clip3( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
-        pix[-1*xstride] = vbx264_clip_pixel( p0 + delta );    /* p0' */
-        pix[ 0*xstride] = vbx264_clip_pixel( q0 - delta );    /* q0' */
+        int delta = x264_clip3( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
+        pix[-1*xstride] = x264_clip_pixel( p0 + delta );    /* p0' */
+        pix[ 0*xstride] = x264_clip_pixel( q0 - delta );    /* q0' */
     }
 }
 static ALWAYS_INLINE void deblock_chroma_c( pixel *pix, int height, intptr_t xstride, intptr_t ystride, int alpha, int beta, int8_t *tc0 )
@@ -322,7 +322,7 @@ static void deblock_strength_c( uint8_t nnz[X264_SCAN8_SIZE], int8_t ref[2][X264
 #include "loongarch/deblock.h"
 #endif
 
-void vbx264_deblock_init( uint32_t cpu, vbx264_deblock_function_t *pf, int b_mbaff )
+void x264_deblock_init( uint32_t cpu, x264_deblock_function_t *pf, int b_mbaff )
 {
     pf->deblock_luma[1] = deblock_v_luma_c;
     pf->deblock_luma[0] = deblock_h_luma_c;
@@ -344,73 +344,73 @@ void vbx264_deblock_init( uint32_t cpu, vbx264_deblock_function_t *pf, int b_mba
     if( cpu&X264_CPU_MMX2 )
     {
 #if ARCH_X86
-        pf->deblock_luma[1] = vbx264_deblock_v_luma_mmx2;
-        pf->deblock_luma[0] = vbx264_deblock_h_luma_mmx2;
-        pf->deblock_chroma[1] = vbx264_deblock_v_chroma_mmx2;
-        pf->deblock_h_chroma_420 = vbx264_deblock_h_chroma_mmx2;
-        pf->deblock_chroma_420_mbaff = vbx264_deblock_h_chroma_mbaff_mmx2;
-        pf->deblock_h_chroma_422 = vbx264_deblock_h_chroma_422_mmx2;
-        pf->deblock_h_chroma_422_intra = vbx264_deblock_h_chroma_422_intra_mmx2;
-        pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_mmx2;
-        pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_mmx2;
-        pf->deblock_chroma_intra[1] = vbx264_deblock_v_chroma_intra_mmx2;
-        pf->deblock_h_chroma_420_intra = vbx264_deblock_h_chroma_intra_mmx2;
-        pf->deblock_chroma_420_intra_mbaff = vbx264_deblock_h_chroma_intra_mbaff_mmx2;
+        pf->deblock_luma[1] = x264_deblock_v_luma_mmx2;
+        pf->deblock_luma[0] = x264_deblock_h_luma_mmx2;
+        pf->deblock_chroma[1] = x264_deblock_v_chroma_mmx2;
+        pf->deblock_h_chroma_420 = x264_deblock_h_chroma_mmx2;
+        pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_mmx2;
+        pf->deblock_h_chroma_422 = x264_deblock_h_chroma_422_mmx2;
+        pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_mmx2;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_mmx2;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_mmx2;
+        pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_mmx2;
+        pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_mmx2;
+        pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_mmx2;
 #endif
 #if !HIGH_BIT_DEPTH
-        pf->deblock_chroma_420_intra_mbaff = vbx264_deblock_h_chroma_intra_mbaff_mmx2;
+        pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_mmx2;
 #endif
         if( cpu&X264_CPU_SSE2 )
         {
-            pf->deblock_strength = vbx264_deblock_strength_sse2;
-            pf->deblock_h_chroma_420 = vbx264_deblock_h_chroma_sse2;
-            pf->deblock_h_chroma_422 = vbx264_deblock_h_chroma_422_sse2;
-            pf->deblock_h_chroma_422_intra = vbx264_deblock_h_chroma_422_intra_sse2;
-            pf->deblock_chroma_420_mbaff = vbx264_deblock_h_chroma_mbaff_sse2;
-            pf->deblock_luma[1] = vbx264_deblock_v_luma_sse2;
-            pf->deblock_luma[0] = vbx264_deblock_h_luma_sse2;
-            pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_sse2;
-            pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_sse2;
+            pf->deblock_strength = x264_deblock_strength_sse2;
+            pf->deblock_h_chroma_420 = x264_deblock_h_chroma_sse2;
+            pf->deblock_h_chroma_422 = x264_deblock_h_chroma_422_sse2;
+            pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_sse2;
+            pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_sse2;
+            pf->deblock_luma[1] = x264_deblock_v_luma_sse2;
+            pf->deblock_luma[0] = x264_deblock_h_luma_sse2;
+            pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_sse2;
+            pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_sse2;
             if( !(cpu&X264_CPU_STACK_MOD4) )
             {
-                pf->deblock_chroma[1] = vbx264_deblock_v_chroma_sse2;
-                pf->deblock_chroma_intra[1] = vbx264_deblock_v_chroma_intra_sse2;
-                pf->deblock_h_chroma_420_intra = vbx264_deblock_h_chroma_intra_sse2;
+                pf->deblock_chroma[1] = x264_deblock_v_chroma_sse2;
+                pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_sse2;
+                pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_sse2;
 #if HIGH_BIT_DEPTH
-                pf->deblock_chroma_420_intra_mbaff= vbx264_deblock_h_chroma_intra_mbaff_sse2;
+                pf->deblock_chroma_420_intra_mbaff= x264_deblock_h_chroma_intra_mbaff_sse2;
 #endif
             }
         }
         if( cpu&X264_CPU_SSSE3 )
-            pf->deblock_strength = vbx264_deblock_strength_ssse3;
+            pf->deblock_strength = x264_deblock_strength_ssse3;
         if( cpu&X264_CPU_AVX )
         {
-            pf->deblock_strength = vbx264_deblock_strength_avx;
-            pf->deblock_h_chroma_420 = vbx264_deblock_h_chroma_avx;
-            pf->deblock_h_chroma_422 = vbx264_deblock_h_chroma_422_avx;
-            pf->deblock_h_chroma_422_intra = vbx264_deblock_h_chroma_422_intra_avx;
-            pf->deblock_luma[1] = vbx264_deblock_v_luma_avx;
-            pf->deblock_luma[0] = vbx264_deblock_h_luma_avx;
-            pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_avx;
-            pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_avx;
+            pf->deblock_strength = x264_deblock_strength_avx;
+            pf->deblock_h_chroma_420 = x264_deblock_h_chroma_avx;
+            pf->deblock_h_chroma_422 = x264_deblock_h_chroma_422_avx;
+            pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_avx;
+            pf->deblock_luma[1] = x264_deblock_v_luma_avx;
+            pf->deblock_luma[0] = x264_deblock_h_luma_avx;
+            pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_avx;
+            pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_avx;
             if( !(cpu&X264_CPU_STACK_MOD4) )
             {
-                pf->deblock_chroma[1] = vbx264_deblock_v_chroma_avx;
-                pf->deblock_chroma_intra[1] = vbx264_deblock_v_chroma_intra_avx;
-                pf->deblock_h_chroma_420_intra = vbx264_deblock_h_chroma_intra_avx;
+                pf->deblock_chroma[1] = x264_deblock_v_chroma_avx;
+                pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_avx;
+                pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_avx;
 #if HIGH_BIT_DEPTH
-                pf->deblock_chroma_420_mbaff = vbx264_deblock_h_chroma_mbaff_avx;
-                pf->deblock_chroma_420_intra_mbaff = vbx264_deblock_h_chroma_intra_mbaff_avx;
+                pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_avx;
+                pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_avx;
 #endif
             }
         }
         if( cpu&X264_CPU_AVX2 )
         {
-            pf->deblock_strength = vbx264_deblock_strength_avx2;
+            pf->deblock_strength = x264_deblock_strength_avx2;
         }
         if( cpu&X264_CPU_AVX512 )
         {
-            pf->deblock_strength = vbx264_deblock_strength_avx512;
+            pf->deblock_strength = x264_deblock_strength_avx512;
         }
     }
 #endif
@@ -419,32 +419,32 @@ void vbx264_deblock_init( uint32_t cpu, vbx264_deblock_function_t *pf, int b_mba
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
     {
-        pf->deblock_luma[1] = vbx264_deblock_v_luma_altivec;
-        pf->deblock_luma[0] = vbx264_deblock_h_luma_altivec;
+        pf->deblock_luma[1] = x264_deblock_v_luma_altivec;
+        pf->deblock_luma[0] = x264_deblock_h_luma_altivec;
     }
 #endif // HAVE_ALTIVEC
 
 #if HAVE_ARMV6 || HAVE_AARCH64
     if( cpu&X264_CPU_NEON )
     {
-        pf->deblock_luma[1] = vbx264_deblock_v_luma_neon;
-        pf->deblock_luma[0] = vbx264_deblock_h_luma_neon;
-        pf->deblock_chroma[1] = vbx264_deblock_v_chroma_neon;
-        pf->deblock_h_chroma_420 = vbx264_deblock_h_chroma_neon;
-        pf->deblock_h_chroma_422 = vbx264_deblock_h_chroma_422_neon;
-        pf->deblock_chroma_420_mbaff = vbx264_deblock_h_chroma_mbaff_neon;
-        pf->deblock_chroma_420_intra_mbaff = vbx264_deblock_h_chroma_intra_mbaff_neon;
-        pf->deblock_h_chroma_420_intra = vbx264_deblock_h_chroma_intra_neon;
-        pf->deblock_h_chroma_422_intra = vbx264_deblock_h_chroma_422_intra_neon;
-        pf->deblock_chroma_intra[1] = vbx264_deblock_v_chroma_intra_neon;
-        pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_neon;
-        pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_neon;
-        pf->deblock_strength     = vbx264_deblock_strength_neon;
+        pf->deblock_luma[1] = x264_deblock_v_luma_neon;
+        pf->deblock_luma[0] = x264_deblock_h_luma_neon;
+        pf->deblock_chroma[1] = x264_deblock_v_chroma_neon;
+        pf->deblock_h_chroma_420 = x264_deblock_h_chroma_neon;
+        pf->deblock_h_chroma_422 = x264_deblock_h_chroma_422_neon;
+        pf->deblock_chroma_420_mbaff = x264_deblock_h_chroma_mbaff_neon;
+        pf->deblock_chroma_420_intra_mbaff = x264_deblock_h_chroma_intra_mbaff_neon;
+        pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_neon;
+        pf->deblock_h_chroma_422_intra = x264_deblock_h_chroma_422_intra_neon;
+        pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_neon;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_neon;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_neon;
+        pf->deblock_strength     = x264_deblock_strength_neon;
     }
 #if HAVE_SVE
     if ( cpu&X264_CPU_SVE )
     {
-        pf->deblock_chroma[1] = vbx264_deblock_v_chroma_sve;
+        pf->deblock_chroma[1] = x264_deblock_v_chroma_sve;
     }
 #endif
 #endif
@@ -452,32 +452,32 @@ void vbx264_deblock_init( uint32_t cpu, vbx264_deblock_function_t *pf, int b_mba
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        pf->deblock_luma[1] = vbx264_deblock_v_luma_msa;
-        pf->deblock_luma[0] = vbx264_deblock_h_luma_msa;
-        pf->deblock_chroma[1] = vbx264_deblock_v_chroma_msa;
-        pf->deblock_h_chroma_420 = vbx264_deblock_h_chroma_msa;
-        pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_msa;
-        pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_msa;
-        pf->deblock_chroma_intra[1] = vbx264_deblock_v_chroma_intra_msa;
-        pf->deblock_h_chroma_420_intra = vbx264_deblock_h_chroma_intra_msa;
-        pf->deblock_strength = vbx264_deblock_strength_msa;
+        pf->deblock_luma[1] = x264_deblock_v_luma_msa;
+        pf->deblock_luma[0] = x264_deblock_h_luma_msa;
+        pf->deblock_chroma[1] = x264_deblock_v_chroma_msa;
+        pf->deblock_h_chroma_420 = x264_deblock_h_chroma_msa;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_msa;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_msa;
+        pf->deblock_chroma_intra[1] = x264_deblock_v_chroma_intra_msa;
+        pf->deblock_h_chroma_420_intra = x264_deblock_h_chroma_intra_msa;
+        pf->deblock_strength = x264_deblock_strength_msa;
     }
 #endif
 
 #if HAVE_LSX
     if( cpu&X264_CPU_LSX )
     {
-        pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_lsx;
-        pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_lsx;
-        pf->deblock_strength = vbx264_deblock_strength_lsx;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_lsx;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_lsx;
+        pf->deblock_strength = x264_deblock_strength_lsx;
     }
     if( cpu&X264_CPU_LASX )
     {
-        pf->deblock_luma[1] = vbx264_deblock_v_luma_lasx;
-        pf->deblock_luma[0] = vbx264_deblock_h_luma_lasx;
-        pf->deblock_luma_intra[1] = vbx264_deblock_v_luma_intra_lasx;
-        pf->deblock_luma_intra[0] = vbx264_deblock_h_luma_intra_lasx;
-        pf->deblock_strength = vbx264_deblock_strength_lasx;
+        pf->deblock_luma[1] = x264_deblock_v_luma_lasx;
+        pf->deblock_luma[0] = x264_deblock_h_luma_lasx;
+        pf->deblock_luma_intra[1] = x264_deblock_v_luma_intra_lasx;
+        pf->deblock_luma_intra[0] = x264_deblock_h_luma_intra_lasx;
+        pf->deblock_strength = x264_deblock_strength_lasx;
     }
 #endif
 

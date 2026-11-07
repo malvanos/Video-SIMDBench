@@ -304,7 +304,7 @@ static void add4x4_idct( pixel *p_dst, dctcoef dct[16] )
     for( int y = 0; y < 4; y++ )
     {
         for( int x = 0; x < 4; x++ )
-            p_dst[x] = vbx264_clip_pixel( p_dst[x] + d[y*4+x] );
+            p_dst[x] = x264_clip_pixel( p_dst[x] + d[y*4+x] );
         p_dst += FDEC_STRIDE;
     }
 }
@@ -424,7 +424,7 @@ static void add8x8_idct8( pixel *dst, dctcoef dct[64] )
 #undef DST
 
 #define SRC(x)     dct[i*8+x]
-#define DST(x,rhs) dst[i + x*FDEC_STRIDE] = vbx264_clip_pixel( dst[i + x*FDEC_STRIDE] + ((rhs) >> 6) );
+#define DST(x,rhs) dst[i + x*FDEC_STRIDE] = x264_clip_pixel( dst[i + x*FDEC_STRIDE] + ((rhs) >> 6) );
     for( int i = 0; i < 8; i++ )
         IDCT8_1D
 #undef SRC
@@ -444,10 +444,10 @@ static inline void add4x4_idct_dc( pixel *p_dst, dctcoef dc )
     dc = (dc + 32) >> 6;
     for( int i = 0; i < 4; i++, p_dst += FDEC_STRIDE )
     {
-        p_dst[0] = vbx264_clip_pixel( p_dst[0] + dc );
-        p_dst[1] = vbx264_clip_pixel( p_dst[1] + dc );
-        p_dst[2] = vbx264_clip_pixel( p_dst[2] + dc );
-        p_dst[3] = vbx264_clip_pixel( p_dst[3] + dc );
+        p_dst[0] = x264_clip_pixel( p_dst[0] + dc );
+        p_dst[1] = x264_clip_pixel( p_dst[1] + dc );
+        p_dst[2] = x264_clip_pixel( p_dst[2] + dc );
+        p_dst[3] = x264_clip_pixel( p_dst[3] + dc );
     }
 }
 
@@ -472,9 +472,9 @@ static void add16x16_idct_dc( pixel *p_dst, dctcoef dct[16] )
 
 
 /****************************************************************************
- * vbx264_dct_init:
+ * x264_dct_init:
  ****************************************************************************/
-void vbx264_dct_init( uint32_t cpu, vbx264_dct_function_t *dctf )
+void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf )
 {
     dctf->sub4x4_dct    = sub4x4_dct;
     dctf->add4x4_idct   = add4x4_idct;
@@ -505,218 +505,218 @@ void vbx264_dct_init( uint32_t cpu, vbx264_dct_function_t *dctf )
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX )
     {
-        dctf->sub4x4_dct    = vbx264_sub4x4_dct_mmx;
-        dctf->sub8x8_dct    = vbx264_sub8x8_dct_mmx;
-        dctf->sub16x16_dct  = vbx264_sub16x16_dct_mmx;
+        dctf->sub4x4_dct    = x264_sub4x4_dct_mmx;
+        dctf->sub8x8_dct    = x264_sub8x8_dct_mmx;
+        dctf->sub16x16_dct  = x264_sub16x16_dct_mmx;
     }
     if( cpu&X264_CPU_SSE2 )
     {
-        dctf->add4x4_idct     = vbx264_add4x4_idct_sse2;
-        dctf->dct4x4dc        = vbx264_dct4x4dc_sse2;
-        dctf->idct4x4dc       = vbx264_idct4x4dc_sse2;
-        dctf->dct2x4dc        = vbx264_dct2x4dc_sse2;
-        dctf->sub8x8_dct8     = vbx264_sub8x8_dct8_sse2;
-        dctf->sub16x16_dct8   = vbx264_sub16x16_dct8_sse2;
-        dctf->add8x8_idct     = vbx264_add8x8_idct_sse2;
-        dctf->add16x16_idct   = vbx264_add16x16_idct_sse2;
-        dctf->add8x8_idct8    = vbx264_add8x8_idct8_sse2;
-        dctf->add16x16_idct8    = vbx264_add16x16_idct8_sse2;
-        dctf->sub8x8_dct_dc   = vbx264_sub8x8_dct_dc_sse2;
-        dctf->add8x8_idct_dc  = vbx264_add8x8_idct_dc_sse2;
-        dctf->sub8x16_dct_dc  = vbx264_sub8x16_dct_dc_sse2;
-        dctf->add16x16_idct_dc= vbx264_add16x16_idct_dc_sse2;
+        dctf->add4x4_idct     = x264_add4x4_idct_sse2;
+        dctf->dct4x4dc        = x264_dct4x4dc_sse2;
+        dctf->idct4x4dc       = x264_idct4x4dc_sse2;
+        dctf->dct2x4dc        = x264_dct2x4dc_sse2;
+        dctf->sub8x8_dct8     = x264_sub8x8_dct8_sse2;
+        dctf->sub16x16_dct8   = x264_sub16x16_dct8_sse2;
+        dctf->add8x8_idct     = x264_add8x8_idct_sse2;
+        dctf->add16x16_idct   = x264_add16x16_idct_sse2;
+        dctf->add8x8_idct8    = x264_add8x8_idct8_sse2;
+        dctf->add16x16_idct8    = x264_add16x16_idct8_sse2;
+        dctf->sub8x8_dct_dc   = x264_sub8x8_dct_dc_sse2;
+        dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_sse2;
+        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_sse2;
+        dctf->add16x16_idct_dc= x264_add16x16_idct_dc_sse2;
     }
     if( cpu&X264_CPU_SSE4 )
     {
-        dctf->sub8x8_dct8     = vbx264_sub8x8_dct8_sse4;
-        dctf->sub16x16_dct8   = vbx264_sub16x16_dct8_sse4;
+        dctf->sub8x8_dct8     = x264_sub8x8_dct8_sse4;
+        dctf->sub16x16_dct8   = x264_sub16x16_dct8_sse4;
     }
     if( cpu&X264_CPU_AVX )
     {
-        dctf->add4x4_idct     = vbx264_add4x4_idct_avx;
-        dctf->dct4x4dc        = vbx264_dct4x4dc_avx;
-        dctf->idct4x4dc       = vbx264_idct4x4dc_avx;
-        dctf->dct2x4dc        = vbx264_dct2x4dc_avx;
-        dctf->sub8x8_dct8     = vbx264_sub8x8_dct8_avx;
-        dctf->sub16x16_dct8   = vbx264_sub16x16_dct8_avx;
-        dctf->add8x8_idct     = vbx264_add8x8_idct_avx;
-        dctf->add16x16_idct   = vbx264_add16x16_idct_avx;
-        dctf->add8x8_idct8    = vbx264_add8x8_idct8_avx;
-        dctf->add16x16_idct8  = vbx264_add16x16_idct8_avx;
-        dctf->add8x8_idct_dc  = vbx264_add8x8_idct_dc_avx;
-        dctf->sub8x16_dct_dc  = vbx264_sub8x16_dct_dc_avx;
-        dctf->add16x16_idct_dc= vbx264_add16x16_idct_dc_avx;
+        dctf->add4x4_idct     = x264_add4x4_idct_avx;
+        dctf->dct4x4dc        = x264_dct4x4dc_avx;
+        dctf->idct4x4dc       = x264_idct4x4dc_avx;
+        dctf->dct2x4dc        = x264_dct2x4dc_avx;
+        dctf->sub8x8_dct8     = x264_sub8x8_dct8_avx;
+        dctf->sub16x16_dct8   = x264_sub16x16_dct8_avx;
+        dctf->add8x8_idct     = x264_add8x8_idct_avx;
+        dctf->add16x16_idct   = x264_add16x16_idct_avx;
+        dctf->add8x8_idct8    = x264_add8x8_idct8_avx;
+        dctf->add16x16_idct8  = x264_add16x16_idct8_avx;
+        dctf->add8x8_idct_dc  = x264_add8x8_idct_dc_avx;
+        dctf->sub8x16_dct_dc  = x264_sub8x16_dct_dc_avx;
+        dctf->add16x16_idct_dc= x264_add16x16_idct_dc_avx;
     }
 #endif // HAVE_MMX
 #else // !HIGH_BIT_DEPTH
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX )
     {
-        dctf->sub4x4_dct    = vbx264_sub4x4_dct_mmx;
-        dctf->add4x4_idct   = vbx264_add4x4_idct_mmx;
-        dctf->idct4x4dc     = vbx264_idct4x4dc_mmx;
-        dctf->sub8x8_dct_dc = vbx264_sub8x8_dct_dc_mmx2;
+        dctf->sub4x4_dct    = x264_sub4x4_dct_mmx;
+        dctf->add4x4_idct   = x264_add4x4_idct_mmx;
+        dctf->idct4x4dc     = x264_idct4x4dc_mmx;
+        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_mmx2;
 
 #if !ARCH_X86_64
-        dctf->sub8x8_dct    = vbx264_sub8x8_dct_mmx;
-        dctf->sub16x16_dct  = vbx264_sub16x16_dct_mmx;
-        dctf->add8x8_idct   = vbx264_add8x8_idct_mmx;
-        dctf->add16x16_idct = vbx264_add16x16_idct_mmx;
+        dctf->sub8x8_dct    = x264_sub8x8_dct_mmx;
+        dctf->sub16x16_dct  = x264_sub16x16_dct_mmx;
+        dctf->add8x8_idct   = x264_add8x8_idct_mmx;
+        dctf->add16x16_idct = x264_add16x16_idct_mmx;
 
-        dctf->sub8x8_dct8   = vbx264_sub8x8_dct8_mmx;
-        dctf->sub16x16_dct8 = vbx264_sub16x16_dct8_mmx;
-        dctf->add8x8_idct8  = vbx264_add8x8_idct8_mmx;
-        dctf->add16x16_idct8= vbx264_add16x16_idct8_mmx;
+        dctf->sub8x8_dct8   = x264_sub8x8_dct8_mmx;
+        dctf->sub16x16_dct8 = x264_sub16x16_dct8_mmx;
+        dctf->add8x8_idct8  = x264_add8x8_idct8_mmx;
+        dctf->add16x16_idct8= x264_add16x16_idct8_mmx;
 #endif
     }
 
     if( cpu&X264_CPU_MMX2 )
     {
-        dctf->dct4x4dc         = vbx264_dct4x4dc_mmx2;
-        dctf->dct2x4dc         = vbx264_dct2x4dc_mmx2;
-        dctf->add8x8_idct_dc   = vbx264_add8x8_idct_dc_mmx2;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_mmx2;
+        dctf->dct4x4dc         = x264_dct4x4dc_mmx2;
+        dctf->dct2x4dc         = x264_dct2x4dc_mmx2;
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_mmx2;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_mmx2;
     }
 
     if( cpu&X264_CPU_SSE2 )
     {
-        dctf->sub8x8_dct8   = vbx264_sub8x8_dct8_sse2;
-        dctf->sub16x16_dct8 = vbx264_sub16x16_dct8_sse2;
-        dctf->sub8x8_dct_dc = vbx264_sub8x8_dct_dc_sse2;
-        dctf->sub8x16_dct_dc= vbx264_sub8x16_dct_dc_sse2;
-        dctf->add8x8_idct8  = vbx264_add8x8_idct8_sse2;
-        dctf->add16x16_idct8= vbx264_add16x16_idct8_sse2;
+        dctf->sub8x8_dct8   = x264_sub8x8_dct8_sse2;
+        dctf->sub16x16_dct8 = x264_sub16x16_dct8_sse2;
+        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_sse2;
+        dctf->sub8x16_dct_dc= x264_sub8x16_dct_dc_sse2;
+        dctf->add8x8_idct8  = x264_add8x8_idct8_sse2;
+        dctf->add16x16_idct8= x264_add16x16_idct8_sse2;
 
         if( !(cpu&X264_CPU_SSE2_IS_SLOW) )
         {
-            dctf->sub8x8_dct    = vbx264_sub8x8_dct_sse2;
-            dctf->sub16x16_dct  = vbx264_sub16x16_dct_sse2;
-            dctf->add8x8_idct   = vbx264_add8x8_idct_sse2;
-            dctf->add16x16_idct = vbx264_add16x16_idct_sse2;
-            dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_sse2;
+            dctf->sub8x8_dct    = x264_sub8x8_dct_sse2;
+            dctf->sub16x16_dct  = x264_sub16x16_dct_sse2;
+            dctf->add8x8_idct   = x264_add8x8_idct_sse2;
+            dctf->add16x16_idct = x264_add16x16_idct_sse2;
+            dctf->add16x16_idct_dc = x264_add16x16_idct_dc_sse2;
         }
     }
 
     if( (cpu&X264_CPU_SSSE3) && !(cpu&X264_CPU_SSE2_IS_SLOW) )
     {
-        dctf->sub8x16_dct_dc = vbx264_sub8x16_dct_dc_ssse3;
+        dctf->sub8x16_dct_dc = x264_sub8x16_dct_dc_ssse3;
         if( !(cpu&X264_CPU_SLOW_ATOM) )
         {
-            dctf->sub4x4_dct    = vbx264_sub4x4_dct_ssse3;
-            dctf->sub8x8_dct    = vbx264_sub8x8_dct_ssse3;
-            dctf->sub16x16_dct  = vbx264_sub16x16_dct_ssse3;
-            dctf->sub8x8_dct8   = vbx264_sub8x8_dct8_ssse3;
-            dctf->sub16x16_dct8 = vbx264_sub16x16_dct8_ssse3;
+            dctf->sub4x4_dct    = x264_sub4x4_dct_ssse3;
+            dctf->sub8x8_dct    = x264_sub8x8_dct_ssse3;
+            dctf->sub16x16_dct  = x264_sub16x16_dct_ssse3;
+            dctf->sub8x8_dct8   = x264_sub8x8_dct8_ssse3;
+            dctf->sub16x16_dct8 = x264_sub16x16_dct8_ssse3;
             if( !(cpu&X264_CPU_SLOW_PSHUFB) )
             {
-                dctf->add8x8_idct_dc = vbx264_add8x8_idct_dc_ssse3;
-                dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_ssse3;
+                dctf->add8x8_idct_dc = x264_add8x8_idct_dc_ssse3;
+                dctf->add16x16_idct_dc = x264_add16x16_idct_dc_ssse3;
             }
         }
     }
 
     if( cpu&X264_CPU_SSE4 )
-        dctf->add4x4_idct   = vbx264_add4x4_idct_sse4;
+        dctf->add4x4_idct   = x264_add4x4_idct_sse4;
 
     if( cpu&X264_CPU_AVX )
     {
-        dctf->add4x4_idct      = vbx264_add4x4_idct_avx;
-        dctf->add8x8_idct      = vbx264_add8x8_idct_avx;
-        dctf->add16x16_idct    = vbx264_add16x16_idct_avx;
-        dctf->add8x8_idct8     = vbx264_add8x8_idct8_avx;
-        dctf->add16x16_idct8   = vbx264_add16x16_idct8_avx;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_avx;
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_avx;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_avx;
-        dctf->sub8x8_dct8      = vbx264_sub8x8_dct8_avx;
-        dctf->sub16x16_dct8    = vbx264_sub16x16_dct8_avx;
+        dctf->add4x4_idct      = x264_add4x4_idct_avx;
+        dctf->add8x8_idct      = x264_add8x8_idct_avx;
+        dctf->add16x16_idct    = x264_add16x16_idct_avx;
+        dctf->add8x8_idct8     = x264_add8x8_idct8_avx;
+        dctf->add16x16_idct8   = x264_add16x16_idct8_avx;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_avx;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_avx;
+        dctf->sub8x8_dct8      = x264_sub8x8_dct8_avx;
+        dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx;
     }
 
     if( cpu&X264_CPU_XOP )
     {
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_xop;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_xop;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_xop;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_xop;
     }
 
     if( cpu&X264_CPU_AVX2 )
     {
-        dctf->add8x8_idct      = vbx264_add8x8_idct_avx2;
-        dctf->add16x16_idct    = vbx264_add16x16_idct_avx2;
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_avx2;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_avx2;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_avx2;
+        dctf->add8x8_idct      = x264_add8x8_idct_avx2;
+        dctf->add16x16_idct    = x264_add16x16_idct_avx2;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_avx2;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_avx2;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_avx2;
 #if ARCH_X86_64
-        dctf->sub16x16_dct8    = vbx264_sub16x16_dct8_avx2;
+        dctf->sub16x16_dct8    = x264_sub16x16_dct8_avx2;
 #endif
     }
 
     if( cpu&X264_CPU_AVX512 )
     {
-        dctf->sub4x4_dct       = vbx264_sub4x4_dct_avx512;
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_avx512;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_avx512;
-        dctf->sub8x8_dct_dc    = vbx264_sub8x8_dct_dc_avx512;
-        dctf->sub8x16_dct_dc   = vbx264_sub8x16_dct_dc_avx512;
-        dctf->add8x8_idct      = vbx264_add8x8_idct_avx512;
+        dctf->sub4x4_dct       = x264_sub4x4_dct_avx512;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_avx512;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_avx512;
+        dctf->sub8x8_dct_dc    = x264_sub8x8_dct_dc_avx512;
+        dctf->sub8x16_dct_dc   = x264_sub8x16_dct_dc_avx512;
+        dctf->add8x8_idct      = x264_add8x8_idct_avx512;
     }
 #endif //HAVE_MMX
 
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
     {
-        dctf->sub4x4_dct    = vbx264_sub4x4_dct_altivec;
-        dctf->sub8x8_dct    = vbx264_sub8x8_dct_altivec;
-        dctf->sub16x16_dct  = vbx264_sub16x16_dct_altivec;
+        dctf->sub4x4_dct    = x264_sub4x4_dct_altivec;
+        dctf->sub8x8_dct    = x264_sub8x8_dct_altivec;
+        dctf->sub16x16_dct  = x264_sub16x16_dct_altivec;
 
-        dctf->add8x8_idct_dc = vbx264_add8x8_idct_dc_altivec;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_altivec;
+        dctf->add8x8_idct_dc = x264_add8x8_idct_dc_altivec;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_altivec;
 
-        dctf->add4x4_idct   = vbx264_add4x4_idct_altivec;
-        dctf->add8x8_idct   = vbx264_add8x8_idct_altivec;
-        dctf->add16x16_idct = vbx264_add16x16_idct_altivec;
+        dctf->add4x4_idct   = x264_add4x4_idct_altivec;
+        dctf->add8x8_idct   = x264_add8x8_idct_altivec;
+        dctf->add16x16_idct = x264_add16x16_idct_altivec;
 
-        dctf->sub8x8_dct_dc = vbx264_sub8x8_dct_dc_altivec;
-        dctf->sub8x8_dct8   = vbx264_sub8x8_dct8_altivec;
-        dctf->sub16x16_dct8 = vbx264_sub16x16_dct8_altivec;
+        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_altivec;
+        dctf->sub8x8_dct8   = x264_sub8x8_dct8_altivec;
+        dctf->sub16x16_dct8 = x264_sub16x16_dct8_altivec;
 
-        dctf->add8x8_idct8  = vbx264_add8x8_idct8_altivec;
-        dctf->add16x16_idct8= vbx264_add16x16_idct8_altivec;
+        dctf->add8x8_idct8  = x264_add8x8_idct8_altivec;
+        dctf->add16x16_idct8= x264_add16x16_idct8_altivec;
     }
 #endif
 
 #if HAVE_ARMV6 || HAVE_AARCH64
     if( cpu&X264_CPU_NEON )
     {
-        dctf->sub4x4_dct    = vbx264_sub4x4_dct_neon;
-        dctf->sub8x8_dct    = vbx264_sub8x8_dct_neon;
-        dctf->sub16x16_dct  = vbx264_sub16x16_dct_neon;
-        dctf->add8x8_idct_dc = vbx264_add8x8_idct_dc_neon;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_neon;
-        dctf->sub8x8_dct_dc = vbx264_sub8x8_dct_dc_neon;
-        dctf->dct4x4dc      = vbx264_dct4x4dc_neon;
-        dctf->idct4x4dc     = vbx264_idct4x4dc_neon;
+        dctf->sub4x4_dct    = x264_sub4x4_dct_neon;
+        dctf->sub8x8_dct    = x264_sub8x8_dct_neon;
+        dctf->sub16x16_dct  = x264_sub16x16_dct_neon;
+        dctf->add8x8_idct_dc = x264_add8x8_idct_dc_neon;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_neon;
+        dctf->sub8x8_dct_dc = x264_sub8x8_dct_dc_neon;
+        dctf->dct4x4dc      = x264_dct4x4dc_neon;
+        dctf->idct4x4dc     = x264_idct4x4dc_neon;
 
-        dctf->add4x4_idct   = vbx264_add4x4_idct_neon;
-        dctf->add8x8_idct   = vbx264_add8x8_idct_neon;
-        dctf->add16x16_idct = vbx264_add16x16_idct_neon;
+        dctf->add4x4_idct   = x264_add4x4_idct_neon;
+        dctf->add8x8_idct   = x264_add8x8_idct_neon;
+        dctf->add16x16_idct = x264_add16x16_idct_neon;
 
-        dctf->sub8x8_dct8   = vbx264_sub8x8_dct8_neon;
-        dctf->sub16x16_dct8 = vbx264_sub16x16_dct8_neon;
+        dctf->sub8x8_dct8   = x264_sub8x8_dct8_neon;
+        dctf->sub16x16_dct8 = x264_sub16x16_dct8_neon;
 
-        dctf->add8x8_idct8  = vbx264_add8x8_idct8_neon;
-        dctf->add16x16_idct8= vbx264_add16x16_idct8_neon;
-        dctf->sub8x16_dct_dc= vbx264_sub8x16_dct_dc_neon;
+        dctf->add8x8_idct8  = x264_add8x8_idct8_neon;
+        dctf->add16x16_idct8= x264_add16x16_idct8_neon;
+        dctf->sub8x16_dct_dc= x264_sub8x16_dct_dc_neon;
     }
 #if HAVE_SVE
     if ( cpu&X264_CPU_SVE )
     {
-        dctf->sub4x4_dct    = vbx264_sub4x4_dct_sve;
+        dctf->sub4x4_dct    = x264_sub4x4_dct_sve;
     }
 #endif
 #if HAVE_SVE2
     if ( cpu&X264_CPU_SVE2 )
     {
-        dctf->add4x4_idct   = vbx264_add4x4_idct_sve2;
+        dctf->add4x4_idct   = x264_add4x4_idct_sve2;
     }
 #endif
 #endif
@@ -724,52 +724,52 @@ void vbx264_dct_init( uint32_t cpu, vbx264_dct_function_t *dctf )
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        dctf->sub4x4_dct       = vbx264_sub4x4_dct_msa;
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_msa;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_msa;
-        dctf->sub8x8_dct_dc    = vbx264_sub8x8_dct_dc_msa;
-        dctf->sub8x16_dct_dc   = vbx264_sub8x16_dct_dc_msa;
-        dctf->dct4x4dc         = vbx264_dct4x4dc_msa;
-        dctf->idct4x4dc        = vbx264_idct4x4dc_msa;
-        dctf->add4x4_idct      = vbx264_add4x4_idct_msa;
-        dctf->add8x8_idct      = vbx264_add8x8_idct_msa;
-        dctf->add8x8_idct_dc   = vbx264_add8x8_idct_dc_msa;
-        dctf->add16x16_idct    = vbx264_add16x16_idct_msa;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_msa;
-        dctf->add8x8_idct8     = vbx264_add8x8_idct8_msa;
-        dctf->add16x16_idct8   = vbx264_add16x16_idct8_msa;
+        dctf->sub4x4_dct       = x264_sub4x4_dct_msa;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_msa;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_msa;
+        dctf->sub8x8_dct_dc    = x264_sub8x8_dct_dc_msa;
+        dctf->sub8x16_dct_dc   = x264_sub8x16_dct_dc_msa;
+        dctf->dct4x4dc         = x264_dct4x4dc_msa;
+        dctf->idct4x4dc        = x264_idct4x4dc_msa;
+        dctf->add4x4_idct      = x264_add4x4_idct_msa;
+        dctf->add8x8_idct      = x264_add8x8_idct_msa;
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_msa;
+        dctf->add16x16_idct    = x264_add16x16_idct_msa;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_msa;
+        dctf->add8x8_idct8     = x264_add8x8_idct8_msa;
+        dctf->add16x16_idct8   = x264_add16x16_idct8_msa;
     }
 #endif
 
 #if HAVE_LSX
     if( cpu&X264_CPU_LSX )
     {
-        dctf->sub4x4_dct       = vbx264_sub4x4_dct_lsx;
-        dctf->add4x4_idct      = vbx264_add4x4_idct_lsx;
-        dctf->dct4x4dc         = vbx264_dct4x4dc_lsx;
-        dctf->idct4x4dc        = vbx264_idct4x4dc_lsx;
-        dctf->sub8x8_dct8      = vbx264_sub8x8_dct8_lsx;
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_lsx;
-        dctf->add8x8_idct      = vbx264_add8x8_idct_lsx;
-        dctf->add8x8_idct8     = vbx264_add8x8_idct8_lsx;
-        dctf->add8x8_idct_dc   = vbx264_add8x8_idct_dc_lsx;
-        dctf->add16x16_idct    = vbx264_add16x16_idct_lsx;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_lsx;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_lsx;
-        dctf->sub16x16_dct8    = vbx264_sub16x16_dct8_lsx;
+        dctf->sub4x4_dct       = x264_sub4x4_dct_lsx;
+        dctf->add4x4_idct      = x264_add4x4_idct_lsx;
+        dctf->dct4x4dc         = x264_dct4x4dc_lsx;
+        dctf->idct4x4dc        = x264_idct4x4dc_lsx;
+        dctf->sub8x8_dct8      = x264_sub8x8_dct8_lsx;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_lsx;
+        dctf->add8x8_idct      = x264_add8x8_idct_lsx;
+        dctf->add8x8_idct8     = x264_add8x8_idct8_lsx;
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_lsx;
+        dctf->add16x16_idct    = x264_add16x16_idct_lsx;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_lsx;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_lsx;
+        dctf->sub16x16_dct8    = x264_sub16x16_dct8_lsx;
     }
     if( cpu&X264_CPU_LASX )
     {
-        dctf->sub8x8_dct       = vbx264_sub8x8_dct_lasx;
-        dctf->sub16x16_dct     = vbx264_sub16x16_dct_lasx;
-        dctf->add8x8_idct      = vbx264_add8x8_idct_lasx;
-        dctf->add8x8_idct8     = vbx264_add8x8_idct8_lasx;
-        dctf->add16x16_idct    = vbx264_add16x16_idct_lasx;
-        dctf->sub16x16_dct8    = vbx264_sub16x16_dct8_lasx;
-        dctf->add8x8_idct_dc   = vbx264_add8x8_idct_dc_lasx;
-        dctf->add16x16_idct_dc = vbx264_add16x16_idct_dc_lasx;
-        dctf->dct4x4dc         = vbx264_dct4x4dc_lasx;
-        dctf->idct4x4dc        = vbx264_idct4x4dc_lasx;
+        dctf->sub8x8_dct       = x264_sub8x8_dct_lasx;
+        dctf->sub16x16_dct     = x264_sub16x16_dct_lasx;
+        dctf->add8x8_idct      = x264_add8x8_idct_lasx;
+        dctf->add8x8_idct8     = x264_add8x8_idct8_lasx;
+        dctf->add16x16_idct    = x264_add16x16_idct_lasx;
+        dctf->sub16x16_dct8    = x264_sub16x16_dct8_lasx;
+        dctf->add8x8_idct_dc   = x264_add8x8_idct_dc_lasx;
+        dctf->add16x16_idct_dc = x264_add16x16_idct_dc_lasx;
+        dctf->dct4x4dc         = x264_dct4x4dc_lasx;
+        dctf->idct4x4dc        = x264_idct4x4dc_lasx;
     }
 #endif
 
@@ -947,7 +947,7 @@ static void zigzag_interleave_8x8_cavlc( dctcoef *dst, dctcoef *src, uint8_t *nn
     }
 }
 
-void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive, vbx264_zigzag_function_t *pf_interlaced )
+void x264_zigzag_init( uint32_t cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced )
 {
     pf_interlaced->scan_8x8   = zigzag_scan_8x8_field;
     pf_progressive->scan_8x8  = zigzag_scan_8x8_frame;
@@ -964,98 +964,98 @@ void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive,
 #if HAVE_MMX
     if( cpu&X264_CPU_SSE2 )
     {
-        pf_interlaced->scan_4x4  = vbx264_zigzag_scan_4x4_field_sse2;
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_sse2;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_sse2;
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_sse2;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_sse2;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_sse2;
     }
     if( cpu&X264_CPU_SSE4 )
-        pf_interlaced->scan_8x8 = vbx264_zigzag_scan_8x8_field_sse4;
+        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_sse4;
     if( cpu&X264_CPU_AVX )
-        pf_interlaced->scan_8x8 = vbx264_zigzag_scan_8x8_field_avx;
+        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_avx;
 #if ARCH_X86_64
     if( cpu&X264_CPU_AVX )
     {
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_avx;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_avx;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx;
     }
 #endif // ARCH_X86_64
     if( cpu&X264_CPU_AVX512 )
     {
-        pf_interlaced->scan_4x4  = vbx264_zigzag_scan_4x4_field_avx512;
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_avx512;
-        pf_interlaced->scan_8x8  = vbx264_zigzag_scan_8x8_field_avx512;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_avx512;
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
+        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_avx512;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
 #endif // HAVE_MMX
 #else
 #if HAVE_MMX
     if( cpu&X264_CPU_MMX )
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_mmx;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_mmx;
     if( cpu&X264_CPU_MMX2 )
     {
-        pf_interlaced->scan_8x8  = vbx264_zigzag_scan_8x8_field_mmx2;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_mmx2;
+        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_mmx2;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_mmx2;
     }
     if( cpu&X264_CPU_SSE )
-        pf_interlaced->scan_4x4  = vbx264_zigzag_scan_4x4_field_sse;
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_sse;
     if( cpu&X264_CPU_SSE2_IS_FAST )
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_sse2;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_sse2;
     if( cpu&X264_CPU_SSSE3 )
     {
-        pf_interlaced->sub_4x4   = vbx264_zigzag_sub_4x4_field_ssse3;
-        pf_progressive->sub_4x4  = vbx264_zigzag_sub_4x4_frame_ssse3;
-        pf_interlaced->sub_4x4ac = vbx264_zigzag_sub_4x4ac_field_ssse3;
-        pf_progressive->sub_4x4ac= vbx264_zigzag_sub_4x4ac_frame_ssse3;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_ssse3;
+        pf_interlaced->sub_4x4   = x264_zigzag_sub_4x4_field_ssse3;
+        pf_progressive->sub_4x4  = x264_zigzag_sub_4x4_frame_ssse3;
+        pf_interlaced->sub_4x4ac = x264_zigzag_sub_4x4ac_field_ssse3;
+        pf_progressive->sub_4x4ac= x264_zigzag_sub_4x4ac_frame_ssse3;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_ssse3;
         if( !(cpu&X264_CPU_SLOW_SHUFFLE) )
-            pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_ssse3;
+            pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_ssse3;
     }
     if( cpu&X264_CPU_AVX )
     {
-        pf_interlaced->sub_4x4   = vbx264_zigzag_sub_4x4_field_avx;
-        pf_progressive->sub_4x4  = vbx264_zigzag_sub_4x4_frame_avx;
+        pf_interlaced->sub_4x4   = x264_zigzag_sub_4x4_field_avx;
+        pf_progressive->sub_4x4  = x264_zigzag_sub_4x4_frame_avx;
 #if ARCH_X86_64
-        pf_interlaced->sub_4x4ac = vbx264_zigzag_sub_4x4ac_field_avx;
-        pf_progressive->sub_4x4ac= vbx264_zigzag_sub_4x4ac_frame_avx;
+        pf_interlaced->sub_4x4ac = x264_zigzag_sub_4x4ac_field_avx;
+        pf_progressive->sub_4x4ac= x264_zigzag_sub_4x4ac_frame_avx;
 #endif
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_avx;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx;
     }
     if( cpu&X264_CPU_XOP )
     {
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_xop;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_xop;
-        pf_interlaced->scan_8x8 = vbx264_zigzag_scan_8x8_field_xop;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_xop;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_xop;
+        pf_interlaced->scan_8x8 = x264_zigzag_scan_8x8_field_xop;
     }
     if( cpu&X264_CPU_AVX512 )
     {
-        pf_interlaced->scan_4x4  = vbx264_zigzag_scan_4x4_field_avx512;
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_avx512;
-        pf_interlaced->scan_8x8  = vbx264_zigzag_scan_8x8_field_avx512;
-        pf_progressive->scan_8x8 = vbx264_zigzag_scan_8x8_frame_avx512;
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_avx512;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_avx512;
+        pf_interlaced->scan_8x8  = x264_zigzag_scan_8x8_field_avx512;
+        pf_progressive->scan_8x8 = x264_zigzag_scan_8x8_frame_avx512;
     }
 #endif // HAVE_MMX
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
     {
-        pf_interlaced->scan_4x4  = vbx264_zigzag_scan_4x4_field_altivec;
-        pf_progressive->scan_4x4 = vbx264_zigzag_scan_4x4_frame_altivec;
-        pf_progressive->scan_8x8  = vbx264_zigzag_scan_8x8_frame_altivec;
+        pf_interlaced->scan_4x4  = x264_zigzag_scan_4x4_field_altivec;
+        pf_progressive->scan_4x4 = x264_zigzag_scan_4x4_frame_altivec;
+        pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_altivec;
     }
 #endif
 #if HAVE_ARMV6 || HAVE_AARCH64
     if( cpu&X264_CPU_NEON )
     {
-        pf_progressive->scan_4x4  = vbx264_zigzag_scan_4x4_frame_neon;
+        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_neon;
 #if HAVE_AARCH64
-        pf_interlaced->scan_4x4   = vbx264_zigzag_scan_4x4_field_neon;
-        pf_interlaced->scan_8x8   = vbx264_zigzag_scan_8x8_field_neon;
-        pf_interlaced->sub_4x4    = vbx264_zigzag_sub_4x4_field_neon;
-        pf_interlaced->sub_4x4ac  = vbx264_zigzag_sub_4x4ac_field_neon;
-        pf_interlaced->sub_8x8    = vbx264_zigzag_sub_8x8_field_neon;
-        pf_progressive->scan_8x8  = vbx264_zigzag_scan_8x8_frame_neon;
-        pf_progressive->sub_4x4   = vbx264_zigzag_sub_4x4_frame_neon;
-        pf_progressive->sub_4x4ac = vbx264_zigzag_sub_4x4ac_frame_neon;
-        pf_progressive->sub_8x8   = vbx264_zigzag_sub_8x8_frame_neon;
+        pf_interlaced->scan_4x4   = x264_zigzag_scan_4x4_field_neon;
+        pf_interlaced->scan_8x8   = x264_zigzag_scan_8x8_field_neon;
+        pf_interlaced->sub_4x4    = x264_zigzag_sub_4x4_field_neon;
+        pf_interlaced->sub_4x4ac  = x264_zigzag_sub_4x4ac_field_neon;
+        pf_interlaced->sub_8x8    = x264_zigzag_sub_8x8_field_neon;
+        pf_progressive->scan_8x8  = x264_zigzag_scan_8x8_frame_neon;
+        pf_progressive->sub_4x4   = x264_zigzag_sub_4x4_frame_neon;
+        pf_progressive->sub_4x4ac = x264_zigzag_sub_4x4ac_frame_neon;
+        pf_progressive->sub_8x8   = x264_zigzag_sub_8x8_frame_neon;
 #endif // HAVE_AARCH64
     }
 #endif // HAVE_ARMV6 || HAVE_AARCH64
@@ -1068,45 +1068,45 @@ void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive,
     if( cpu&X264_CPU_SSE2 )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_sse2;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_sse2;
     }
     if( cpu&X264_CPU_AVX )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_avx;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx;
     }
     if( cpu&X264_CPU_AVX512 )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_avx512;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx512;
     }
 #else
     if( cpu&X264_CPU_MMX )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_mmx;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_mmx;
     }
     if( (cpu&X264_CPU_SSE2) && !(cpu&(X264_CPU_SLOW_SHUFFLE|X264_CPU_SSE2_IS_SLOW)) )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_sse2;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_sse2;
     }
 
     if( cpu&X264_CPU_AVX )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_avx;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx;
     }
 
     if( cpu&X264_CPU_AVX2 )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_avx2;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx2;
     }
     if( cpu&X264_CPU_AVX512 )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_avx512;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_avx512;
     }
 #endif // HIGH_BIT_DEPTH
 #endif
@@ -1115,12 +1115,12 @@ void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive,
     if( cpu&X264_CPU_NEON )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc =  vbx264_zigzag_interleave_8x8_cavlc_neon;
+        pf_progressive->interleave_8x8_cavlc =  x264_zigzag_interleave_8x8_cavlc_neon;
     }
 #if HAVE_SVE
     if( cpu&X264_CPU_SVE )
     {
-        pf_progressive->interleave_8x8_cavlc =  vbx264_zigzag_interleave_8x8_cavlc_sve;
+        pf_progressive->interleave_8x8_cavlc =  x264_zigzag_interleave_8x8_cavlc_sve;
     }
 #endif
 #endif // HAVE_AARCH64
@@ -1129,21 +1129,21 @@ void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive,
     if( cpu&X264_CPU_ALTIVEC )
     {
         pf_interlaced->interleave_8x8_cavlc =
-        pf_progressive->interleave_8x8_cavlc = vbx264_zigzag_interleave_8x8_cavlc_altivec;
+        pf_progressive->interleave_8x8_cavlc = x264_zigzag_interleave_8x8_cavlc_altivec;
     }
 #endif // HAVE_ALTIVEC
 
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        pf_progressive->scan_4x4  = vbx264_zigzag_scan_4x4_frame_msa;
+        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_msa;
     }
 #endif
 
 #if HAVE_LSX
     if( cpu&X264_CPU_LASX )
     {
-        pf_progressive->scan_4x4  = vbx264_zigzag_scan_4x4_frame_lasx;
+        pf_progressive->scan_4x4  = x264_zigzag_scan_4x4_frame_lasx;
     }
 #endif
 #endif // !HIGH_BIT_DEPTH

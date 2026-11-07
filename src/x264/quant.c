@@ -56,7 +56,7 @@
     nz |= (coef); \
 }
 
-int vbx264_quant_8x8_c( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] )
+int x264_quant_8x8_c( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] )
 {
     int nz = 0;
     for( int i = 0; i < 64; i++ )
@@ -64,7 +64,7 @@ int vbx264_quant_8x8_c( dctcoef dct[64], udctcoef mf[64], udctcoef bias[64] )
     return !!nz;
 }
 
-int vbx264_quant_4x4_c( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
+int x264_quant_4x4_c( dctcoef dct[16], udctcoef mf[16], udctcoef bias[16] )
 {
     int nz = 0;
     for( int i = 0; i < 16; i++ )
@@ -109,7 +109,7 @@ static int quant_2x2_dc( dctcoef dct[4], int mf, int bias )
 #define DEQUANT_SHR( x ) \
     dct[x] = ( dct[x] * dequant_mf[i_mf][x] + f ) >> (-i_qbits)
 
-void vbx264_dequant_4x4_c( dctcoef dct[16], int dequant_mf[6][16], int i_qp )
+void x264_dequant_4x4_c( dctcoef dct[16], int dequant_mf[6][16], int i_qp )
 {
     const int i_mf = i_qp%6;
     const int i_qbits = i_qp/6 - 4;
@@ -127,7 +127,7 @@ void vbx264_dequant_4x4_c( dctcoef dct[16], int dequant_mf[6][16], int i_qp )
     }
 }
 
-void vbx264_dequant_8x8_c( dctcoef dct[64], int dequant_mf[6][64], int i_qp )
+void x264_dequant_8x8_c( dctcoef dct[64], int dequant_mf[6][64], int i_qp )
 {
     const int i_mf = i_qp%6;
     const int i_qbits = i_qp/6 - 6;
@@ -315,7 +315,7 @@ static void denoise_dct( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size
 }
 
 /* (ref: JVT-B118)
- * vbx264_mb_decimate_score: given dct coeffs it returns a score to see if we could empty this dct coeffs
+ * x264_mb_decimate_score: given dct coeffs it returns a score to see if we could empty this dct coeffs
  * to 0 (low score means set it to null)
  * Used in inter macroblock (luma and chroma)
  *  luma: for a 8x8 block: if score < 4 -> null
@@ -325,7 +325,7 @@ static void denoise_dct( dctcoef *dct, uint32_t *sum, udctcoef *offset, int size
 
 static ALWAYS_INLINE int decimate_score_internal( dctcoef *dct, int i_max )
 {
-    const uint8_t *ds_table = (i_max == 64) ? vbx264_decimate_table8 : vbx264_decimate_table4;
+    const uint8_t *ds_table = (i_max == 64) ? x264_decimate_table8 : x264_decimate_table4;
     int i_score = 0;
     int idx = i_max - 1;
 
@@ -379,7 +379,7 @@ last(16)
 last(64)
 
 #define level_run(num)\
-static int coeff_level_run##num( dctcoef *dct, vbx264_run_level_t *runlevel )\
+static int coeff_level_run##num( dctcoef *dct, x264_run_level_t *runlevel )\
 {\
     int i_last = runlevel->last = coeff_last##num(dct);\
     int i_total = 0;\
@@ -401,12 +401,12 @@ level_run(16)
 
 #if ARCH_X86_64
 #define INIT_TRELLIS(cpu)\
-    pf->trellis_cabac_4x4 = vbx264_trellis_cabac_4x4_##cpu;\
-    pf->trellis_cabac_8x8 = vbx264_trellis_cabac_8x8_##cpu;\
-    pf->trellis_cabac_4x4_psy = vbx264_trellis_cabac_4x4_psy_##cpu;\
-    pf->trellis_cabac_8x8_psy = vbx264_trellis_cabac_8x8_psy_##cpu;\
-    pf->trellis_cabac_dc = vbx264_trellis_cabac_dc_##cpu;\
-    pf->trellis_cabac_chroma_422_dc = vbx264_trellis_cabac_chroma_422_dc_##cpu;
+    pf->trellis_cabac_4x4 = x264_trellis_cabac_4x4_##cpu;\
+    pf->trellis_cabac_8x8 = x264_trellis_cabac_8x8_##cpu;\
+    pf->trellis_cabac_4x4_psy = x264_trellis_cabac_4x4_psy_##cpu;\
+    pf->trellis_cabac_8x8_psy = x264_trellis_cabac_8x8_psy_##cpu;\
+    pf->trellis_cabac_dc = x264_trellis_cabac_dc_##cpu;\
+    pf->trellis_cabac_chroma_422_dc = x264_trellis_cabac_chroma_422_dc_##cpu;
 #else
 #define INIT_TRELLIS(...)
 #endif

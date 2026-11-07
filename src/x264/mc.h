@@ -34,19 +34,19 @@ do\
     MC_CLIP_ADD((s)[1], (x)[1]);\
 } while( 0 )
 
-#define vbx264_mbtree_propagate_list_internal_neon vbx264_template(mbtree_propagate_list_internal_neon)
+#define x264_mbtree_propagate_list_internal_neon x264_template(mbtree_propagate_list_internal_neon)
 #define PROPAGATE_LIST(cpu)\
-void vbx264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
+void x264_mbtree_propagate_list_internal_##cpu( int16_t (*mvs)[2], int16_t *propagate_amount,\
                                                 uint16_t *lowres_costs, int16_t *output,\
                                                 int bipred_weight, int mb_y, int len );\
 \
-static void mbtree_propagate_list_##cpu( vbx264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
+static void mbtree_propagate_list_##cpu( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],\
                                          int16_t *propagate_amount, uint16_t *lowres_costs,\
                                          int bipred_weight, int mb_y, int len, int list )\
 {\
     int16_t *current = h->scratch_buffer2;\
 \
-    vbx264_mbtree_propagate_list_internal_##cpu( mvs, propagate_amount, lowres_costs,\
+    x264_mbtree_propagate_list_internal_##cpu( mvs, propagate_amount, lowres_costs,\
                                                current, bipred_weight, mb_y, len );\
 \
     unsigned stride = h->mb.i_mb_stride;\
@@ -101,58 +101,58 @@ static void mbtree_propagate_list_##cpu( vbx264_t *h, uint16_t *ref_costs, int16
     }\
 }
 
-#define vbx264_plane_copy_c vbx264_template(plane_copy_c)
-void vbx264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+#define x264_plane_copy_c x264_template(plane_copy_c)
+void x264_plane_copy_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY(align, cpu)\
 static void plane_copy_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
     int c_w = (align) / SIZEOF_PIXEL - 1;\
     if( w < 256 ) /* tiny resolutions don't want non-temporal hints. dunno the exact threshold. */\
-        vbx264_plane_copy_c( dst, i_dst, src, i_src, w, h );\
+        x264_plane_copy_c( dst, i_dst, src, i_src, w, h );\
     else if( !(w&c_w) )\
-        vbx264_plane_copy_core_##cpu( dst, i_dst, src, i_src, w, h );\
+        x264_plane_copy_core_##cpu( dst, i_dst, src, i_src, w, h );\
     else\
     {\
         if( --h > 0 )\
         {\
             if( i_src > 0 )\
             {\
-                vbx264_plane_copy_core_##cpu( dst, i_dst, src, i_src, (w+c_w)&~c_w, h );\
+                x264_plane_copy_core_##cpu( dst, i_dst, src, i_src, (w+c_w)&~c_w, h );\
                 dst += i_dst * h;\
                 src += i_src * h;\
             }\
             else\
-                vbx264_plane_copy_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
+                x264_plane_copy_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
         }\
         /* use plain memcpy on the last line (in memory order) to avoid overreading src. */\
         memcpy( dst, src, w*SIZEOF_PIXEL );\
     }\
 }
 
-#define vbx264_plane_copy_swap_c vbx264_template(plane_copy_swap_c)
-void vbx264_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
+#define x264_plane_copy_swap_c x264_template(plane_copy_swap_c)
+void x264_plane_copy_swap_c( pixel *, intptr_t, pixel *, intptr_t, int w, int h );
 
 #define PLANE_COPY_SWAP(align, cpu)\
 static void plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intptr_t i_src, int w, int h )\
 {\
     int c_w = (align>>1) / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
-        vbx264_plane_copy_swap_core_##cpu( dst, i_dst, src, i_src, w, h );\
+        x264_plane_copy_swap_core_##cpu( dst, i_dst, src, i_src, w, h );\
     else if( w > c_w )\
     {\
         if( --h > 0 )\
         {\
             if( i_src > 0 )\
             {\
-                vbx264_plane_copy_swap_core_##cpu( dst, i_dst, src, i_src, (w+c_w)&~c_w, h );\
+                x264_plane_copy_swap_core_##cpu( dst, i_dst, src, i_src, (w+c_w)&~c_w, h );\
                 dst += i_dst * h;\
                 src += i_src * h;\
             }\
             else\
-                vbx264_plane_copy_swap_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
+                x264_plane_copy_swap_core_##cpu( dst+i_dst, i_dst, src+i_src, i_src, (w+c_w)&~c_w, h );\
         }\
-        vbx264_plane_copy_swap_core_##cpu( dst, 0, src, 0, w&~c_w, 1 );\
+        x264_plane_copy_swap_core_##cpu( dst, 0, src, 0, w&~c_w, 1 );\
         for( int x = 2*(w&~c_w); x < 2*w; x += 2 )\
         {\
             dst[x]   = src[x+1];\
@@ -160,11 +160,11 @@ static void plane_copy_swap_##cpu( pixel *dst, intptr_t i_dst, pixel *src, intpt
         }\
     }\
     else\
-        vbx264_plane_copy_swap_c( dst, i_dst, src, i_src, w, h );\
+        x264_plane_copy_swap_c( dst, i_dst, src, i_src, w, h );\
 }
 
-#define vbx264_plane_copy_deinterleave_c vbx264_template(plane_copy_deinterleave_c)
-void vbx264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
+#define x264_plane_copy_deinterleave_c x264_template(plane_copy_deinterleave_c)
+void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
                                      pixel *src, intptr_t i_src, int w, int h );
 
 /* We can utilize existing plane_copy_deinterleave() functions for YUYV/UYUV
@@ -175,30 +175,30 @@ static void plane_copy_deinterleave_yuyv_##cpu( pixel *dsta, intptr_t i_dsta, pi
 {\
     int c_w = (align>>1) / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
-        vbx264_plane_copy_deinterleave_##cpu( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
+        x264_plane_copy_deinterleave_##cpu( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
     else if( w > c_w )\
     {\
         if( --h > 0 )\
         {\
             if( i_src > 0 )\
             {\
-                vbx264_plane_copy_deinterleave_##cpu( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
+                x264_plane_copy_deinterleave_##cpu( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
                 dsta += i_dsta * h;\
                 dstb += i_dstb * h;\
                 src  += i_src  * h;\
             }\
             else\
-                vbx264_plane_copy_deinterleave_##cpu( dsta+i_dsta, i_dsta, dstb+i_dstb, i_dstb,\
+                x264_plane_copy_deinterleave_##cpu( dsta+i_dsta, i_dsta, dstb+i_dstb, i_dstb,\
                                                     src+i_src, i_src, w, h );\
         }\
-        vbx264_plane_copy_deinterleave_c( dsta, 0, dstb, 0, src, 0, w, 1 );\
+        x264_plane_copy_deinterleave_c( dsta, 0, dstb, 0, src, 0, w, 1 );\
     }\
     else\
-        vbx264_plane_copy_deinterleave_c( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
+        x264_plane_copy_deinterleave_c( dsta, i_dsta, dstb, i_dstb, src, i_src, w, h );\
 }
 
-#define vbx264_plane_copy_interleave_c vbx264_template(plane_copy_interleave_c)
-void vbx264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
+#define x264_plane_copy_interleave_c x264_template(plane_copy_interleave_c)
+void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h );
 
@@ -209,30 +209,30 @@ static void plane_copy_interleave_##cpu( pixel *dst,  intptr_t i_dst,\
 {\
     int c_w = 16 / SIZEOF_PIXEL - 1;\
     if( !(w&c_w) )\
-        vbx264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
+        x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
     else if( w > c_w && (i_srcu ^ i_srcv) >= 0 ) /* only works correctly for strides with identical signs */\
     {\
         if( --h > 0 )\
         {\
             if( i_srcu > 0 )\
             {\
-                vbx264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, (w+c_w)&~c_w, h );\
+                x264_plane_copy_interleave_core_##cpu( dst, i_dst, srcu, i_srcu, srcv, i_srcv, (w+c_w)&~c_w, h );\
                 dst  += i_dst  * h;\
                 srcu += i_srcu * h;\
                 srcv += i_srcv * h;\
             }\
             else\
-                vbx264_plane_copy_interleave_core_##cpu( dst+i_dst, i_dst, srcu+i_srcu, i_srcu, srcv+i_srcv, i_srcv, (w+c_w)&~c_w, h );\
+                x264_plane_copy_interleave_core_##cpu( dst+i_dst, i_dst, srcu+i_srcu, i_srcu, srcv+i_srcv, i_srcv, (w+c_w)&~c_w, h );\
         }\
-        vbx264_plane_copy_interleave_c( dst, 0, srcu, 0, srcv, 0, w, 1 );\
+        x264_plane_copy_interleave_c( dst, 0, srcu, 0, srcv, 0, w, 1 );\
     }\
     else\
-        vbx264_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
+        x264_plane_copy_interleave_c( dst, i_dst, srcu, i_srcu, srcv, i_srcv, w, h );\
 }
 
-struct vbx264_weight_t;
-typedef void (* vbx264_weight_fn_t)( pixel *, intptr_t, pixel *,intptr_t, const struct vbx264_weight_t *, int );
-typedef struct vbx264_weight_t
+struct x264_weight_t;
+typedef void (* x264_weight_fn_t)( pixel *, intptr_t, pixel *,intptr_t, const struct x264_weight_t *, int );
+typedef struct x264_weight_t
 {
     /* aligning the first member is a gcc hack to force the struct to be
      * 16 byte aligned, as well as force sizeof(struct) to be a multiple of 16 */
@@ -241,10 +241,10 @@ typedef struct vbx264_weight_t
     int32_t i_denom;
     int32_t i_scale;
     int32_t i_offset;
-    vbx264_weight_fn_t *weightfn;
-} ALIGNED_16( vbx264_weight_t );
+    x264_weight_fn_t *weightfn;
+} ALIGNED_16( x264_weight_t );
 
-#define vbx264_weight_none ((const vbx264_weight_t*)vbx264_zero)
+#define x264_weight_none ((const x264_weight_t*)x264_zero)
 
 #define SET_WEIGHT( w, b, s, d, o )\
 {\
@@ -267,11 +267,11 @@ typedef struct vbx264_weight_t
 typedef struct
 {
     void (*mc_luma)( pixel *dst, intptr_t i_dst, pixel **src, intptr_t i_src,
-                     int mvx, int mvy, int i_width, int i_height, const vbx264_weight_t *weight );
+                     int mvx, int mvy, int i_width, int i_height, const x264_weight_t *weight );
 
     /* may round up the dimensions if they're not a power of 2 */
     pixel* (*get_ref)( pixel *dst, intptr_t *i_dst, pixel **src, intptr_t i_src,
-                       int mvx, int mvy, int i_width, int i_height, const vbx264_weight_t *weight );
+                       int mvx, int mvy, int i_width, int i_height, const x264_weight_t *weight );
 
     /* mc_chroma may write up to 2 bytes of garbage to the right of dst,
      * so it must be run from left to right. */
@@ -325,21 +325,21 @@ typedef struct
 
     void (*frame_init_lowres_core)( pixel *src0, pixel *dst0, pixel *dsth, pixel *dstv, pixel *dstc,
                                     intptr_t src_stride, intptr_t dst_stride, int width, int height );
-    vbx264_weight_fn_t *weight;
-    vbx264_weight_fn_t *offsetadd;
-    vbx264_weight_fn_t *offsetsub;
-    void (*weight_cache)( vbx264_t *, vbx264_weight_t * );
+    x264_weight_fn_t *weight;
+    x264_weight_fn_t *offsetadd;
+    x264_weight_fn_t *offsetsub;
+    void (*weight_cache)( x264_t *, x264_weight_t * );
 
     void (*mbtree_propagate_cost)( int16_t *dst, uint16_t *propagate_in, uint16_t *intra_costs,
                                    uint16_t *inter_costs, uint16_t *inv_qscales, float *fps_factor, int len );
-    void (*mbtree_propagate_list)( vbx264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
+    void (*mbtree_propagate_list)( x264_t *h, uint16_t *ref_costs, int16_t (*mvs)[2],
                                    int16_t *propagate_amount, uint16_t *lowres_costs,
                                    int bipred_weight, int mb_y, int len, int list );
     void (*mbtree_fix8_pack)( uint16_t *dst, float *src, int count );
     void (*mbtree_fix8_unpack)( float *dst, uint16_t *src, int count );
-} vbx264_mc_functions_t;
+} x264_mc_functions_t;
 
-#define vbx264_mc_init vbx264_template(mc_init)
-void vbx264_mc_init( uint32_t cpu, vbx264_mc_functions_t *pf, int cpu_independent );
+#define x264_mc_init x264_template(mc_init)
+void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent );
 
 #endif

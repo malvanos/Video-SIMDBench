@@ -53,9 +53,9 @@ typedef struct
     int (*coeff_last[14])( dctcoef *dct );
     int (*coeff_last4)( dctcoef *dct );
     int (*coeff_last8)( dctcoef *dct );
-    int (*coeff_level_run[13])( dctcoef *dct, vbx264_run_level_t *runlevel );
-    int (*coeff_level_run4)( dctcoef *dct, vbx264_run_level_t *runlevel );
-    int (*coeff_level_run8)( dctcoef *dct, vbx264_run_level_t *runlevel );
+    int (*coeff_level_run[13])( dctcoef *dct, x264_run_level_t *runlevel );
+    int (*coeff_level_run4)( dctcoef *dct, x264_run_level_t *runlevel );
+    int (*coeff_level_run8)( dctcoef *dct, x264_run_level_t *runlevel );
 
 #define TRELLIS_PARAMS const int *unquant_mf, const uint8_t *zigzag, int lambda2,\
                        int last_nnz, dctcoef *coefs, dctcoef *quant_coefs, dctcoef *dct,\
@@ -67,9 +67,9 @@ typedef struct
     int (*trellis_cabac_8x8_psy)( TRELLIS_PARAMS, int b_interlaced, dctcoef *fenc_dct, int psy_trellis );
     int (*trellis_cabac_dc)( TRELLIS_PARAMS, int num_coefs );
     int (*trellis_cabac_chroma_422_dc)( TRELLIS_PARAMS );
-} vbx264_quant_function_t;
+} x264_quant_function_t;
 
-#define vbx264_quant_init vbx264_template(quant_init)
-void vbx264_quant_init( vbx264_t *h, uint32_t cpu, vbx264_quant_function_t *pf );
+#define x264_quant_init x264_template(quant_init)
+void x264_quant_init( x264_t *h, uint32_t cpu, x264_quant_function_t *pf );
 
 #endif

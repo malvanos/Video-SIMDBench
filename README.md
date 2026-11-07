@@ -27,8 +27,6 @@ package found (x264, x265, dav1d). Architecture-specific assembly kernels are
 built by default on aarch64 (NEON, via the system compiler) and on x86_64
 Linux when `nasm` is installed (`-DVBENCH_ASM=OFF` to disable).
 
-Legacy alternative (C kernels only): `cd src && make` or `./compile.sh`.
-
 ## Run
 
 ```sh

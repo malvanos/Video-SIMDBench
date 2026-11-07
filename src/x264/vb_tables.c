@@ -1,7 +1,7 @@
-/* cabac context tables extracted from upstream common/tables.c (vbx264_ -> vbx264_) */
+/* cabac context tables extracted from upstream common/tables.c (x264_ -> x264_) */
 #include "vb_shim.h"
 
-const int8_t vbx264_cabac_context_init_I[1024][2] =
+const int8_t x264_cabac_context_init_I[1024][2] =
 {
     /* 0 - 10 */
     { 20, -15 }, {  2, 54 },  {  3,  74 }, { 20, -15 },
@@ -106,7 +106,7 @@ const int8_t vbx264_cabac_context_init_I[1024][2] =
     { -4, 48 },  { -2, 53 },  { -3, 62 },    { -13, 71 },
     { -10, 79 }, { -12, 86 }, { -13, 90 },   { -14, 97 },
 
-    /* 276 a bit special (not used, vbx264_cabac_encode_bypass is used instead) */
+    /* 276 a bit special (not used, x264_cabac_encode_bypass is used instead) */
     { 0, 0 },
 
     /* 277 -> 307 */
@@ -312,7 +312,7 @@ const int8_t vbx264_cabac_context_init_I[1024][2] =
     {  -3,  70 }, {  -8,  93 }, { -10,  90 }, { -30, 127 },
     {  -3,  70 }, {  -8,  93 }, { -10,  90 }, { -30, 127 }
 };
-const int8_t vbx264_cabac_context_init_PB[3][1024][2] =
+const int8_t x264_cabac_context_init_PB[3][1024][2] =
 {
     /* i_cabac_init_idc == 0 */
     {
@@ -410,7 +410,7 @@ const int8_t vbx264_cabac_context_init_PB[3][1024][2] =
         {   2,  40 }, {   0,  58 }, {  -3,  70 }, {  -6,  79 },
         {  -8,  85 },
 
-        /* 276 a bit special (not used, vbx264_cabac_encode_bypass is used instead) */
+        /* 276 a bit special (not used, x264_cabac_encode_bypass is used instead) */
         { 0, 0 },
 
         /* 277 - 337 */
@@ -709,7 +709,7 @@ const int8_t vbx264_cabac_context_init_PB[3][1024][2] =
         {   3,  37 }, {  -1,  61 }, {  -5,  73 }, {  -1,  70 },
         {  -4,  78 },
 
-        /* 276 a bit special (not used, vbx264_cabac_encode_bypass is used instead) */
+        /* 276 a bit special (not used, x264_cabac_encode_bypass is used instead) */
         { 0, 0 },
 
         /* 277 - 337 */
@@ -1008,7 +1008,7 @@ const int8_t vbx264_cabac_context_init_PB[3][1024][2] =
         { -16,  73 }, { -10,  76 }, { -13,  86 }, {  -9,  83 },
         { -10,  87 },
 
-        /* 276 a bit special (not used, vbx264_cabac_encode_bypass is used instead) */
+        /* 276 a bit special (not used, x264_cabac_encode_bypass is used instead) */
         { 0, 0 },
 
         /* 277 - 337 */
@@ -1211,7 +1211,7 @@ const int8_t vbx264_cabac_context_init_PB[3][1024][2] =
         {  -5,  79 }, { -11, 104 }, { -11,  91 }, { -30, 127 }
     }
 };
-const uint8_t vbx264_cabac_range_lps[64][4] =
+const uint8_t x264_cabac_range_lps[64][4] =
 {
     {  2,   2,   2,   2}, {  6,   7,   8,   9}, {  6,   7,   9,  10}, {  6,   8,   9,  11},
     {  7,   8,  10,  11}, {  7,   9,  10,  12}, {  7,   9,  11,  12}, {  8,   9,  11,  13},
@@ -1230,7 +1230,7 @@ const uint8_t vbx264_cabac_range_lps[64][4] =
     {100, 122, 144, 166}, {105, 128, 152, 175}, {111, 135, 160, 185}, {116, 142, 169, 195},
     {123, 150, 178, 205}, {128, 158, 187, 216}, {128, 167, 197, 227}, {128, 176, 208, 240}
 };
-const uint8_t vbx264_cabac_transition[128][2] =
+const uint8_t x264_cabac_transition[128][2] =
 {
     {  0,   0}, {  1,   1}, {  2,  50}, { 51,   3}, {  2,  50}, { 51,   3}, {  4,  52}, { 53,   5},
     {  6,  52}, { 53,   7}, {  8,  52}, { 53,   9}, { 10,  54}, { 55,  11}, { 12,  54}, { 55,  13},
@@ -1249,14 +1249,14 @@ const uint8_t vbx264_cabac_transition[128][2] =
     {110, 116}, {117, 111}, {112, 118}, {119, 113}, {114, 118}, {119, 115}, {116, 122}, {123, 117},
     {118, 122}, {123, 119}, {120, 124}, {125, 121}, {122, 126}, {127, 123}, {124, 127}, {126, 125}
 };
-const uint8_t vbx264_cabac_renorm_shift[64] =
+const uint8_t x264_cabac_renorm_shift[64] =
 {
     6,5,4,4,3,3,3,3,2,2,2,2,2,2,2,2,
     1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
-const uint16_t vbx264_cabac_entropy[128] =
+const uint16_t x264_cabac_entropy[128] =
 {
     FIX8(0.0273), FIX8(5.7370), FIX8(0.0288), FIX8(5.6618),
     FIX8(0.0303), FIX8(5.5866), FIX8(0.0320), FIX8(5.5114),
@@ -1291,26 +1291,26 @@ const uint16_t vbx264_cabac_entropy[128] =
     FIX8(0.8050), FIX8(1.2256), FIX8(0.8638), FIX8(1.1504),
     FIX8(0.9285), FIX8(1.0752), FIX8(1.0000), FIX8(1.0000)
 };
-const uint8_t vbx264_hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
-const uint8_t vbx264_hpel_ref1[16] = {0,0,1,0,2,2,3,2,2,2,3,2,2,2,3,2};
+const uint8_t x264_hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
+const uint8_t x264_hpel_ref1[16] = {0,0,1,0,2,2,3,2,2,2,3,2,2,2,3,2};
 
 /*****************************************************************************
  * CQM
  *****************************************************************************/
 
 /* default quant matrices */
-const uint8_t vbx264_cqm_jvt4i[16] =
+const uint8_t x264_cqm_jvt4i[16] =
 {
       6,13,20,28,
      13,20,28,32,
      20,28,32,37,
      28,32,37,42
 };
-const uint8_t vbx264_decimate_table4[16] =
+const uint8_t x264_decimate_table4[16] =
 {
     3,2,2,1,1,1,0,0,0,0,0,0,0,0,0,0
 };
-const uint8_t vbx264_decimate_table8[64] =
+const uint8_t x264_decimate_table8[64] =
 {
     3,3,3,3,2,2,2,2,2,2,2,2,1,1,1,1,
     1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,

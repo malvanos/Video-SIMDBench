@@ -56,7 +56,7 @@ typedef struct
 
     void (*dct2x4dc)( dctcoef dct[8], dctcoef dct4x4[8][16] );
 
-} vbx264_dct_function_t;
+} x264_dct_function_t;
 
 typedef struct
 {
@@ -67,11 +67,11 @@ typedef struct
     int  (*sub_4x4ac)( dctcoef level[16], const pixel *p_src, pixel *p_dst, dctcoef *dc );
     void (*interleave_8x8_cavlc)( dctcoef *dst, dctcoef *src, uint8_t *nnz );
 
-} vbx264_zigzag_function_t;
+} x264_zigzag_function_t;
 
-#define vbx264_dct_init vbx264_template(dct_init)
-void vbx264_dct_init( uint32_t cpu, vbx264_dct_function_t *dctf );
-#define vbx264_zigzag_init vbx264_template(zigzag_init)
-void vbx264_zigzag_init( uint32_t cpu, vbx264_zigzag_function_t *pf_progressive, vbx264_zigzag_function_t *pf_interlaced );
+#define x264_dct_init x264_template(dct_init)
+void x264_dct_init( uint32_t cpu, x264_dct_function_t *dctf );
+#define x264_zigzag_init x264_template(zigzag_init)
+void x264_zigzag_init( uint32_t cpu, x264_zigzag_function_t *pf_progressive, x264_zigzag_function_t *pf_interlaced );
 
 #endif

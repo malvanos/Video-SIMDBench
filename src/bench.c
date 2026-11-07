@@ -79,41 +79,11 @@ bench_t *get_bench( const char *name, int cpu )
 #define HAVE_X86_INLINE_ASM 1
 
 
-#if ARCH_X86 || ARCH_X86_64
-int x264_stack_pagealign( int (*func)(), int align );
-
-/* detect when callee-saved regs aren't saved
- * needs an explicit asm check because it only sometimes crashes in normal use. */
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#else
-#define x264_stack_pagealign( func, align ) func()
-#endif
-
-#if ARCH_AARCH64
-intptr_t x264_checkasm_call( intptr_t (*func)(), int *ok, ... );
-#endif
-
-#if ARCH_ARM
-intptr_t x264_checkasm_call_neon( intptr_t (*func)(), int *ok, ... );
-intptr_t x264_checkasm_call_noneon( intptr_t (*func)(), int *ok, ... );
-intptr_t (*x264_checkasm_call)( intptr_t (*func)(), int *ok, ... ) = x264_checkasm_call_noneon;
-#endif
-
-
-
 static int check_all_funcs( int cpu_ref, int cpu_new )
 {
-    return check_pixel( cpu_ref, cpu_new )
-         + check_dct( cpu_ref, cpu_new )
-         + check_mc( cpu_ref, cpu_new )
-         + check_intra( cpu_ref, cpu_new )
-         + check_deblock( cpu_ref, cpu_new )
-         + check_quant( cpu_ref, cpu_new )
-         + check_cabac( cpu_ref, cpu_new )
-         + check_codec_kernels( cpu_ref, cpu_new );
-#if 0
-         + check_bitstream( cpu_ref, cpu_new );
-#endif
+    /* the per-category 2016 harness modules (check_pixel/check_dct/...) are
+     * gone; the codec packages under src/<codec>/ register everything */
+    return check_codec_kernels( cpu_ref, cpu_new );
 }
 
 static int add_flags( int *cpu_ref, int *cpu_new, int flags, const char *name )

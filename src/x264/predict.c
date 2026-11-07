@@ -64,7 +64,7 @@
         src += FDEC_STRIDE;\
     }
 
-void vbx264_predict_16x16_dc_c( pixel *src )
+void x264_predict_16x16_dc_c( pixel *src )
 {
     int dc = 0;
 
@@ -101,7 +101,7 @@ static void predict_16x16_dc_128_c( pixel *src )
 {
     PREDICT_16x16_DC( PIXEL_SPLAT_X4( 1 << (BIT_DEPTH-1) ) );
 }
-void vbx264_predict_16x16_h_c( pixel *src )
+void x264_predict_16x16_h_c( pixel *src )
 {
     for( int i = 0; i < 16; i++ )
     {
@@ -113,7 +113,7 @@ void vbx264_predict_16x16_h_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_16x16_v_c( pixel *src )
+void x264_predict_16x16_v_c( pixel *src )
 {
     pixel4 v0 = MPIXEL_X4( &src[ 0-FDEC_STRIDE] );
     pixel4 v1 = MPIXEL_X4( &src[ 4-FDEC_STRIDE] );
@@ -129,7 +129,7 @@ void vbx264_predict_16x16_v_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_16x16_p_c( pixel *src )
+void x264_predict_16x16_p_c( pixel *src )
 {
     int H = 0, V = 0;
 
@@ -151,7 +151,7 @@ void vbx264_predict_16x16_p_c( pixel *src )
         int pix = i00;
         for( int x = 0; x < 16; x++ )
         {
-            src[x] = vbx264_clip_pixel( pix>>5 );
+            src[x] = x264_clip_pixel( pix>>5 );
             pix += b;
         }
         src += FDEC_STRIDE;
@@ -218,7 +218,7 @@ static void predict_8x8c_dc_top_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x8c_dc_c( pixel *src )
+void x264_predict_8x8c_dc_c( pixel *src )
 {
     int s0 = 0, s1 = 0, s2 = 0, s3 = 0;
 
@@ -257,7 +257,7 @@ void vbx264_predict_8x8c_dc_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x8c_h_c( pixel *src )
+void x264_predict_8x8c_h_c( pixel *src )
 {
     for( int i = 0; i < 8; i++ )
     {
@@ -267,7 +267,7 @@ void vbx264_predict_8x8c_h_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x8c_v_c( pixel *src )
+void x264_predict_8x8c_v_c( pixel *src )
 {
     pixel4 v0 = MPIXEL_X4( src+0-FDEC_STRIDE );
     pixel4 v1 = MPIXEL_X4( src+4-FDEC_STRIDE );
@@ -279,7 +279,7 @@ void vbx264_predict_8x8c_v_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x8c_p_c( pixel *src )
+void x264_predict_8x8c_p_c( pixel *src )
 {
     int H = 0, V = 0;
 
@@ -299,7 +299,7 @@ void vbx264_predict_8x8c_p_c( pixel *src )
         int pix = i00;
         for( int x = 0; x < 8; x++ )
         {
-            src[x] = vbx264_clip_pixel( pix>>5 );
+            src[x] = x264_clip_pixel( pix>>5 );
             pix += b;
         }
         src += FDEC_STRIDE;
@@ -358,7 +358,7 @@ static void predict_8x16c_dc_top_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x16c_dc_c( pixel *src )
+void x264_predict_8x16c_dc_c( pixel *src )
 {
     int s0 = 0, s1 = 0, s2 = 0, s3 = 0, s4 = 0, s5 = 0;
 
@@ -418,7 +418,7 @@ void vbx264_predict_8x16c_dc_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x16c_h_c( pixel *src )
+void x264_predict_8x16c_h_c( pixel *src )
 {
     for( int i = 0; i < 16; i++ )
     {
@@ -428,7 +428,7 @@ void vbx264_predict_8x16c_h_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x16c_v_c( pixel *src )
+void x264_predict_8x16c_v_c( pixel *src )
 {
     pixel4 v0 = MPIXEL_X4( src+0-FDEC_STRIDE );
     pixel4 v1 = MPIXEL_X4( src+4-FDEC_STRIDE );
@@ -440,7 +440,7 @@ void vbx264_predict_8x16c_v_c( pixel *src )
         src += FDEC_STRIDE;
     }
 }
-void vbx264_predict_8x16c_p_c( pixel *src )
+void x264_predict_8x16c_p_c( pixel *src )
 {
     int H = 0;
     int V = 0;
@@ -460,7 +460,7 @@ void vbx264_predict_8x16c_p_c( pixel *src )
         int pix = i00;
         for( int x = 0; x < 8; x++ )
         {
-            src[x] = vbx264_clip_pixel( pix>>5 );
+            src[x] = x264_clip_pixel( pix>>5 );
             pix += b;
         }
         src += FDEC_STRIDE;
@@ -492,20 +492,20 @@ static void predict_4x4_dc_top_c( pixel *src )
     pixel4 dc = PIXEL_SPLAT_X4( (SRC(0,-1) + SRC(1,-1) + SRC(2,-1) + SRC(3,-1) + 2) >> 2 );
     PREDICT_4x4_DC( dc );
 }
-void vbx264_predict_4x4_dc_c( pixel *src )
+void x264_predict_4x4_dc_c( pixel *src )
 {
     pixel4 dc = PIXEL_SPLAT_X4( (SRC(-1,0) + SRC(-1,1) + SRC(-1,2) + SRC(-1,3) +
                                  SRC(0,-1) + SRC(1,-1) + SRC(2,-1) + SRC(3,-1) + 4) >> 3 );
     PREDICT_4x4_DC( dc );
 }
-void vbx264_predict_4x4_h_c( pixel *src )
+void x264_predict_4x4_h_c( pixel *src )
 {
     SRC_X4(0,0) = PIXEL_SPLAT_X4( SRC(-1,0) );
     SRC_X4(0,1) = PIXEL_SPLAT_X4( SRC(-1,1) );
     SRC_X4(0,2) = PIXEL_SPLAT_X4( SRC(-1,2) );
     SRC_X4(0,3) = PIXEL_SPLAT_X4( SRC(-1,3) );
 }
-void vbx264_predict_4x4_v_c( pixel *src )
+void x264_predict_4x4_v_c( pixel *src )
 {
     PREDICT_4x4_DC(SRC_X4(0,-1));
 }
@@ -713,14 +713,14 @@ static void predict_8x8_dc_top_c( pixel *src, pixel edge[36] )
     pixel4 dc = PIXEL_SPLAT_X4( (t0+t1+t2+t3+t4+t5+t6+t7+4) >> 3 );
     PREDICT_8x8_DC( dc );
 }
-void vbx264_predict_8x8_dc_c( pixel *src, pixel edge[36] )
+void x264_predict_8x8_dc_c( pixel *src, pixel edge[36] )
 {
     PREDICT_8x8_LOAD_LEFT
     PREDICT_8x8_LOAD_TOP
     pixel4 dc = PIXEL_SPLAT_X4( (l0+l1+l2+l3+l4+l5+l6+l7+t0+t1+t2+t3+t4+t5+t6+t7+8) >> 4 );
     PREDICT_8x8_DC( dc );
 }
-void vbx264_predict_8x8_h_c( pixel *src, pixel edge[36] )
+void x264_predict_8x8_h_c( pixel *src, pixel edge[36] )
 {
     PREDICT_8x8_LOAD_LEFT
 #define ROW(y) MPIXEL_X4( src+y*FDEC_STRIDE+0 ) =\
@@ -728,7 +728,7 @@ void vbx264_predict_8x8_h_c( pixel *src, pixel edge[36] )
     ROW(0); ROW(1); ROW(2); ROW(3); ROW(4); ROW(5); ROW(6); ROW(7);
 #undef ROW
 }
-void vbx264_predict_8x8_v_c( pixel *src, pixel edge[36] )
+void x264_predict_8x8_v_c( pixel *src, pixel edge[36] )
 {
     pixel4 top[2] = { MPIXEL_X4( edge+16 ),
                       MPIXEL_X4( edge+20 ) };
@@ -886,122 +886,122 @@ static void predict_8x8_hu_c( pixel *src, pixel edge[36] )
 /****************************************************************************
  * Exported functions:
  ****************************************************************************/
-void vbx264_predict_16x16_init( uint32_t cpu, vbx264_predict_t pf[7] )
+void x264_predict_16x16_init( uint32_t cpu, x264_predict_t pf[7] )
 {
-    pf[I_PRED_16x16_V ]     = vbx264_predict_16x16_v_c;
-    pf[I_PRED_16x16_H ]     = vbx264_predict_16x16_h_c;
-    pf[I_PRED_16x16_DC]     = vbx264_predict_16x16_dc_c;
-    pf[I_PRED_16x16_P ]     = vbx264_predict_16x16_p_c;
+    pf[I_PRED_16x16_V ]     = x264_predict_16x16_v_c;
+    pf[I_PRED_16x16_H ]     = x264_predict_16x16_h_c;
+    pf[I_PRED_16x16_DC]     = x264_predict_16x16_dc_c;
+    pf[I_PRED_16x16_P ]     = x264_predict_16x16_p_c;
     pf[I_PRED_16x16_DC_LEFT]= predict_16x16_dc_left_c;
     pf[I_PRED_16x16_DC_TOP ]= predict_16x16_dc_top_c;
     pf[I_PRED_16x16_DC_128 ]= predict_16x16_dc_128_c;
 
 #if HAVE_MMX
-    vbx264_predict_16x16_init_mmx( cpu, pf );
+    x264_predict_16x16_init_mmx( cpu, pf );
 #endif
 
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
-        vbx264_predict_16x16_init_altivec( pf );
+        x264_predict_16x16_init_altivec( pf );
 #endif
 
 #if HAVE_ARMV6
-    vbx264_predict_16x16_init_arm( cpu, pf );
+    x264_predict_16x16_init_arm( cpu, pf );
 #endif
 
 #if HAVE_AARCH64
-    vbx264_predict_16x16_init_aarch64( cpu, pf );
+    x264_predict_16x16_init_aarch64( cpu, pf );
 #endif
 
 #if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        pf[I_PRED_16x16_V ]     = vbx264_intra_predict_vert_16x16_msa;
-        pf[I_PRED_16x16_H ]     = vbx264_intra_predict_hor_16x16_msa;
-        pf[I_PRED_16x16_DC]     = vbx264_intra_predict_dc_16x16_msa;
-        pf[I_PRED_16x16_P ]     = vbx264_intra_predict_plane_16x16_msa;
-        pf[I_PRED_16x16_DC_LEFT]= vbx264_intra_predict_dc_left_16x16_msa;
-        pf[I_PRED_16x16_DC_TOP ]= vbx264_intra_predict_dc_top_16x16_msa;
-        pf[I_PRED_16x16_DC_128 ]= vbx264_intra_predict_dc_128_16x16_msa;
+        pf[I_PRED_16x16_V ]     = x264_intra_predict_vert_16x16_msa;
+        pf[I_PRED_16x16_H ]     = x264_intra_predict_hor_16x16_msa;
+        pf[I_PRED_16x16_DC]     = x264_intra_predict_dc_16x16_msa;
+        pf[I_PRED_16x16_P ]     = x264_intra_predict_plane_16x16_msa;
+        pf[I_PRED_16x16_DC_LEFT]= x264_intra_predict_dc_left_16x16_msa;
+        pf[I_PRED_16x16_DC_TOP ]= x264_intra_predict_dc_top_16x16_msa;
+        pf[I_PRED_16x16_DC_128 ]= x264_intra_predict_dc_128_16x16_msa;
     }
 #endif
 #endif
 
 #if HAVE_LSX
-    vbx264_predict_16x16_init_loongarch( cpu, pf );
+    x264_predict_16x16_init_loongarch( cpu, pf );
 #endif
 }
 
-void vbx264_predict_8x8c_init( uint32_t cpu, vbx264_predict_t pf[7] )
+void x264_predict_8x8c_init( uint32_t cpu, x264_predict_t pf[7] )
 {
-    pf[I_PRED_CHROMA_V ]     = vbx264_predict_8x8c_v_c;
-    pf[I_PRED_CHROMA_H ]     = vbx264_predict_8x8c_h_c;
-    pf[I_PRED_CHROMA_DC]     = vbx264_predict_8x8c_dc_c;
-    pf[I_PRED_CHROMA_P ]     = vbx264_predict_8x8c_p_c;
+    pf[I_PRED_CHROMA_V ]     = x264_predict_8x8c_v_c;
+    pf[I_PRED_CHROMA_H ]     = x264_predict_8x8c_h_c;
+    pf[I_PRED_CHROMA_DC]     = x264_predict_8x8c_dc_c;
+    pf[I_PRED_CHROMA_P ]     = x264_predict_8x8c_p_c;
     pf[I_PRED_CHROMA_DC_LEFT]= predict_8x8c_dc_left_c;
     pf[I_PRED_CHROMA_DC_TOP ]= predict_8x8c_dc_top_c;
     pf[I_PRED_CHROMA_DC_128 ]= predict_8x8c_dc_128_c;
 
 #if HAVE_MMX
-    vbx264_predict_8x8c_init_mmx( cpu, pf );
+    x264_predict_8x8c_init_mmx( cpu, pf );
 #endif
 
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
-        vbx264_predict_8x8c_init_altivec( pf );
+        x264_predict_8x8c_init_altivec( pf );
 #endif
 
 #if HAVE_ARMV6
-    vbx264_predict_8x8c_init_arm( cpu, pf );
+    x264_predict_8x8c_init_arm( cpu, pf );
 #endif
 
 #if HAVE_AARCH64
-    vbx264_predict_8x8c_init_aarch64( cpu, pf );
+    x264_predict_8x8c_init_aarch64( cpu, pf );
 #endif
 
 #if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        pf[I_PRED_CHROMA_P ]     = vbx264_intra_predict_plane_8x8_msa;
+        pf[I_PRED_CHROMA_P ]     = x264_intra_predict_plane_8x8_msa;
     }
 #endif
 #endif
 
 #if HAVE_LSX
-    vbx264_predict_8x8c_init_loongarch( cpu, pf );
+    x264_predict_8x8c_init_loongarch( cpu, pf );
 #endif
 }
 
-void vbx264_predict_8x16c_init( uint32_t cpu, vbx264_predict_t pf[7] )
+void x264_predict_8x16c_init( uint32_t cpu, x264_predict_t pf[7] )
 {
-    pf[I_PRED_CHROMA_V ]     = vbx264_predict_8x16c_v_c;
-    pf[I_PRED_CHROMA_H ]     = vbx264_predict_8x16c_h_c;
-    pf[I_PRED_CHROMA_DC]     = vbx264_predict_8x16c_dc_c;
-    pf[I_PRED_CHROMA_P ]     = vbx264_predict_8x16c_p_c;
+    pf[I_PRED_CHROMA_V ]     = x264_predict_8x16c_v_c;
+    pf[I_PRED_CHROMA_H ]     = x264_predict_8x16c_h_c;
+    pf[I_PRED_CHROMA_DC]     = x264_predict_8x16c_dc_c;
+    pf[I_PRED_CHROMA_P ]     = x264_predict_8x16c_p_c;
     pf[I_PRED_CHROMA_DC_LEFT]= predict_8x16c_dc_left_c;
     pf[I_PRED_CHROMA_DC_TOP ]= predict_8x16c_dc_top_c;
     pf[I_PRED_CHROMA_DC_128 ]= predict_8x16c_dc_128_c;
 
 #if HAVE_MMX
-    vbx264_predict_8x16c_init_mmx( cpu, pf );
+    x264_predict_8x16c_init_mmx( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
-    vbx264_predict_8x16c_init_arm( cpu, pf );
+    x264_predict_8x16c_init_arm( cpu, pf );
 #endif
 
 #if HAVE_AARCH64
-    vbx264_predict_8x16c_init_aarch64( cpu, pf );
+    x264_predict_8x16c_init_aarch64( cpu, pf );
 #endif
 }
 
-void vbx264_predict_8x8_init( uint32_t cpu, vbx264_predict8x8_t pf[12], vbx264_predict_8x8_filter_t *predict_filter )
+void x264_predict_8x8_init( uint32_t cpu, x264_predict8x8_t pf[12], x264_predict_8x8_filter_t *predict_filter )
 {
-    pf[I_PRED_8x8_V]      = vbx264_predict_8x8_v_c;
-    pf[I_PRED_8x8_H]      = vbx264_predict_8x8_h_c;
-    pf[I_PRED_8x8_DC]     = vbx264_predict_8x8_dc_c;
+    pf[I_PRED_8x8_V]      = x264_predict_8x8_v_c;
+    pf[I_PRED_8x8_H]      = x264_predict_8x8_h_c;
+    pf[I_PRED_8x8_DC]     = x264_predict_8x8_dc_c;
     pf[I_PRED_8x8_DDL]    = predict_8x8_ddl_c;
     pf[I_PRED_8x8_DDR]    = predict_8x8_ddr_c;
     pf[I_PRED_8x8_VR]     = predict_8x8_vr_c;
@@ -1014,36 +1014,36 @@ void vbx264_predict_8x8_init( uint32_t cpu, vbx264_predict8x8_t pf[12], vbx264_p
     *predict_filter       = predict_8x8_filter_c;
 
 #if HAVE_MMX
-    vbx264_predict_8x8_init_mmx( cpu, pf, predict_filter );
+    x264_predict_8x8_init_mmx( cpu, pf, predict_filter );
 #endif
 
 #if HAVE_ARMV6
-    vbx264_predict_8x8_init_arm( cpu, pf, predict_filter );
+    x264_predict_8x8_init_arm( cpu, pf, predict_filter );
 #endif
 
 #if HAVE_AARCH64
-    vbx264_predict_8x8_init_aarch64( cpu, pf, predict_filter );
+    x264_predict_8x8_init_aarch64( cpu, pf, predict_filter );
 #endif
 
 #if !HIGH_BIT_DEPTH
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
     {
-        pf[I_PRED_8x8_DDL]    = vbx264_intra_predict_ddl_8x8_msa;
+        pf[I_PRED_8x8_DDL]    = x264_intra_predict_ddl_8x8_msa;
     }
 #endif
 #endif
 
 #if HAVE_LSX
-    vbx264_predict_8x8_init_loongarch( cpu, pf, predict_filter );
+    x264_predict_8x8_init_loongarch( cpu, pf, predict_filter );
 #endif
 }
 
-void vbx264_predict_4x4_init( uint32_t cpu, vbx264_predict_t pf[12] )
+void x264_predict_4x4_init( uint32_t cpu, x264_predict_t pf[12] )
 {
-    pf[I_PRED_4x4_V]      = vbx264_predict_4x4_v_c;
-    pf[I_PRED_4x4_H]      = vbx264_predict_4x4_h_c;
-    pf[I_PRED_4x4_DC]     = vbx264_predict_4x4_dc_c;
+    pf[I_PRED_4x4_V]      = x264_predict_4x4_v_c;
+    pf[I_PRED_4x4_H]      = x264_predict_4x4_h_c;
+    pf[I_PRED_4x4_DC]     = x264_predict_4x4_dc_c;
     pf[I_PRED_4x4_DDL]    = predict_4x4_ddl_c;
     pf[I_PRED_4x4_DDR]    = predict_4x4_ddr_c;
     pf[I_PRED_4x4_VR]     = predict_4x4_vr_c;
@@ -1055,19 +1055,19 @@ void vbx264_predict_4x4_init( uint32_t cpu, vbx264_predict_t pf[12] )
     pf[I_PRED_4x4_DC_128] = predict_4x4_dc_128_c;
 
 #if HAVE_MMX
-    vbx264_predict_4x4_init_mmx( cpu, pf );
+    x264_predict_4x4_init_mmx( cpu, pf );
 #endif
 
 #if HAVE_ARMV6
-    vbx264_predict_4x4_init_arm( cpu, pf );
+    x264_predict_4x4_init_arm( cpu, pf );
 #endif
 
 #if HAVE_AARCH64
-    vbx264_predict_4x4_init_aarch64( cpu, pf );
+    x264_predict_4x4_init_aarch64( cpu, pf );
 #endif
 
 #if HAVE_LSX
-    vbx264_predict_4x4_init_loongarch( cpu, pf );
+    x264_predict_4x4_init_loongarch( cpu, pf );
 #endif
 }
 

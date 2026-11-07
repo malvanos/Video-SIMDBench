@@ -127,10 +127,12 @@ static void sigill_handler( int sig )
 
 #if ARCH_X86 || ARCH_X86_64
 #if HAVE_MMX
-int pu_cpuid_test( void );
-void asm_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx );
-void asm_cpu_xgetbv( uint32_t op, uint32_t *eax, uint32_t *edx );
-int asm_cpu_cpuid_test();
+/* x86 asm kernels are linked in (VBENCH_ASM=ON): the cpuid helpers come from
+ * the x264 asm package (src/x264/x86/cpu-a.asm, built by vbench_add_asm as
+ * x264_cpu_cpuid / x264_cpu_xgetbv / x264_cpu_cpuid_test). */
+#define asm_cpu_cpuid      x264_cpu_cpuid
+#define asm_cpu_xgetbv     x264_cpu_xgetbv
+#define asm_cpu_cpuid_test x264_cpu_cpuid_test
 #else
 /* No x86 assembly kernels in this build (VBENCH_ASM=OFF, e.g. nasm missing):
  * implement the cpuid helpers in plain C so that cpu_detect() still works.
@@ -201,7 +203,7 @@ static int vb_cpuid_present( void )
 #endif
 #endif /* _MSC_VER */
 
-/* same signatures as the nasm versions in asm/x86/cpu-a.asm */
+/* same signatures as the nasm versions in src/x264/x86/cpu-a.asm */
 void asm_cpu_cpuid( uint32_t op, uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx )
 {
     vb_cpuid( op, eax, ebx, ecx, edx );

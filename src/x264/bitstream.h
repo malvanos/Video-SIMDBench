@@ -55,21 +55,21 @@ typedef struct
     int32_t last;
     int32_t mask;
     ALIGNED_16( dctcoef level[18] );
-} vbx264_run_level_t;
+} x264_run_level_t;
 
 typedef struct
 {
     uint8_t *(*nal_escape)( uint8_t *dst, uint8_t *src, uint8_t *end );
     void (*cabac_block_residual_internal)( dctcoef *l, int b_interlaced,
-                                           intptr_t ctx_block_cat, vbx264_cabac_t *cb );
+                                           intptr_t ctx_block_cat, x264_cabac_t *cb );
     void (*cabac_block_residual_rd_internal)( dctcoef *l, int b_interlaced,
-                                              intptr_t ctx_block_cat, vbx264_cabac_t *cb );
+                                              intptr_t ctx_block_cat, x264_cabac_t *cb );
     void (*cabac_block_residual_8x8_rd_internal)( dctcoef *l, int b_interlaced,
-                                                  intptr_t ctx_block_cat, vbx264_cabac_t *cb );
-} vbx264_bitstream_function_t;
+                                                  intptr_t ctx_block_cat, x264_cabac_t *cb );
+} x264_bitstream_function_t;
 
-#define vbx264_bitstream_init vbx264_template(bitstream_init)
-void vbx264_bitstream_init( uint32_t cpu, vbx264_bitstream_function_t *pf );
+#define x264_bitstream_init x264_template(bitstream_init)
+void x264_bitstream_init( uint32_t cpu, x264_bitstream_function_t *pf );
 
 /* A larger level table size theoretically could help a bit at extremely
  * high bitrates, but the cost in cache is usually too high for it to be
@@ -77,14 +77,14 @@ void vbx264_bitstream_init( uint32_t cpu, vbx264_bitstream_function_t *pf );
  * This size appears to be optimal for QP18 encoding on a Nehalem CPU.
  * FIXME: Do further testing? */
 #define LEVEL_TABLE_SIZE 128
-#define vbx264_level_token vbx264_template(level_token)
-extern vlc_large_t vbx264_level_token[7][LEVEL_TABLE_SIZE];
+#define x264_level_token x264_template(level_token)
+extern vlc_large_t x264_level_token[7][LEVEL_TABLE_SIZE];
 
 /* The longest possible set of zero run codes sums to 25 bits.  This leaves
  * plenty of room for both the code (25 bits) and size (5 bits) in a uint32_t. */
 
-#define vbx264_run_before vbx264_template(run_before)
-extern uint32_t vbx264_run_before[1<<16];
+#define x264_run_before x264_template(run_before)
+extern uint32_t x264_run_before[1<<16];
 
 static inline void bs_init( bs_t *s, void *p_data, int i_data )
 {
@@ -201,7 +201,7 @@ static inline void bs_align_10( bs_t *s )
 
 /* golomb functions */
 
-static const uint8_t vbx264_ue_size_tab[256] =
+static const uint8_t x264_ue_size_tab[256] =
 {
      1, 1, 3, 3, 5, 5, 5, 5, 7, 7, 7, 7, 7, 7, 7, 7,
      9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,
@@ -235,7 +235,7 @@ static inline void bs_write_ue_big( bs_t *s, unsigned int val )
         size += 16;
         tmp >>= 8;
     }
-    size += vbx264_ue_size_tab[tmp];
+    size += x264_ue_size_tab[tmp];
     bs_write( s, size>>1, 0 );
     bs_write( s, (size>>1)+1, val );
 }
@@ -243,7 +243,7 @@ static inline void bs_write_ue_big( bs_t *s, unsigned int val )
 /* Only works on values under 255. */
 static inline void bs_write_ue( bs_t *s, int val )
 {
-    bs_write( s, vbx264_ue_size_tab[val+1], val+1 );
+    bs_write( s, x264_ue_size_tab[val+1], val+1 );
 }
 
 static inline void bs_write_se( bs_t *s, int val )
@@ -260,7 +260,7 @@ static inline void bs_write_se( bs_t *s, int val )
         size = 16;
         tmp >>= 8;
     }
-    size += vbx264_ue_size_tab[tmp];
+    size += x264_ue_size_tab[tmp];
     bs_write( s, size, val );
 }
 
@@ -280,15 +280,15 @@ static inline void bs_rbsp_trailing( bs_t *s )
 
 static ALWAYS_INLINE int bs_size_ue( unsigned int val )
 {
-    return vbx264_ue_size_tab[val+1];
+    return x264_ue_size_tab[val+1];
 }
 
 static ALWAYS_INLINE int bs_size_ue_big( unsigned int val )
 {
     if( val < 255 )
-        return vbx264_ue_size_tab[val+1];
+        return x264_ue_size_tab[val+1];
     else
-        return vbx264_ue_size_tab[(val+1)>>8] + 16;
+        return x264_ue_size_tab[(val+1)>>8] + 16;
 }
 
 static ALWAYS_INLINE int bs_size_se( int val )
@@ -296,9 +296,9 @@ static ALWAYS_INLINE int bs_size_se( int val )
     int tmp = 1 - val*2;
     if( tmp < 0 ) tmp = val*2;
     if( tmp < 256 )
-        return vbx264_ue_size_tab[tmp];
+        return x264_ue_size_tab[tmp];
     else
-        return vbx264_ue_size_tab[tmp>>8]+16;
+        return x264_ue_size_tab[tmp>>8]+16;
 }
 
 static ALWAYS_INLINE int bs_size_te( int x, int val )
@@ -306,7 +306,7 @@ static ALWAYS_INLINE int bs_size_te( int x, int val )
     if( x == 1 )
         return 1;
     else //if( x > 1 )
-        return vbx264_ue_size_tab[val+1];
+        return x264_ue_size_tab[val+1];
 }
 
 #endif

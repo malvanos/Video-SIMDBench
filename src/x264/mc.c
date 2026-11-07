@@ -83,7 +83,7 @@ static inline void pixel_avg_weight_wxh( pixel *dst,  intptr_t i_dst,
     int i_weight2 = 64 - i_weight1;
     for( int y = 0; y<height; y++, dst += i_dst, src1 += i_src1, src2 += i_src2 )
         for( int x = 0; x<width; x++ )
-            dst[x] = vbx264_clip_pixel( (src1[x]*i_weight1 + src2[x]*i_weight2 + (1<<5)) >> 6 );
+            dst[x] = x264_clip_pixel( (src1[x]*i_weight1 + src2[x]*i_weight2 + (1<<5)) >> 6 );
 }
 #undef op_scale2
 
@@ -110,10 +110,10 @@ PIXEL_AVG_C( pixel_avg_2x8,   2, 8 )
 PIXEL_AVG_C( pixel_avg_2x4,   2, 4 )
 PIXEL_AVG_C( pixel_avg_2x2,   2, 2 )
 
-#define opscale(x) dst[x] = vbx264_clip_pixel( ((src[x] * scale + (1<<(denom - 1))) >> denom) + offset )
-#define opscale_noden(x) dst[x] = vbx264_clip_pixel( src[x] * scale + offset )
+#define opscale(x) dst[x] = x264_clip_pixel( ((src[x] * scale + (1<<(denom - 1))) >> denom) + offset )
+#define opscale_noden(x) dst[x] = x264_clip_pixel( src[x] * scale + offset )
 static void mc_weight( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride,
-                       const vbx264_weight_t *weight, int i_width, int i_height )
+                       const x264_weight_t *weight, int i_width, int i_height )
 {
     int offset = weight->i_offset * (1 << (BIT_DEPTH-8));
     int scale = weight->i_scale;
@@ -133,7 +133,7 @@ static void mc_weight( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i
 }
 
 #define MC_WEIGHT_C( name, width ) \
-static void name( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride, const vbx264_weight_t *weight, int height ) \
+static void name( pixel *dst, intptr_t i_dst_stride, pixel *src, intptr_t i_src_stride, const x264_weight_t *weight, int height ) \
 { \
     mc_weight( dst, i_dst_stride, src, i_src_stride, weight, width, height );\
 }
@@ -145,7 +145,7 @@ MC_WEIGHT_C( mc_weight_w8,   8 )
 MC_WEIGHT_C( mc_weight_w4,   4 )
 MC_WEIGHT_C( mc_weight_w2,   2 )
 
-static vbx264_weight_fn_t mc_weight_wtab[6] =
+static x264_weight_fn_t mc_weight_wtab[6] =
 {
     mc_weight_w2,
     mc_weight_w4,
@@ -176,14 +176,14 @@ static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
         for( int x = -2; x < width+3; x++ )
         {
             int v = TAPFILTER(src,stride);
-            dstv[x] = vbx264_clip_pixel( (v + 16) >> 5 );
+            dstv[x] = x264_clip_pixel( (v + 16) >> 5 );
             /* transform v for storage in a 16-bit integer */
             buf[x+2] = v + pad;
         }
         for( int x = 0; x < width; x++ )
-            dstc[x] = vbx264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );
+            dstc[x] = x264_clip_pixel( (TAPFILTER(buf+2,1) - 32*pad + 512) >> 10 );
         for( int x = 0; x < width; x++ )
-            dsth[x] = vbx264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );
+            dsth[x] = x264_clip_pixel( (TAPFILTER(src,1) + 16) >> 5 );
         dsth += stride;
         dstv += stride;
         dstc += stride;
@@ -194,15 +194,15 @@ static void hpel_filter( pixel *dsth, pixel *dstv, pixel *dstc, pixel *src,
 static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
                      pixel *src[4], intptr_t i_src_stride,
                      int mvx, int mvy,
-                     int i_width, int i_height, const vbx264_weight_t *weight )
+                     int i_width, int i_height, const x264_weight_t *weight )
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[vbx264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        pixel *src2 = src[vbx264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg( dst, i_dst_stride, src1, i_src_stride,
                    src2, i_src_stride, i_width, i_height );
         if( weight->weightfn )
@@ -217,15 +217,15 @@ static void mc_luma( pixel *dst,    intptr_t i_dst_stride,
 static pixel *get_ref( pixel *dst,   intptr_t *i_dst_stride,
                        pixel *src[4], intptr_t i_src_stride,
                        int mvx, int mvy,
-                       int i_width, int i_height, const vbx264_weight_t *weight )
+                       int i_width, int i_height, const x264_weight_t *weight )
 {
     int qpel_idx = ((mvy&3)<<2) + (mvx&3);
     int offset = (mvy>>2)*i_src_stride + (mvx>>2);
-    pixel *src1 = src[vbx264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
+    pixel *src1 = src[x264_hpel_ref0[qpel_idx]] + offset + ((mvy&3) == 3) * i_src_stride;
 
     if( qpel_idx & 5 ) /* qpel interpolation needed */
     {
-        pixel *src2 = src[vbx264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
+        pixel *src2 = src[x264_hpel_ref1[qpel_idx]] + offset + ((mvx&3) == 3);
         pixel_avg( dst, *i_dst_stride, src1, i_src_stride,
                    src2, i_src_stride, i_width, i_height );
         if( weight->weightfn )
@@ -287,7 +287,7 @@ MC_COPY( 16 )
 MC_COPY( 8 )
 MC_COPY( 4 )
 
-void vbx264_plane_copy_c( pixel *dst, intptr_t i_dst,
+void x264_plane_copy_c( pixel *dst, intptr_t i_dst,
                         pixel *src, intptr_t i_src, int w, int h )
 {
     while( h-- )
@@ -298,7 +298,7 @@ void vbx264_plane_copy_c( pixel *dst, intptr_t i_dst,
     }
 }
 
-void vbx264_plane_copy_swap_c( pixel *dst, intptr_t i_dst,
+void x264_plane_copy_swap_c( pixel *dst, intptr_t i_dst,
                              pixel *src, intptr_t i_src, int w, int h )
 {
     for( int y=0; y<h; y++, dst+=i_dst, src+=i_src )
@@ -309,7 +309,7 @@ void vbx264_plane_copy_swap_c( pixel *dst, intptr_t i_dst,
         }
 }
 
-void vbx264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
+void x264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
                                    pixel *srcu, intptr_t i_srcu,
                                    pixel *srcv, intptr_t i_srcv, int w, int h )
 {
@@ -321,7 +321,7 @@ void vbx264_plane_copy_interleave_c( pixel *dst,  intptr_t i_dst,
         }
 }
 
-void vbx264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
+void x264_plane_copy_deinterleave_c( pixel *dsta, intptr_t i_dsta, pixel *dstb, intptr_t i_dstb,
                                      pixel *src,  intptr_t i_src, int w, int h )
 {
     for( int y=0; y<h; y++, dsta+=i_dsta, dstb+=i_dstb, src+=i_src )
@@ -397,12 +397,12 @@ static void store_interleave_chroma( pixel *dst, intptr_t i_dst, pixel *srcu, pi
 
 static void load_deinterleave_chroma_fenc( pixel *dst, pixel *src, intptr_t i_src, int height )
 {
-    vbx264_plane_copy_deinterleave_c( dst, FENC_STRIDE, dst+FENC_STRIDE/2, FENC_STRIDE, src, i_src, 8, height );
+    x264_plane_copy_deinterleave_c( dst, FENC_STRIDE, dst+FENC_STRIDE/2, FENC_STRIDE, src, i_src, 8, height );
 }
 
 static void load_deinterleave_chroma_fdec( pixel *dst, pixel *src, intptr_t i_src, int height )
 {
-    vbx264_plane_copy_deinterleave_c( dst, FDEC_STRIDE, dst+FDEC_STRIDE/2, FDEC_STRIDE, src, i_src, 8, height );
+    x264_plane_copy_deinterleave_c( dst, FDEC_STRIDE, dst+FDEC_STRIDE/2, FDEC_STRIDE, src, i_src, 8, height );
 }
 
 static void prefetch_fenc_null( pixel *pix_y,  intptr_t stride_y,
@@ -507,7 +507,7 @@ static void mbtree_fix8_unpack( float *dst, uint16_t *src, int count )
         dst[i] = (int16_t)endian_fix16( src[i] ) * (1.0f/256.0f);
 }
 
-void vbx264_mc_init( uint32_t cpu, vbx264_mc_functions_t *pf, int cpu_independent )
+void x264_mc_init( uint32_t cpu, x264_mc_functions_t *pf, int cpu_independent )
 {
     pf->mc_luma   = mc_luma;
     pf->get_ref   = get_ref;
@@ -541,12 +541,12 @@ void vbx264_mc_init( uint32_t cpu, vbx264_mc_functions_t *pf, int cpu_independen
     pf->load_deinterleave_chroma_fenc = load_deinterleave_chroma_fenc;
     pf->load_deinterleave_chroma_fdec = load_deinterleave_chroma_fdec;
 
-    pf->plane_copy = vbx264_plane_copy_c;
-    pf->plane_copy_swap = vbx264_plane_copy_swap_c;
-    pf->plane_copy_interleave = vbx264_plane_copy_interleave_c;
+    pf->plane_copy = x264_plane_copy_c;
+    pf->plane_copy_swap = x264_plane_copy_swap_c;
+    pf->plane_copy_interleave = x264_plane_copy_interleave_c;
 
-    pf->plane_copy_deinterleave = vbx264_plane_copy_deinterleave_c;
-    pf->plane_copy_deinterleave_yuyv = vbx264_plane_copy_deinterleave_c;
+    pf->plane_copy_deinterleave = x264_plane_copy_deinterleave_c;
+    pf->plane_copy_deinterleave_yuyv = x264_plane_copy_deinterleave_c;
     pf->plane_copy_deinterleave_rgb = plane_copy_deinterleave_rgb_c;
     pf->plane_copy_deinterleave_v210 = plane_copy_deinterleave_v210_c;
 
@@ -571,24 +571,24 @@ void vbx264_mc_init( uint32_t cpu, vbx264_mc_functions_t *pf, int cpu_independen
     pf->mbtree_fix8_unpack    = mbtree_fix8_unpack;
 
 #if HAVE_MMX
-    vbx264_mc_init_mmx( cpu, pf );
+    x264_mc_init_mmx( cpu, pf );
 #endif
 #if HAVE_ALTIVEC
     if( cpu&X264_CPU_ALTIVEC )
-        vbx264_mc_init_altivec( pf );
+        x264_mc_init_altivec( pf );
 #endif
 #if HAVE_ARMV6
-    vbx264_mc_init_arm( cpu, pf );
+    x264_mc_init_arm( cpu, pf );
 #endif
 #if HAVE_AARCH64
-    vbx264_mc_init_aarch64( cpu, pf );
+    x264_mc_init_aarch64( cpu, pf );
 #endif
 #if HAVE_MSA
     if( cpu&X264_CPU_MSA )
-        vbx264_mc_init_mips( cpu, pf );
+        x264_mc_init_mips( cpu, pf );
 #endif
 #if HAVE_LSX
-    vbx264_mc_init_loongarch( cpu, pf );
+    x264_mc_init_loongarch( cpu, pf );
 #endif
 
     if( cpu_independent )

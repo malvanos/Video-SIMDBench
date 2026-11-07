@@ -4,9 +4,10 @@
 # Builds the project in a fresh temporary build dir, then runs vbench with a
 # fixed seed and asserts on its output:
 #   * stderr contains "VideoBench: All tests passed"
-#   * the stdout timing table has a header line with the "C" column
-#   * at least 300 table rows (lines matching '^[[:space:]]+[^ ]+.* :')
-#   * at least 100 codec-prefixed rows (x264:/x265:/dav1d:)
+#   * the stdout timing table header carries both the "C" and "C-plain" columns
+#   * every table row is codec-prefixed (x264:/x265:/dav1d:) — the per-category
+#     harness bench modules are gone, so total rows == codec rows
+#   * at least 100 codec-prefixed rows
 #   * a "--bench=x264:" filtered run still passes and emits only x264: rows
 #
 # Prints PASS/FAIL per check and exits nonzero if any check fails.
@@ -16,10 +17,10 @@ set -eu
 
 REPO=$(CDPATH= cd -P "$(dirname -- "$0")/.." && pwd)
 SEED=12345
-MIN_ROWS=300
 MIN_CODEC_ROWS=100
 ROW_RE='^[[:space:]]+[^ ]+.* :'                         # table rows: "<name> : <values>"
 HEADER_C_RE='^[[:space:]]+:[[:space:]]*C([[:space:]]|$)' # header line carrying the C column
+HEADER_PLAIN_RE='^[[:space:]]+:[[:space:]]*C[[:space:]]+C-plain([[:space:]]|$)' # ... and C-plain right after C
 
 # ------------------------------------------------------------------ temp dir --
 TMP=$(mktemp -d)
@@ -91,12 +92,14 @@ else
     grep -nE '^[[:space:]]*:' "$TMP/full.out" >&2 || true
 fi
 
-rows=$(grep -cE "$ROW_RE" "$TMP/full.out" || true); rows=${rows:-0}
-if [ "$rows" -ge "$MIN_ROWS" ]; then
-    pass "table row count $rows >= $MIN_ROWS"
+if grep -qE "$HEADER_PLAIN_RE" "$TMP/full.out"; then
+    pass "stdout table header line contains the C-plain column right after C"
 else
-    fail "table row count $rows < $MIN_ROWS"
+    fail "stdout table header line with C-plain column not found"
+    grep -nE '^[[:space:]]*:' "$TMP/full.out" >&2 || true
 fi
+
+rows=$(grep -cE "$ROW_RE" "$TMP/full.out" || true); rows=${rows:-0}
 
 codec_rows=$(grep -E "$ROW_RE" "$TMP/full.out" | grep -cE '^[[:space:]]*(x264:|x265:|dav1d:)' || true)
 codec_rows=${codec_rows:-0}
@@ -104,6 +107,15 @@ if [ "$codec_rows" -ge "$MIN_CODEC_ROWS" ]; then
     pass "codec-prefixed rows (x264:/x265:/dav1d:) $codec_rows >= $MIN_CODEC_ROWS"
 else
     fail "codec-prefixed rows (x264:/x265:/dav1d:) $codec_rows < $MIN_CODEC_ROWS"
+fi
+
+# the per-category harness bench modules are deleted: every table row must be
+# a codec row, i.e. total rows == codec-prefixed rows
+if [ "$rows" -gt 0 ] && [ "$rows" -eq "$codec_rows" ]; then
+    pass "all $rows table rows are codec-prefixed (no harness rows left)"
+else
+    fail "table rows $rows != codec-prefixed rows $codec_rows (harness rows still present?)"
+    grep -E "$ROW_RE" "$TMP/full.out" | sed 's/^[[:space:]]*//' | grep -vE '^(x264:|x265:|dav1d:)' >&2 || true
 fi
 
 # ---------------------------------------------- filtered run: --bench=x264: --
