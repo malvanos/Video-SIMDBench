@@ -35,12 +35,12 @@
 #     upstream include/common/*.h  -> src/dav1d/common/*.h
 #     upstream include/dav1d/*.h   -> src/dav1d/dav1d/*.h
 #     upstream src/{x86,arm}/      -> src/dav1d/src/{x86,arm}/      (asm, verbatim)
+#     upstream src/ext/            -> src/dav1d/ext/                (x86inc.asm for src/x86)
 #
-# Copied source files get the same mechanical transform the port was created
-# with (see PORTING.md):
-#     dav1d_ -> vbdav1d_
-# Never edit synced files by hand — edit the local shim headers (config.h and
-# the *_8bpc.c wrappers) instead.
+# Copied source files are plain copies now: the port uses native upstream
+# dav1d_ symbol names everywhere (the asm must match the C decls), so no
+# symbol-rename transform is applied. Never edit synced files by hand — edit
+# the local shim headers (config.h and the *_8bpc.c wrappers) instead.
 #
 # Acceptance after a sync (from the repo root):
 #     cmake --build build -j8 && ./build/vbench --bench=dav1d:
@@ -89,10 +89,12 @@ COPY_HEADER_GLOBS=(
 
 # Upstream dir | dest dir relative to src/dav1d/ — copied verbatim (asm moves
 # together with the C above; upstream also has ppc/riscv/loongarch asm dirs
-# which this port does not use — add them here if that changes).
+# and 32-bit arm (src/arm/32) which this port does not use — add them here if
+# that changes).
 COPY_DIRS=(
     "src/x86|src/x86"
     "src/arm|src/arm"
+    "src/ext|ext"
 )
 
 # Local-only files this script must never overwrite (or create). Anything under
@@ -122,9 +124,10 @@ is_protected() {
     return 1
 }
 
-# Mechanical transform applied to copied source files (stdout).
+# Mechanical transform applied to copied source files (stdout). The port uses
+# native upstream dav1d_ symbol names (no rename), so this is a plain copy.
 transform_file() {
-    sed -e 's/dav1d_/vbdav1d_/g' "$1"
+    cat "$1"
 }
 
 check_dst() {
@@ -138,7 +141,7 @@ check_dst() {
 }
 
 copy_file() { # <upstream-rel> <dest-rel> <mode>
-    local up_rel=$1 dst_rel=$2 mode=${3:-sed}
+    local up_rel=$1 dst_rel=$2 mode=${3:-copy}
     local src=$UPSTREAM_DIR/$up_rel dst=$DEST_DIR/$dst_rel
     check_dst "$dst_rel"
     if [ ! -f "$src" ]; then

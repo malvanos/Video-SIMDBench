@@ -38,13 +38,13 @@ union alias32 { uint32_t u32; uint8_t u8[4]; } ATTR_ALIAS;
 union alias16 { uint16_t u16; uint8_t u8[2]; } ATTR_ALIAS;
 union alias8 { uint8_t u8; } ATTR_ALIAS;
 
-typedef void (*vbdav1d_memset_pow2_fn)(void *ptr, int value);
-EXTERN const vbdav1d_memset_pow2_fn vbdav1d_memset_pow2[6];
+typedef void (*dav1d_memset_pow2_fn)(void *ptr, int value);
+EXTERN const dav1d_memset_pow2_fn dav1d_memset_pow2[6];
 
-static inline void vbdav1d_memset_likely_pow2(void *const ptr, const int value, const int n) {
+static inline void dav1d_memset_likely_pow2(void *const ptr, const int value, const int n) {
     assert(n >= 1 && n <= 32);
     if ((n&(n-1)) == 0) {
-        vbdav1d_memset_pow2[ulog2(n)](ptr, value);
+        dav1d_memset_pow2[ulog2(n)](ptr, value);
     } else {
         memset(ptr, value, n);
     }

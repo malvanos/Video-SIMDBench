@@ -66,8 +66,8 @@ typedef struct EdgeBranch {
 } EdgeBranch;
 
 /* Tree to keep track of which edges are available. */
-EXTERN const EdgeNode *vbdav1d_intra_edge_tree[2 /* BL_128X128, BL_64X64 */];
+EXTERN const EdgeNode *dav1d_intra_edge_tree[2 /* BL_128X128, BL_64X64 */];
 
-void vbdav1d_init_intra_edge_tree(void);
+void dav1d_init_intra_edge_tree(void);
 
 #endif /* DAV1D_SRC_INTRA_EDGE_H */

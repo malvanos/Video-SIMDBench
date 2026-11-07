@@ -38,6 +38,6 @@ typedef struct Dav1dPalDSPContext {
     pal_idx_finish_fn pal_idx_finish;
 } Dav1dPalDSPContext;
 
-void vbdav1d_pal_dsp_init(Dav1dPalDSPContext *dsp);
+void dav1d_pal_dsp_init(Dav1dPalDSPContext *dsp);
 
 #endif /* DAV1D_SRC_PAL_H */

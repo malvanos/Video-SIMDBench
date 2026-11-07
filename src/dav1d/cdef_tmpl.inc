@@ -113,7 +113,7 @@ cdef_filter_block_c(pixel *dst, const ptrdiff_t dst_stride,
     assert((w == 4 || w == 8) && (h == 4 || h == 8));
     int16_t tmp_buf[144]; // 12*12 is the maximum value of tmp_stride * (h + 4)
     int16_t *tmp = tmp_buf + 2 * tmp_stride + 2;
-    const int8_t (*const cdef_dirs)[2] = &vbdav1d_cdef_directions[dir];
+    const int8_t (*const cdef_dirs)[2] = &dav1d_cdef_directions[dir];
 
     padding(tmp, tmp_stride, dst, dst_stride, left, top, bottom, w, h, edges);
 
@@ -318,7 +318,7 @@ static int cdef_find_dir_c(const pixel *img, const ptrdiff_t stride,
 #endif
 #endif
 
-COLD void bitfn(vbdav1d_cdef_dsp_init)(Dav1dCdefDSPContext *const c) {
+COLD void bitfn(dav1d_cdef_dsp_init)(Dav1dCdefDSPContext *const c) {
     c->dir = cdef_find_dir_c;
     c->fb[0] = cdef_filter_block_8x8_c;
     c->fb[1] = cdef_filter_block_4x8_c;

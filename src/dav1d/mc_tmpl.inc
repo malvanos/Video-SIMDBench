@@ -114,13 +114,13 @@ prep_c(int16_t *tmp, const pixel *src, const ptrdiff_t src_stride,
 
 #define GET_H_FILTER(mx) \
     const int8_t *const fh = !(mx) ? NULL : w > 4 ? \
-        vbdav1d_mc_subpel_filters[filter_type & 3][(mx) - 1] : \
-        vbdav1d_mc_subpel_filters[3 + (filter_type & 1)][(mx) - 1]
+        dav1d_mc_subpel_filters[filter_type & 3][(mx) - 1] : \
+        dav1d_mc_subpel_filters[3 + (filter_type & 1)][(mx) - 1]
 
 #define GET_V_FILTER(my) \
     const int8_t *const fv = !(my) ? NULL : h > 4 ? \
-        vbdav1d_mc_subpel_filters[filter_type >> 2][(my) - 1] : \
-        vbdav1d_mc_subpel_filters[3 + ((filter_type >> 2) & 1)][(my) - 1]
+        dav1d_mc_subpel_filters[filter_type >> 2][(my) - 1] : \
+        dav1d_mc_subpel_filters[3 + ((filter_type >> 2) & 1)][(my) - 1]
 
 #define GET_FILTERS() \
     GET_H_FILTER(mx); \
@@ -696,7 +696,7 @@ static void blend_c(pixel *dst, const ptrdiff_t dst_stride, const pixel *tmp,
 static void blend_v_c(pixel *dst, const ptrdiff_t dst_stride, const pixel *tmp,
                       const int w, int h)
 {
-    const uint8_t *const mask = &vbdav1d_obmc_masks[w];
+    const uint8_t *const mask = &dav1d_obmc_masks[w];
     do {
         for (int x = 0; x < (w * 3) >> 2; x++) {
             dst[x] = blend_px(dst[x], tmp[x], mask[x]);
@@ -709,7 +709,7 @@ static void blend_v_c(pixel *dst, const ptrdiff_t dst_stride, const pixel *tmp,
 static void blend_h_c(pixel *dst, const ptrdiff_t dst_stride, const pixel *tmp,
                       const int w, int h)
 {
-    const uint8_t *mask = &vbdav1d_obmc_masks[h];
+    const uint8_t *mask = &dav1d_obmc_masks[h];
     h = (h * 3) >> 2;
     do {
         const int m = *mask++;
@@ -808,7 +808,7 @@ static void warp_affine_8x8_c(pixel *dst, const ptrdiff_t dst_stride,
     for (int y = 0; y < 15; y++, mx += abcd[1]) {
         for (int x = 0, tmx = mx; x < 8; x++, tmx += abcd[0]) {
             const int8_t *const filter =
-                vbdav1d_mc_warp_filter[64 + ((tmx + 512) >> 10)];
+                dav1d_mc_warp_filter[64 + ((tmx + 512) >> 10)];
 
             mid_ptr[x] = FILTER_WARP_RND(src, x, filter, 1,
                                          7 - intermediate_bits);
@@ -821,7 +821,7 @@ static void warp_affine_8x8_c(pixel *dst, const ptrdiff_t dst_stride,
     for (int y = 0; y < 8; y++, my += abcd[3]) {
         for (int x = 0, tmy = my; x < 8; x++, tmy += abcd[2]) {
             const int8_t *const filter =
-                vbdav1d_mc_warp_filter[64 + ((tmy + 512) >> 10)];
+                dav1d_mc_warp_filter[64 + ((tmy + 512) >> 10)];
 
             dst[x] = FILTER_WARP_CLIP(mid_ptr, x, filter, 8,
                                       7 + intermediate_bits);
@@ -843,7 +843,7 @@ static void warp_affine_8x8t_c(int16_t *tmp, const ptrdiff_t tmp_stride,
     for (int y = 0; y < 15; y++, mx += abcd[1]) {
         for (int x = 0, tmx = mx; x < 8; x++, tmx += abcd[0]) {
             const int8_t *const filter =
-                vbdav1d_mc_warp_filter[64 + ((tmx + 512) >> 10)];
+                dav1d_mc_warp_filter[64 + ((tmx + 512) >> 10)];
 
             mid_ptr[x] = FILTER_WARP_RND(src, x, filter, 1,
                                          7 - intermediate_bits);
@@ -856,7 +856,7 @@ static void warp_affine_8x8t_c(int16_t *tmp, const ptrdiff_t tmp_stride,
     for (int y = 0; y < 8; y++, my += abcd[3]) {
         for (int x = 0, tmy = my; x < 8; x++, tmy += abcd[2]) {
             const int8_t *const filter =
-                vbdav1d_mc_warp_filter[64 + ((tmy + 512) >> 10)];
+                dav1d_mc_warp_filter[64 + ((tmy + 512) >> 10)];
 
             tmp[x] = FILTER_WARP_RND(mid_ptr, x, filter, 8, 7) - PREP_BIAS;
         }
@@ -923,7 +923,7 @@ static void resize_c(pixel *dst, const ptrdiff_t dst_stride,
     do {
         int mx = mx0, src_x = -1;
         for (int x = 0; x < dst_w; x++) {
-            const int8_t *const F = vbdav1d_resize_filter[mx >> 8];
+            const int8_t *const F = dav1d_resize_filter[mx >> 8];
             dst[x] = iclip_pixel((-(F[0] * src[iclip(src_x - 3, 0, src_w - 1)] +
                                     F[1] * src[iclip(src_x - 2, 0, src_w - 1)] +
                                     F[2] * src[iclip(src_x - 1, 0, src_w - 1)] +
@@ -957,7 +957,7 @@ static void resize_c(pixel *dst, const ptrdiff_t dst_stride,
 #endif
 #endif
 
-COLD void bitfn(vbdav1d_mc_dsp_init)(Dav1dMCDSPContext *const c) {
+COLD void bitfn(dav1d_mc_dsp_init)(Dav1dMCDSPContext *const c) {
 #define init_mc_fns(type, name) do { \
     c->mc        [type] = put_##name##_c; \
     c->mc_scaled [type] = put_##name##_scaled_c; \

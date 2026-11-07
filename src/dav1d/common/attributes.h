@@ -144,9 +144,9 @@
 #endif
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__)
-#    define vbdav1d_uninit(x) x=x
+#    define dav1d_uninit(x) x=x
 #else
-#    define vbdav1d_uninit(x) x
+#    define dav1d_uninit(x) x
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)

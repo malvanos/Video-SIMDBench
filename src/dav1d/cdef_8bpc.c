@@ -1,5 +1,5 @@
-/* 8bpc instantiation of dav1d src/cdef_tmpl.c (copied here with dav1d_ -> vbdav1d_
- * symbol prefixing): set BITDEPTH and include the tmpl source, exactly like
+/* 8bpc instantiation of dav1d src/cdef_tmpl.c (copied here under native upstream
+ * symbol names): set BITDEPTH and include the tmpl source, exactly like
  * dav1d's meson build does with -DBITDEPTH=8. */
 #define BITDEPTH 8
 #include "cdef_tmpl.inc"

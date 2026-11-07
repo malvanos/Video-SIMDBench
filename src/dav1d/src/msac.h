@@ -58,53 +58,53 @@ typedef struct MsacContext {
 #endif
 #endif
 
-void vbdav1d_msac_init(MsacContext *s, const uint8_t *data, size_t sz,
+void dav1d_msac_init(MsacContext *s, const uint8_t *data, size_t sz,
                      int disable_cdf_update_flag);
-unsigned vbdav1d_msac_decode_symbol_adapt_c(MsacContext *s, uint16_t *cdf,
+unsigned dav1d_msac_decode_symbol_adapt_c(MsacContext *s, uint16_t *cdf,
                                           size_t n_symbols);
-unsigned vbdav1d_msac_decode_bool_adapt_c(MsacContext *s, uint16_t *cdf);
-unsigned vbdav1d_msac_decode_bool_equi_c(MsacContext *s);
-unsigned vbdav1d_msac_decode_bool_c(MsacContext *s, unsigned f);
-unsigned vbdav1d_msac_decode_hi_tok_c(MsacContext *s, uint16_t *cdf);
-int vbdav1d_msac_decode_subexp(MsacContext *s, int ref, int n, unsigned k);
+unsigned dav1d_msac_decode_bool_adapt_c(MsacContext *s, uint16_t *cdf);
+unsigned dav1d_msac_decode_bool_equi_c(MsacContext *s);
+unsigned dav1d_msac_decode_bool_c(MsacContext *s, unsigned f);
+unsigned dav1d_msac_decode_hi_tok_c(MsacContext *s, uint16_t *cdf);
+int dav1d_msac_decode_subexp(MsacContext *s, int ref, int n, unsigned k);
 
 /* Supported n_symbols ranges: adapt4: 1-3, adapt8: 1-7, adapt16: 3-15 */
-#ifndef vbdav1d_msac_decode_symbol_adapt4
-#define vbdav1d_msac_decode_symbol_adapt4  vbdav1d_msac_decode_symbol_adapt_c
+#ifndef dav1d_msac_decode_symbol_adapt4
+#define dav1d_msac_decode_symbol_adapt4  dav1d_msac_decode_symbol_adapt_c
 #endif
-#ifndef vbdav1d_msac_decode_symbol_adapt8
-#define vbdav1d_msac_decode_symbol_adapt8  vbdav1d_msac_decode_symbol_adapt_c
+#ifndef dav1d_msac_decode_symbol_adapt8
+#define dav1d_msac_decode_symbol_adapt8  dav1d_msac_decode_symbol_adapt_c
 #endif
-#ifndef vbdav1d_msac_decode_symbol_adapt16
-#define vbdav1d_msac_decode_symbol_adapt16 vbdav1d_msac_decode_symbol_adapt_c
+#ifndef dav1d_msac_decode_symbol_adapt16
+#define dav1d_msac_decode_symbol_adapt16 dav1d_msac_decode_symbol_adapt_c
 #endif
-#ifndef vbdav1d_msac_decode_bool_adapt
-#define vbdav1d_msac_decode_bool_adapt     vbdav1d_msac_decode_bool_adapt_c
+#ifndef dav1d_msac_decode_bool_adapt
+#define dav1d_msac_decode_bool_adapt     dav1d_msac_decode_bool_adapt_c
 #endif
-#ifndef vbdav1d_msac_decode_bool_equi
-#define vbdav1d_msac_decode_bool_equi      vbdav1d_msac_decode_bool_equi_c
+#ifndef dav1d_msac_decode_bool_equi
+#define dav1d_msac_decode_bool_equi      dav1d_msac_decode_bool_equi_c
 #endif
-#ifndef vbdav1d_msac_decode_bool
-#define vbdav1d_msac_decode_bool           vbdav1d_msac_decode_bool_c
+#ifndef dav1d_msac_decode_bool
+#define dav1d_msac_decode_bool           dav1d_msac_decode_bool_c
 #endif
-#ifndef vbdav1d_msac_decode_hi_tok
-#define vbdav1d_msac_decode_hi_tok         vbdav1d_msac_decode_hi_tok_c
+#ifndef dav1d_msac_decode_hi_tok
+#define dav1d_msac_decode_hi_tok         dav1d_msac_decode_hi_tok_c
 #endif
 
-static inline unsigned vbdav1d_msac_decode_bools(MsacContext *const s, unsigned n) {
+static inline unsigned dav1d_msac_decode_bools(MsacContext *const s, unsigned n) {
     unsigned v = 0;
     while (n--)
-        v = (v << 1) | vbdav1d_msac_decode_bool_equi(s);
+        v = (v << 1) | dav1d_msac_decode_bool_equi(s);
     return v;
 }
 
-static inline int vbdav1d_msac_decode_uniform(MsacContext *const s, const unsigned n) {
+static inline int dav1d_msac_decode_uniform(MsacContext *const s, const unsigned n) {
     assert(n > 0);
     const int l = ulog2(n) + 1;
     assert(l > 1);
     const unsigned m = (1 << l) - n;
-    const unsigned v = vbdav1d_msac_decode_bools(s, l - 1);
-    return v < m ? v : (v << 1) - m + vbdav1d_msac_decode_bool_equi(s);
+    const unsigned v = dav1d_msac_decode_bools(s, l - 1);
+    return v < m ? v : (v << 1) - m + dav1d_msac_decode_bool_equi(s);
 }
 
 #endif /* DAV1D_SRC_MSAC_H */

@@ -37,21 +37,21 @@ typedef struct GetBits {
     const uint8_t *ptr, *ptr_start, *ptr_end;
 } GetBits;
 
-void vbdav1d_init_get_bits(GetBits *c, const uint8_t *data, size_t sz);
-unsigned vbdav1d_get_bit(GetBits *c);
-unsigned vbdav1d_get_bits(GetBits *c, int n);
-int vbdav1d_get_sbits(GetBits *c, int n);
-unsigned vbdav1d_get_uleb128(GetBits *c);
+void dav1d_init_get_bits(GetBits *c, const uint8_t *data, size_t sz);
+unsigned dav1d_get_bit(GetBits *c);
+unsigned dav1d_get_bits(GetBits *c, int n);
+int dav1d_get_sbits(GetBits *c, int n);
+unsigned dav1d_get_uleb128(GetBits *c);
 
 // Output in range 0..max-1
-unsigned vbdav1d_get_uniform(GetBits *c, unsigned max);
-unsigned vbdav1d_get_vlc(GetBits *c);
-int vbdav1d_get_bits_subexp(GetBits *c, int ref, unsigned n);
+unsigned dav1d_get_uniform(GetBits *c, unsigned max);
+unsigned dav1d_get_vlc(GetBits *c);
+int dav1d_get_bits_subexp(GetBits *c, int ref, unsigned n);
 
 // Discard bits from the buffer until we're next byte-aligned.
-static inline void vbdav1d_bytealign_get_bits(GetBits *c) {
+static inline void dav1d_bytealign_get_bits(GetBits *c) {
     // bits_left is never more than 7, because it is only incremented
-    // by refill(), called by vbdav1d_get_bits and that never reads more
+    // by refill(), called by dav1d_get_bits and that never reads more
     // than 7 bits more than it needs.
     //
     // If this wasn't true, we would need to work out how many bits to
@@ -64,7 +64,7 @@ static inline void vbdav1d_bytealign_get_bits(GetBits *c) {
 }
 
 // Return the current bit position relative to the start of the buffer.
-static inline unsigned vbdav1d_get_bits_pos(const GetBits *c) {
+static inline unsigned dav1d_get_bits_pos(const GetBits *c) {
     return (unsigned) (c->ptr - c->ptr_start) * 8 - c->bits_left;
 }
 

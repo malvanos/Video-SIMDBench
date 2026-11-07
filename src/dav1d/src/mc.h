@@ -114,15 +114,15 @@ void (name)(pixel *dst, ptrdiff_t dst_stride, \
 typedef decl_resize_fn(*resize_fn);
 
 #define decl_8tap_gen(decl_name, fn_name, opt) \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_regular,        opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_regular_smooth, opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_regular_sharp,  opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_smooth_regular, opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_smooth,         opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_smooth_sharp,   opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_sharp_regular,  opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_sharp_smooth,   opt)); \
-    decl_##decl_name##_fn(BF(vbdav1d_##fn_name##_8tap_sharp,          opt))
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_regular,        opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_regular_smooth, opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_regular_sharp,  opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_smooth_regular, opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_smooth,         opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_smooth_sharp,   opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_sharp_regular,  opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_sharp_smooth,   opt)); \
+    decl_##decl_name##_fn(BF(dav1d_##fn_name##_8tap_sharp,          opt))
 
 #define decl_8tap_fns(opt) \
     decl_8tap_gen(mc,  put,  opt); \
@@ -161,6 +161,6 @@ typedef struct Dav1dMCDSPContext {
     resize_fn resize;
 } Dav1dMCDSPContext;
 
-bitfn_decls(void vbdav1d_mc_dsp_init, Dav1dMCDSPContext *c);
+bitfn_decls(void dav1d_mc_dsp_init, Dav1dMCDSPContext *c);
 
 #endif /* DAV1D_SRC_MC_H */

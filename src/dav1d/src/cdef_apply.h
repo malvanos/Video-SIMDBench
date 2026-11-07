@@ -32,7 +32,7 @@
 
 #include "src/internal.h"
 
-void bytefn(vbdav1d_cdef_brow)(Dav1dTaskContext *tc, pixel *const p[3],
+void bytefn(dav1d_cdef_brow)(Dav1dTaskContext *tc, pixel *const p[3],
                              const Av1Filter *lflvl, int by_start, int by_end,
                              int sbrow_start, int sby);
 

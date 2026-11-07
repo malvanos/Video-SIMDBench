@@ -30,6 +30,6 @@
 
 #include "src/internal.h"
 
-int vbdav1d_submit_frame(Dav1dContext *c);
+int dav1d_submit_frame(Dav1dContext *c);
 
 #endif /* DAV1D_SRC_DECODE_H */

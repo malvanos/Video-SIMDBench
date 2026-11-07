@@ -24,6 +24,7 @@
 #include <climits>
 
 /* ---- build configuration stubs (normally from CMake / x265.h) ---- */
+#include "vbench_config.h"   /* harness platform config: ARCH_*, HAVE_*, ... */
 #define X265_NS x265
 #ifndef X265_DEPTH
 #define X265_DEPTH 8
@@ -34,11 +35,25 @@
 #define CHECKED_BUILD 0
 #define ENABLE_PPA 0
 #define ENABLE_VTUNE 0
+/* asm availability: forced to 1 by the codec CMakeLists when the upstream
+ * asm lib (x86/*.asm, aarch64/*.S) is built for this arch; 0 otherwise */
+#ifndef ENABLE_ASSEMBLY
 #define ENABLE_ASSEMBLY 0
+#endif
 #define EXPORT_C_API 0
 #define HAVE_ALTIVEC 0
 #define HAVE_INT_TYPES_H 1
+/* arch selection from the harness platform config (vbench_config.h) */
+#if ARCH_AARCH64
+#define X265_ARCH_ARM64 1
+#define X265_ARCH_X86 0
+#elif ARCH_X86_64 || ARCH_X86
 #define X265_ARCH_ARM64 0
+#define X265_ARCH_X86 1
+#else
+#define X265_ARCH_ARM64 0
+#define X265_ARCH_X86 0
+#endif
 #define X265_LOG_ERROR 3
 
 /* color space defines (from x265.h) */
@@ -66,6 +81,12 @@
 #define X265_CHECK(expr, ...)
 #define ProfileScopeEvent(x)
 #define THREAD_NAME(n,i)
+
+/* bit-scan helpers (upstream threading.h); used by some arch prim files */
+#define BSR(id, x)            (id) = ((unsigned long)__builtin_clz(x) ^ 31)
+#define BSF(id, x)            (id) = ((unsigned long)__builtin_ctz(x))
+#define BSR64(id, x)          (id) = ((unsigned long)__builtin_clzll(x) ^ 63)
+#define BSF64(id, x)          (id) = ((unsigned long)__builtin_ctzll(x))
 
 /* ---- pixel / coefficient types (from common.h) ---- */
 #if HIGH_BIT_DEPTH

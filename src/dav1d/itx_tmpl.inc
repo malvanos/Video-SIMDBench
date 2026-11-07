@@ -45,7 +45,7 @@ inv_txfm_add_c(pixel *dst, const ptrdiff_t stride, coef *const coeff,
                const int eob, const /*enum RectTxfmSize*/ int tx, const int shift,
                const enum TxfmType txtp HIGHBD_DECL_SUFFIX)
 {
-    const TxfmInfo *const t_dim = &vbdav1d_txfm_dimensions[tx];
+    const TxfmInfo *const t_dim = &dav1d_txfm_dimensions[tx];
     const int w = 4 * t_dim->w, h = 4 * t_dim->h;
     const int has_dconly = txtp == DCT_DCT;
     assert(w >= 4 && w <= 64);
@@ -69,9 +69,9 @@ inv_txfm_add_c(pixel *dst, const ptrdiff_t stride, coef *const coeff,
         return;
     }
 
-    const uint8_t *const txtps = vbdav1d_tx1d_types[txtp];
-    const itx_1d_fn first_1d_fn = vbdav1d_tx1d_fns[t_dim->lw][txtps[0]];
-    const itx_1d_fn second_1d_fn = vbdav1d_tx1d_fns[t_dim->lh][txtps[1]];
+    const uint8_t *const txtps = dav1d_tx1d_types[txtp];
+    const itx_1d_fn first_1d_fn = dav1d_tx1d_fns[t_dim->lw][txtps[0]];
+    const itx_1d_fn second_1d_fn = dav1d_tx1d_fns[t_dim->lh][txtps[1]];
     const int sh = imin(h, 32), sw = imin(w, 32);
 #if BITDEPTH == 8
     const int row_clip_min = INT16_MIN;
@@ -90,7 +90,7 @@ inv_txfm_add_c(pixel *dst, const ptrdiff_t stride, coef *const coeff,
     } else if (txtps[0] == IDENTITY && txtps[1] != IDENTITY) {
         last_nonzero_col = eob >> (t_dim->lw + 2);
     } else {
-        last_nonzero_col = vbdav1d_last_nonzero_col_from_eob[tx][eob];
+        last_nonzero_col = dav1d_last_nonzero_col_from_eob[tx][eob];
     }
     assert(last_nonzero_col < sh);
     for (int y = 0; y <= last_nonzero_col; y++, c += w) {
@@ -189,12 +189,12 @@ static void inv_txfm_add_wht_wht_4x4_c(pixel *dst, const ptrdiff_t stride,
     for (int y = 0; y < 4; y++, c += 4) {
         for (int x = 0; x < 4; x++)
             c[x] = coeff[y + x * 4] >> 2;
-        vbdav1d_inv_wht4_1d_c(c, 1);
+        dav1d_inv_wht4_1d_c(c, 1);
     }
     memset(coeff, 0, sizeof(*coeff) * 4 * 4);
 
     for (int x = 0; x < 4; x++)
-        vbdav1d_inv_wht4_1d_c(&tmp[x], 4);
+        dav1d_inv_wht4_1d_c(&tmp[x], 4);
 
     c = tmp;
     for (int y = 0; y < 4; y++, dst += PXSTRIDE(stride))
@@ -217,7 +217,7 @@ static void inv_txfm_add_wht_wht_4x4_c(pixel *dst, const ptrdiff_t stride,
 #endif
 #endif
 
-COLD void bitfn(vbdav1d_itx_dsp_init)(Dav1dInvTxfmDSPContext *const c, int bpc) {
+COLD void bitfn(dav1d_itx_dsp_init)(Dav1dInvTxfmDSPContext *const c, int bpc) {
 #define assign_itx_all_fn64(w, h, pfx) \
     c->itxfm_add[pfx##TX_##w##X##h][DCT_DCT  ] = \
         inv_txfm_add_dct_dct_##w##x##h##_c
@@ -307,5 +307,5 @@ COLD void bitfn(vbdav1d_itx_dsp_init)(Dav1dInvTxfmDSPContext *const c, int bpc) 
 #endif
 
     if (!all_simd)
-        vbdav1d_init_last_nonzero_col_from_eob_tables();
+        dav1d_init_last_nonzero_col_from_eob_tables();
 }

@@ -270,8 +270,8 @@ static void ipred_smooth_c(pixel *dst, const ptrdiff_t stride,
                            const int max_width, const int max_height
                            HIGHBD_DECL_SUFFIX)
 {
-    const uint8_t *const weights_hor = &vbdav1d_sm_weights[width];
-    const uint8_t *const weights_ver = &vbdav1d_sm_weights[height];
+    const uint8_t *const weights_hor = &dav1d_sm_weights[width];
+    const uint8_t *const weights_ver = &dav1d_sm_weights[height];
     const int right = topleft[width], bottom = topleft[-height];
 
     for (int y = 0; y < height; y++) {
@@ -292,7 +292,7 @@ static void ipred_smooth_v_c(pixel *dst, const ptrdiff_t stride,
                              const int max_width, const int max_height
                              HIGHBD_DECL_SUFFIX)
 {
-    const uint8_t *const weights_ver = &vbdav1d_sm_weights[height];
+    const uint8_t *const weights_ver = &dav1d_sm_weights[height];
     const int bottom = topleft[-height];
 
     for (int y = 0; y < height; y++) {
@@ -311,7 +311,7 @@ static void ipred_smooth_h_c(pixel *dst, const ptrdiff_t stride,
                              const int max_width, const int max_height
                              HIGHBD_DECL_SUFFIX)
 {
-    const uint8_t *const weights_hor = &vbdav1d_sm_weights[width];
+    const uint8_t *const weights_hor = &dav1d_sm_weights[width];
     const int right = topleft[width];
 
     for (int y = 0; y < height; y++) {
@@ -415,7 +415,7 @@ static void ipred_z1_c(pixel *dst, const ptrdiff_t stride,
     const int enable_intra_edge_filter = angle >> 10;
     angle &= 511;
     assert(angle < 90);
-    int dx = vbdav1d_dr_intra_derivative[angle >> 1];
+    int dx = dav1d_dr_intra_derivative[angle >> 1];
     pixel top_out[64 + 64];
     const pixel *top;
     int max_base_x;
@@ -469,8 +469,8 @@ static void ipred_z2_c(pixel *dst, const ptrdiff_t stride,
     const int enable_intra_edge_filter = angle >> 10;
     angle &= 511;
     assert(angle > 90 && angle < 180);
-    int dy = vbdav1d_dr_intra_derivative[(angle - 90) >> 1];
-    int dx = vbdav1d_dr_intra_derivative[(180 - angle) >> 1];
+    int dy = dav1d_dr_intra_derivative[(angle - 90) >> 1];
+    int dx = dav1d_dr_intra_derivative[(180 - angle) >> 1];
     const int upsample_left = enable_intra_edge_filter ?
         get_upsample(width + height, 180 - angle, is_sm) : 0;
     const int upsample_above = enable_intra_edge_filter ?
@@ -549,7 +549,7 @@ static void ipred_z3_c(pixel *dst, const ptrdiff_t stride,
     const int enable_intra_edge_filter = angle >> 10;
     angle &= 511;
     assert(angle > 180);
-    int dy = vbdav1d_dr_intra_derivative[(270 - angle) >> 1];
+    int dy = dav1d_dr_intra_derivative[(270 - angle) >> 1];
     pixel left_out[64 + 64];
     const pixel *left;
     int max_base_y;
@@ -624,7 +624,7 @@ static void ipred_filter_c(pixel *dst, const ptrdiff_t stride,
     filt_idx &= 511;
     assert(filt_idx < 5);
 
-    const int8_t *const filter = vbdav1d_filter_intra_taps[filt_idx];
+    const int8_t *const filter = dav1d_filter_intra_taps[filt_idx];
     const pixel *top = &topleft_in[1];
     for (int y = 0; y < height; y += 2) {
         const pixel *topleft = &topleft_in[-y];
@@ -741,7 +741,7 @@ static void pal_pred_c(pixel *dst, const ptrdiff_t stride,
 #endif
 #endif
 
-COLD void bitfn(vbdav1d_intra_pred_dsp_init)(Dav1dIntraPredDSPContext *const c) {
+COLD void bitfn(dav1d_intra_pred_dsp_init)(Dav1dIntraPredDSPContext *const c) {
     c->intra_pred[DC_PRED      ] = ipred_dc_c;
     c->intra_pred[DC_128_PRED  ] = ipred_dc_128_c;
     c->intra_pred[TOP_DC_PRED  ] = ipred_dc_top_c;

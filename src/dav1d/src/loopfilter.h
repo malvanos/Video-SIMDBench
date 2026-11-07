@@ -52,6 +52,6 @@ typedef struct Dav1dLoopFilterDSPContext {
     loopfilter_sb_fn loop_filter_sb[2][2];
 } Dav1dLoopFilterDSPContext;
 
-bitfn_decls(void vbdav1d_loop_filter_dsp_init, Dav1dLoopFilterDSPContext *c);
+bitfn_decls(void dav1d_loop_filter_dsp_init, Dav1dLoopFilterDSPContext *c);
 
 #endif /* DAV1D_SRC_LOOPFILTER_H */

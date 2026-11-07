@@ -34,7 +34,7 @@
 #include "src/levels.h"
 #include "src/tables.h"
 
-const uint8_t vbdav1d_al_part_ctx[2][N_BL_LEVELS][N_PARTITIONS] = {
+const uint8_t dav1d_al_part_ctx[2][N_BL_LEVELS][N_PARTITIONS] = {
     {
         // partitions:
         // none,  h,    v, split,  tts,  tbs,  tls,  trs,   h4,   v4
@@ -53,7 +53,7 @@ const uint8_t vbdav1d_al_part_ctx[2][N_BL_LEVELS][N_PARTITIONS] = {
 };
 
 const uint8_t /* enum BlockSize */
-    vbdav1d_block_sizes[N_BL_LEVELS][N_PARTITIONS][2] =
+    dav1d_block_sizes[N_BL_LEVELS][N_PARTITIONS][2] =
 {
     [BL_128X128] = {
         [PARTITION_NONE]           = { BS_128x128 },
@@ -101,7 +101,7 @@ const uint8_t /* enum BlockSize */
     }
 };
 
-const uint8_t vbdav1d_block_dimensions[N_BS_SIZES][4] = {
+const uint8_t dav1d_block_dimensions[N_BS_SIZES][4] = {
     [BS_128x128] = { 32, 32, 5, 5 },
     [BS_128x64]  = { 32, 16, 5, 4 },
     [BS_64x128]  = { 16, 32, 4, 5 },
@@ -126,7 +126,7 @@ const uint8_t vbdav1d_block_dimensions[N_BS_SIZES][4] = {
     [BS_4x4]     = {  1,  1, 0, 0 },
 };
 
-const TxfmInfo vbdav1d_txfm_dimensions[N_RECT_TX_SIZES] = {
+const TxfmInfo dav1d_txfm_dimensions[N_RECT_TX_SIZES] = {
     [ TX_4X4]   = { .w = 1, .h = 1, .lw = 0, .lh = 0,
                     .min = 0, .max = 0, .ctx = 0 },
     [ TX_8X8]   = { .w = 2, .h = 2, .lw = 1, .lh = 1,
@@ -168,7 +168,7 @@ const TxfmInfo vbdav1d_txfm_dimensions[N_RECT_TX_SIZES] = {
 };
 
 const uint8_t /* enum (Rect)TxfmSize */
-    vbdav1d_max_txfm_size_for_bs[N_BS_SIZES][4 /* y, 420, 422, 444 */] =
+    dav1d_max_txfm_size_for_bs[N_BS_SIZES][4 /* y, 420, 422, 444 */] =
 {
     [BS_128x128] = {  TX_64X64,  TX_32X32,  TX_32X32,  TX_32X32 },
     [BS_128x64]  = {  TX_64X64,  TX_32X32,  TX_32X32,  TX_32X32 },
@@ -195,7 +195,7 @@ const uint8_t /* enum (Rect)TxfmSize */
 };
 
 const uint8_t /* enum TxfmType */
-    vbdav1d_txtp_from_uvmode[N_UV_INTRA_PRED_MODES] =
+    dav1d_txtp_from_uvmode[N_UV_INTRA_PRED_MODES] =
 {
     [DC_PRED]              = DCT_DCT,
     [VERT_PRED]            = ADST_DCT,
@@ -213,7 +213,7 @@ const uint8_t /* enum TxfmType */
 };
 
 const uint8_t /* enum InterPredMode */
-    vbdav1d_comp_inter_pred_modes[N_COMP_INTER_PRED_MODES][2] =
+    dav1d_comp_inter_pred_modes[N_COMP_INTER_PRED_MODES][2] =
 {
     [NEARESTMV_NEARESTMV] = { NEARESTMV, NEARESTMV },
     [NEARMV_NEARMV]       = { NEARMV,    NEARMV    },
@@ -225,7 +225,7 @@ const uint8_t /* enum InterPredMode */
     [NEARMV_NEWMV]        = { NEARMV,    NEWMV     },
 };
 
-const uint8_t vbdav1d_partition_type_count[N_BL_LEVELS] = {
+const uint8_t dav1d_partition_type_count[N_BL_LEVELS] = {
     [BL_128X128] = N_PARTITIONS - 3,
     [BL_64X64]   = N_PARTITIONS - 1,
     [BL_32X32]   = N_PARTITIONS - 1,
@@ -233,7 +233,7 @@ const uint8_t vbdav1d_partition_type_count[N_BL_LEVELS] = {
     [BL_8X8]     = N_SUB8X8_PARTITIONS - 1,
 };
 
-const uint8_t /* enum TxfmType */ vbdav1d_tx_types_per_set[40] = {
+const uint8_t /* enum TxfmType */ dav1d_tx_types_per_set[40] = {
     /* Intra2 */
     IDTX, DCT_DCT, ADST_ADST, ADST_DCT, DCT_ADST,
     /* Intra1 */
@@ -247,7 +247,7 @@ const uint8_t /* enum TxfmType */ vbdav1d_tx_types_per_set[40] = {
     ADST_ADST, FLIPADST_FLIPADST, ADST_FLIPADST, FLIPADST_ADST,
 };
 
-const uint8_t vbdav1d_ymode_size_context[N_BS_SIZES] = {
+const uint8_t dav1d_ymode_size_context[N_BS_SIZES] = {
     [BS_128x128] = 3,
     [BS_128x64]  = 3,
     [BS_64x128]  = 3,
@@ -272,7 +272,7 @@ const uint8_t vbdav1d_ymode_size_context[N_BS_SIZES] = {
     [BS_4x4  ]   = 0,
 };
 
-const uint8_t vbdav1d_lo_ctx_offsets[3][5][5] = {
+const uint8_t dav1d_lo_ctx_offsets[3][5][5] = {
     { /* w == h */
         {  0,  1,  6,  6, 21 },
         {  1,  6,  6, 21, 21 },
@@ -294,7 +294,7 @@ const uint8_t vbdav1d_lo_ctx_offsets[3][5][5] = {
     },
 };
 
-const uint8_t vbdav1d_skip_ctx[5][5] = {
+const uint8_t dav1d_skip_ctx[5][5] = {
     { 1, 2, 2, 2, 3 },
     { 2, 4, 4, 4, 5 },
     { 2, 4, 4, 4, 5 },
@@ -302,7 +302,7 @@ const uint8_t vbdav1d_skip_ctx[5][5] = {
     { 3, 5, 5, 5, 6 },
 };
 
-const uint8_t /* enum TxClass */ vbdav1d_tx_type_class[N_TX_TYPES_PLUS_LL] = {
+const uint8_t /* enum TxClass */ dav1d_tx_type_class[N_TX_TYPES_PLUS_LL] = {
     [DCT_DCT]           = TX_CLASS_2D,
     [ADST_DCT]          = TX_CLASS_2D,
     [DCT_ADST]          = TX_CLASS_2D,
@@ -322,7 +322,7 @@ const uint8_t /* enum TxClass */ vbdav1d_tx_type_class[N_TX_TYPES_PLUS_LL] = {
     [WHT_WHT]           = TX_CLASS_2D,
 };
 
-const uint8_t /* enum Filter2d */ vbdav1d_filter_2d[DAV1D_N_FILTERS][DAV1D_N_FILTERS] = {
+const uint8_t /* enum Filter2d */ dav1d_filter_2d[DAV1D_N_FILTERS][DAV1D_N_FILTERS] = {
     [DAV1D_FILTER_8TAP_REGULAR] = {
         [DAV1D_FILTER_8TAP_REGULAR] = FILTER_2D_8TAP_REGULAR,
         [DAV1D_FILTER_8TAP_SHARP]   = FILTER_2D_8TAP_REGULAR_SHARP,
@@ -340,7 +340,7 @@ const uint8_t /* enum Filter2d */ vbdav1d_filter_2d[DAV1D_N_FILTERS][DAV1D_N_FIL
     }
 };
 
-const uint8_t /* enum Dav1dFilterMode */ vbdav1d_filter_dir[N_2D_FILTERS][2] = {
+const uint8_t /* enum Dav1dFilterMode */ dav1d_filter_dir[N_2D_FILTERS][2] = {
     [FILTER_2D_8TAP_REGULAR]        = { DAV1D_FILTER_8TAP_REGULAR, DAV1D_FILTER_8TAP_REGULAR },
     [FILTER_2D_8TAP_REGULAR_SMOOTH] = { DAV1D_FILTER_8TAP_SMOOTH,  DAV1D_FILTER_8TAP_REGULAR },
     [FILTER_2D_8TAP_REGULAR_SHARP]  = { DAV1D_FILTER_8TAP_SHARP,   DAV1D_FILTER_8TAP_REGULAR },
@@ -353,11 +353,11 @@ const uint8_t /* enum Dav1dFilterMode */ vbdav1d_filter_dir[N_2D_FILTERS][2] = {
     [FILTER_2D_BILINEAR]            = { DAV1D_FILTER_BILINEAR,     DAV1D_FILTER_BILINEAR     },
 };
 
-const uint8_t vbdav1d_filter_mode_to_y_mode[5] = {
+const uint8_t dav1d_filter_mode_to_y_mode[5] = {
     DC_PRED, VERT_PRED, HOR_PRED, HOR_DOWN_PRED, DC_PRED
 };
 
-const uint8_t vbdav1d_intra_mode_context[N_INTRA_PRED_MODES] = {
+const uint8_t dav1d_intra_mode_context[N_INTRA_PRED_MODES] = {
     [DC_PRED]              = 0,
     [VERT_PRED]            = 1,
     [HOR_PRED]             = 2,
@@ -373,7 +373,7 @@ const uint8_t vbdav1d_intra_mode_context[N_INTRA_PRED_MODES] = {
     [PAETH_PRED]           = 0,
 };
 
-const uint8_t vbdav1d_wedge_ctx_lut[N_BS_SIZES] = {
+const uint8_t dav1d_wedge_ctx_lut[N_BS_SIZES] = {
     [BS_32x32] = 6,
     [BS_32x16] = 5,
     [BS_32x8]  = 8,
@@ -385,7 +385,7 @@ const uint8_t vbdav1d_wedge_ctx_lut[N_BS_SIZES] = {
     [BS_8x8]   = 0,
 };
 
-const Dav1dWarpedMotionParams vbdav1d_default_wm_params = {
+const Dav1dWarpedMotionParams dav1d_default_wm_params = {
     .type = DAV1D_WM_TYPE_IDENTITY,
     .matrix = {
         0, 0, 1 << 16,
@@ -397,7 +397,7 @@ const Dav1dWarpedMotionParams vbdav1d_default_wm_params = {
     .u.p.delta = 0,
 };
 
-const int8_t vbdav1d_cdef_directions[2 + 8 + 2 /* dir */][2 /* pass */] = {
+const int8_t dav1d_cdef_directions[2 + 8 + 2 /* dir */][2 /* pass */] = {
     {  1 * 12 + 0,  2 * 12 + 0 }, // 6
     {  1 * 12 + 0,  2 * 12 - 1 }, // 7
     { -1 * 12 + 1, -2 * 12 + 2 }, // 0
@@ -412,7 +412,7 @@ const int8_t vbdav1d_cdef_directions[2 + 8 + 2 /* dir */][2 /* pass */] = {
     {  0 * 12 + 1, -1 * 12 + 2 }, // 1
 };
 
-const uint16_t ALIGN(vbdav1d_sgr_params[16][2], 4) = {
+const uint16_t ALIGN(dav1d_sgr_params[16][2], 4) = {
     { 140, 3236 }, { 112, 2158 }, {  93, 1618 }, {  80, 1438 },
     {  70, 1295 }, {  58, 1177 }, {  47, 1079 }, {  37,  996 },
     {  30,  925 }, {  25,  863 }, {   0, 2589 }, {   0, 1618 },
@@ -420,7 +420,7 @@ const uint16_t ALIGN(vbdav1d_sgr_params[16][2], 4) = {
 };
 
 ATTR_MCMODEL_SMALL
-const uint8_t ALIGN(vbdav1d_sgr_x_by_x[256], 64) = {
+const uint8_t ALIGN(dav1d_sgr_x_by_x[256], 64) = {
     255, 128,  85,  64,  51,  43,  37,  32,  28,  26,  23,  21,  20,  18,  17,
      16,  15,  14,  13,  13,  12,  12,  11,  11,  10,  10,   9,   9,   9,   9,
       8,   8,   8,   8,   7,   7,   7,   7,   7,   6,   6,   6,   6,   6,   6,
@@ -442,7 +442,7 @@ const uint8_t ALIGN(vbdav1d_sgr_x_by_x[256], 64) = {
 };
 
 ATTR_MCMODEL_SMALL
-const int8_t ALIGN(vbdav1d_mc_subpel_filters[6][15][8], 8) = {
+const int8_t ALIGN(dav1d_mc_subpel_filters[6][15][8], 8) = {
     [DAV1D_FILTER_8TAP_REGULAR] = {
         {   0,   1,  -3,  63,   4,  -1,   0,   0 },
         {   0,   1,  -5,  61,   9,  -2,   0,   0 },
@@ -547,7 +547,7 @@ const int8_t ALIGN(vbdav1d_mc_subpel_filters[6][15][8], 8) = {
 };
 
 ATTR_MCMODEL_SMALL
-const int8_t ALIGN(vbdav1d_mc_warp_filter[193][8], 8) = {
+const int8_t ALIGN(dav1d_mc_warp_filter[193][8], 8) = {
     // [-1, 0)
     { 0,   0, 127,   1,   0, 0, 0, 0 }, { 0,  -1, 127,   2,   0, 0, 0, 0 },
     { 1,  -3, 127,   4, - 1, 0, 0, 0 }, { 1,  -4, 126,   6,  -2, 1, 0, 0 },
@@ -652,7 +652,7 @@ const int8_t ALIGN(vbdav1d_mc_warp_filter[193][8], 8) = {
 };
 
 ATTR_MCMODEL_SMALL
-const int8_t ALIGN(vbdav1d_resize_filter[64][8], 8) = {
+const int8_t ALIGN(dav1d_resize_filter[64][8], 8) = {
     { 0,  0,  0, -128,    0,  0,  0, 0 }, { 0,  0,  1, -128,   -2,  1,  0, 0 },
     { 0, -1,  3, -127,   -4,  2, -1, 0 }, { 0, -1,  4, -127,   -6,  3, -1, 0 },
     { 0, -2,  6, -126,   -8,  3, -1, 0 }, { 0, -2,  7, -125,  -11,  4, -1, 0 },
@@ -687,7 +687,7 @@ const int8_t ALIGN(vbdav1d_resize_filter[64][8], 8) = {
     { 0, -1,  2,   -4, -127,  3, -1, 0 }, { 0,  0,  1,   -2, -128,  1,  0, 0 },
 };
 
-const uint8_t ALIGN(vbdav1d_sm_weights[128], 16) = {
+const uint8_t ALIGN(dav1d_sm_weights[128], 16) = {
     // Unused, because we always offset by bs, which is at least 2.
       0,   0,
     // bs = 2
@@ -716,7 +716,7 @@ const uint8_t ALIGN(vbdav1d_sm_weights[128], 16) = {
 };
 
 ATTR_MCMODEL_SMALL
-const uint16_t vbdav1d_dr_intra_derivative[44] = {
+const uint16_t dav1d_dr_intra_derivative[44] = {
     // Values that are 0 will never be used
           0,    // Angles:
     1023, 0,    //  3,  93, 183
@@ -762,7 +762,7 @@ const uint16_t vbdav1d_dr_intra_derivative[44] = {
     [1*idx+48] = f6
 #endif
 ATTR_MCMODEL_SMALL
-const int8_t ALIGN(vbdav1d_filter_intra_taps[5][64], 64) = {
+const int8_t ALIGN(dav1d_filter_intra_taps[5][64], 64) = {
     {
         F( 0,  -6, 10,  0,  0,  0, 12,  0 ),
         F( 1,  -5,  2, 10,  0,  0,  9,  0 ),
@@ -811,7 +811,7 @@ const int8_t ALIGN(vbdav1d_filter_intra_taps[5][64], 64) = {
     }
 };
 
-const uint8_t ALIGN(vbdav1d_obmc_masks[64], 16) = {
+const uint8_t ALIGN(dav1d_obmc_masks[64], 16) = {
     /* Unused */
      0,  0,
     /* 2 */
@@ -829,7 +829,7 @@ const uint8_t ALIGN(vbdav1d_obmc_masks[64], 16) = {
 
 // Taken from the spec. Range is [-2048, 2047], mean is 0 and stddev is 512
 ATTR_MCMODEL_SMALL
-const int16_t vbdav1d_gaussian_sequence[2048] = {
+const int16_t dav1d_gaussian_sequence[2048] = {
     56,    568,   -180,  172,   124,   -84,   172,   -64,   -900,  24,   820,
     224,   1248,  996,   272,   -8,    -916,  -388,  -732,  -104,  -188, 800,
     112,   -652,  -320,  -376,  140,   -252,  492,   -168,  44,    -788, 588,

@@ -38,7 +38,7 @@
  * Intra prediction.
  * - a is the angle (in degrees) for directional intra predictors. For other
  *   modes, it is ignored;
- * - topleft is the same as the argument given to vbdav1d_prepare_intra_edges(),
+ * - topleft is the same as the argument given to dav1d_prepare_intra_edges(),
  *   see ipred_prepare.h for more detailed documentation.
  */
 #define decl_angular_ipred_fn(name) \
@@ -89,6 +89,6 @@ typedef struct Dav1dIntraPredDSPContext {
     pal_pred_fn pal_pred;
 } Dav1dIntraPredDSPContext;
 
-bitfn_decls(void vbdav1d_intra_pred_dsp_init, Dav1dIntraPredDSPContext *c);
+bitfn_decls(void dav1d_intra_pred_dsp_init, Dav1dIntraPredDSPContext *c);
 
 #endif /* DAV1D_SRC_IPRED_H */

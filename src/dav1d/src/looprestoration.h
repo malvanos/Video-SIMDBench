@@ -74,6 +74,6 @@ typedef struct Dav1dLoopRestorationDSPContext {
     looprestorationfilter_fn sgr[3]; /* 5x5, 3x3, mix */
 } Dav1dLoopRestorationDSPContext;
 
-bitfn_decls(void vbdav1d_loop_restoration_dsp_init, Dav1dLoopRestorationDSPContext *c, int bpc);
+bitfn_decls(void dav1d_loop_restoration_dsp_init, Dav1dLoopRestorationDSPContext *c, int bpc);
 
 #endif /* DAV1D_SRC_LOOPRESTORATION_H */

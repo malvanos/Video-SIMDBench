@@ -127,7 +127,7 @@ typedef struct Dav1dRefmvsDSPContext {
 } Dav1dRefmvsDSPContext;
 
 // call once per frame
-int vbdav1d_refmvs_init_frame(refmvs_frame *rf,
+int dav1d_refmvs_init_frame(refmvs_frame *rf,
                             const Dav1dSequenceHeader *seq_hdr,
                             const Dav1dFrameHeader *frm_hdr,
                             const uint8_t ref_poc[7],
@@ -138,7 +138,7 @@ int vbdav1d_refmvs_init_frame(refmvs_frame *rf,
 
 // cache the current tile/sbrow (or frame/sbrow)'s projectable motion vectors
 // into buffers for use in future frame's temporal MV prediction
-static inline void vbdav1d_refmvs_save_tmvs(const Dav1dRefmvsDSPContext *const dsp,
+static inline void dav1d_refmvs_save_tmvs(const Dav1dRefmvsDSPContext *const dsp,
                                           const refmvs_tile *const rt,
                                           const int col_start8, int col_end8,
                                           const int row_start8, int row_end8)
@@ -159,20 +159,20 @@ static inline void vbdav1d_refmvs_save_tmvs(const Dav1dRefmvsDSPContext *const d
 }
 
 // initialize tile boundaries and refmvs_block pointers for one tile/sbrow
-void vbdav1d_refmvs_tile_sbrow_init(refmvs_tile *rt, const refmvs_frame *rf,
+void dav1d_refmvs_tile_sbrow_init(refmvs_tile *rt, const refmvs_frame *rf,
                                   int tile_col_start4, int tile_col_end4,
                                   int tile_row_start4, int tile_row_end4,
                                   int sby, int tile_row_idx, int pass);
 
 // call for each block
-void vbdav1d_refmvs_find(const refmvs_tile *rt,
+void dav1d_refmvs_find(const refmvs_tile *rt,
                        refmvs_candidate mvstack[8], int *cnt,
                        int *ctx, const refmvs_refpair ref, enum BlockSize bs,
                        enum EdgeFlags edge_flags, int by4, int bx4);
 
-void vbdav1d_refmvs_dsp_init(Dav1dRefmvsDSPContext *dsp);
-void vbdav1d_refmvs_dsp_init_arm(Dav1dRefmvsDSPContext *dsp);
-void vbdav1d_refmvs_dsp_init_loongarch(Dav1dRefmvsDSPContext *dsp);
-void vbdav1d_refmvs_dsp_init_x86(Dav1dRefmvsDSPContext *dsp);
+void dav1d_refmvs_dsp_init(Dav1dRefmvsDSPContext *dsp);
+void dav1d_refmvs_dsp_init_arm(Dav1dRefmvsDSPContext *dsp);
+void dav1d_refmvs_dsp_init_loongarch(Dav1dRefmvsDSPContext *dsp);
+void dav1d_refmvs_dsp_init_x86(Dav1dRefmvsDSPContext *dsp);
 
 #endif /* DAV1D_SRC_REF_MVS_H */
