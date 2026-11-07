@@ -120,11 +120,12 @@ static void print_bench(void)
     int64_t results[32] = {0};
     int have[32] = {0};
 
-    /* columns: index 0 is always the C version; 1..12 map to x86 cpu flags,
+    /* columns: index 0 is always the C version, 18 the C-plain version (same
+     * sources, auto-vectorization disabled); 1..12 map to x86 cpu flags,
      * 13..15 to ARM, 16 PPC, 17 MIPS. Only the columns this CPU actually
      * supports are printed (flag bits collide across arch families, so the
-     * ranges are selected per arch). */
-    enum { COL_C=0, COL_ARMV6=13, COL_ARMV8=14, COL_NEON=15, COL_ALTIVEC=16, COL_MSA=17, NCOLS=18 };
+     * ranges are selected per arch); C-plain is always printed, right after C. */
+    enum { COL_C=0, COL_ARMV6=13, COL_ARMV8=14, COL_NEON=15, COL_ALTIVEC=16, COL_MSA=17, COL_PLAIN_C=18, NCOLS=19 };
     static const struct { uint32_t flag; const char *name; } coldef[NCOLS] =
     {
         { 0, "C" },
@@ -136,11 +137,13 @@ static void print_bench(void)
         { VSIMD_CPU_FMA3,  "FMA3"  }, { VSIMD_CPU_AVX2, "AVX2" },
         { VSIMD_CPU_ARMV6, "ARMv6" }, { VSIMD_CPU_ARMV8, "ARMv8" },
         { VSIMD_CPU_NEON,  "NEON"  }, { VSIMD_CPU_ALTIVEC, "Altivec" },
-        { VSIMD_CPU_MSA,   "MSA"   }
+        { VSIMD_CPU_MSA,   "MSA"   },
+        { VSIMD_CPU_PLAIN_C, "C-plain" }
     };
     uint32_t cpu = cpu_detect();
     int col[NCOLS], ncol = 0;
     col[ncol++] = COL_C;
+    col[ncol++] = COL_PLAIN_C; /* not arch-dependent: always right after C */
 #if ARCH_X86 || ARCH_X86_64
     for( int c = 1; c <= 12; c++ )
         if( cpu & coldef[c].flag )
@@ -157,7 +160,8 @@ static void print_bench(void)
 
     printf( "CPU supported:" );
     for( int j = 1; j < ncol; j++ )
-        printf( " %s", coldef[col[j]].name );
+        if( col[j] != COL_PLAIN_C ) /* C-plain is not a CPU feature */
+            printf( " %s", coldef[col[j]].name );
     printf( "\n" );
 
     printf( "%30s :", "" );
@@ -176,8 +180,9 @@ static void print_bench(void)
                 continue;
 
             int c = COL_C;
+            if (b->cpu & VSIMD_CPU_PLAIN_C) c = COL_PLAIN_C;
 #if ARCH_X86 || ARCH_X86_64
-            if (b->cpu&VSIMD_CPU_AVX2) c = 12;
+            else if (b->cpu&VSIMD_CPU_AVX2) c = 12;
             else if (b->cpu&VSIMD_CPU_FMA3) c = 11;
             else if (b->cpu&VSIMD_CPU_FMA4) c = 10;
             else if (b->cpu&VSIMD_CPU_XOP) c = 9;

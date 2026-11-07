@@ -9,7 +9,7 @@ project(vbench C CXX)
 #   ./build/vbench --bench            (optionally: --bench=<pattern>)
 #
 # The legacy src/Makefile still works as an alternative build.
-# Codec kernel packages under kernels/<codec>/ are picked up automatically
+# Codec kernel packages under src/<codec>/ are picked up automatically
 # (see PORTING.md).
 # ---------------------------------------------------------------------------
 
@@ -200,7 +200,8 @@ if(TARGET vbench_asm)
 endif()
 
 # --------------------- codec kernel discovery (PORTING.md) ----------------
-file(GLOB _codec_dirs LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/kernels/*)
+# Each src/<codec>/ directory with a CMakeLists.txt is a codec package.
+file(GLOB _codec_dirs LIST_DIRECTORIES true ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
 foreach(d ${_codec_dirs})
     if(EXISTS ${d}/CMakeLists.txt)
         get_filename_component(codec ${d} NAME)

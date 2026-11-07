@@ -22,7 +22,7 @@ cmake -S . -B build
 cmake --build build -j8
 ```
 
-This builds the `vbench` executable from `src/` plus every `kernels/<codec>/`
+This builds the `vbench` executable from `src/` plus every `src/<codec>/`
 package found (x264, x265, dav1d). Architecture-specific assembly kernels are
 built by default on aarch64 (NEON, via the system compiler) and on x86_64
 Linux when `nasm` is installed (`-DVBENCH_ASM=OFF` to disable).
@@ -57,20 +57,25 @@ CPU supported: ARMv8 NEON
 ## Layout
 
 ```
-├── CMakeLists.txt        # build; auto-discovers kernels/<codec>/
-├── PORTING.md            # how to add a new codec kernel package
-├── src/                  # the benchmark harness (x264-derived bench modules)
-├── kernels/x264/         # 42 embedded x264 C kernels    + bench_x264.c   (upstream: code.videolan.org/videolan/x264)
-├── kernels/x265/         # 40 embedded x265 C++ kernels  + bench_x265.cpp (upstream: bitbucket.org/multicoreware/x265_git)
-├── kernels/dav1d/        # 27 embedded dav1d 8bpc C kernels + bench_dav1d.c (upstream: code.videolan.org/videolan/dav1d)
-└── LICENSE               # GPL (harness, derived from x264); kernels keep their upstream licenses in each kernels/<codec>/ dir
+├── CMakeLists.txt        # build; auto-discovers src/<codec>/
+├── PORTING.md            # how to add a new codec kernel package + how to sync it with upstream
+├── src/                  # the benchmark harness (x264-derived) + the codec packages
+│   ├── *.c *.h           # harness sources
+│   ├── x264/             # 42 embedded x264 C kernels    + bench_x264.c   (upstream: code.videolan.org/videolan/x264)
+│   ├── x265/             # 40 embedded x265 C++ kernels  + bench_x265.cpp (upstream: bitbucket.org/multicoreware/x265_git)
+│   ├── dav1d/            # 27 embedded dav1d 8bpc C kernels + bench_dav1d.c (upstream: code.videolan.org/videolan/dav1d)
+│   └── tools/            # sync-<codec>.sh: mechanical upstream-sync scripts (see PORTING.md)
+└── LICENSE               # GPL (harness, derived from x264); codecs keep their upstream licenses in each src/<codec>/ dir
 ```
 
-The codec kernel sources are copied into `kernels/<codec>/` (with symbols
+The codec kernel sources are copied into `src/<codec>/` (with symbols
 prefixed, e.g. `x264_` → `vbx264_`) together with their upstream LICENSE/COPYING
 files, so the tree is fully self-contained — nothing is cloned or fetched at
-build time.
+build time. To update a package to a newer upstream ref, run its
+`src/tools/sync-<codec>.sh` script (clones upstream into `/tmp` as a
+reference, then copies the C and asm sources together into `src/<codec>/`)
+— see `PORTING.md`, "Syncing with upstream".
 
-Adding another codec: create `kernels/<codec>/` with the copied sources, a
+Adding another codec: create `src/<codec>/` with the copied sources, a
 `bench_<codec>.c` implementing `vbench_codec_<codec>()`, and a
 `CMakeLists.txt` — see `PORTING.md`. No harness changes needed.

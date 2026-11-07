@@ -269,6 +269,13 @@ void checkasm_stack_clobber( uint64_t clobber, ... );
 #define call_c2(func,...) ({ call_bench(func,0,__VA_ARGS__); })
 #define call_a64(func,...) ({ call_a2(func,__VA_ARGS__); call_a1_64(func,__VA_ARGS__); })
 
+/* C-plain column: same C sources compiled with auto-vectorization disabled.
+ * Mirrors call_c/call_c2/call_c1, but registers the timing under the
+ * VSIMD_CPU_PLAIN_C pseudo-flag (see common.h) instead of the "C" column. */
+#define call_cp(func,...) ({ call_cp2(func,__VA_ARGS__); call_cp1(func,__VA_ARGS__); })
+#define call_cp2(func,...) ({ call_bench(func,VSIMD_CPU_PLAIN_C,__VA_ARGS__); })
+#define call_cp1(func,...) func(__VA_ARGS__)
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 

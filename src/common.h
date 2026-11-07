@@ -294,6 +294,13 @@ enum slice_type_e
 /* MIPS */
 #define VSIMD_CPU_MSA             0x0000001  /* MIPS MSA */
 
+/* Pseudo-flag for the "C-plain" benchmark column (PLAN.md step 3): the same
+ * codec C sources compiled with auto-vectorization disabled
+ * (-fno-tree-vectorize -fno-slp-vectorize). Not a real CPU bit: the x86
+ * modifier flags top out at 0x4000000 (VSIMD_CPU_SLOW_PALIGNR) and the
+ * ARM/PPC/MIPS flags only use the low bits, so 0x8000000 is free. */
+#define VSIMD_CPU_PLAIN_C         0x8000000
+
 
 
 
