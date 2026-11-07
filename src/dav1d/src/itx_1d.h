@@ -45,9 +45,9 @@ enum Tx1dType {
 void (name)(int32_t *c, ptrdiff_t stride, int min, int max)
 typedef decl_itx_1d_fn(*itx_1d_fn);
 
-EXTERN const itx_1d_fn vbdav1d_tx1d_fns[N_TX_SIZES][N_TX_1D_TYPES];
-EXTERN const uint8_t /* enum Tx1dType */ vbdav1d_tx1d_types[N_TX_TYPES][2];
+EXTERN const itx_1d_fn dav1d_tx1d_fns[N_TX_SIZES][N_TX_1D_TYPES];
+EXTERN const uint8_t /* enum Tx1dType */ dav1d_tx1d_types[N_TX_TYPES][2];
 
-void vbdav1d_inv_wht4_1d_c(int32_t *c, ptrdiff_t stride);
+void dav1d_inv_wht4_1d_c(int32_t *c, ptrdiff_t stride);
 
 #endif /* DAV1D_SRC_ITX_1D_H */

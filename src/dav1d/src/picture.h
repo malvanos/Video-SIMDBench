@@ -70,7 +70,7 @@ typedef struct Dav1dPictureBuffer {
 /*
  * Allocate a picture with custom border size.
  */
-int vbdav1d_thread_picture_alloc(Dav1dContext *c, Dav1dFrameContext *f, const int bpc);
+int dav1d_thread_picture_alloc(Dav1dContext *c, Dav1dFrameContext *f, const int bpc);
 
 /**
  * Allocate a picture with identical metadata to an existing picture.
@@ -79,27 +79,27 @@ int vbdav1d_thread_picture_alloc(Dav1dContext *c, Dav1dFrameContext *f, const in
  * For the more typical use case of allocating a new image of the same
  * dimensions, use src->p.w as width.
  */
-int vbdav1d_picture_alloc_copy(Dav1dContext *c, Dav1dPicture *dst, const int w,
+int dav1d_picture_alloc_copy(Dav1dContext *c, Dav1dPicture *dst, const int w,
                              const Dav1dPicture *src);
 
 /**
  * Create a copy of a picture.
  */
-void vbdav1d_picture_ref(Dav1dPicture *dst, const Dav1dPicture *src);
-void vbdav1d_thread_picture_ref(Dav1dThreadPicture *dst,
+void dav1d_picture_ref(Dav1dPicture *dst, const Dav1dPicture *src);
+void dav1d_thread_picture_ref(Dav1dThreadPicture *dst,
                               const Dav1dThreadPicture *src);
-void vbdav1d_thread_picture_move_ref(Dav1dThreadPicture *dst,
+void dav1d_thread_picture_move_ref(Dav1dThreadPicture *dst,
                                    Dav1dThreadPicture *src);
-void vbdav1d_thread_picture_unref(Dav1dThreadPicture *p);
+void dav1d_thread_picture_unref(Dav1dThreadPicture *p);
 
 /**
  * Move a picture reference.
  */
-void vbdav1d_picture_move_ref(Dav1dPicture *dst, Dav1dPicture *src);
+void dav1d_picture_move_ref(Dav1dPicture *dst, Dav1dPicture *src);
 
-int vbdav1d_default_picture_alloc(Dav1dPicture *p, void *cookie);
-void vbdav1d_default_picture_release(Dav1dPicture *p, void *cookie);
-void vbdav1d_picture_unref_internal(Dav1dPicture *p);
+int dav1d_default_picture_alloc(Dav1dPicture *p, void *cookie);
+void dav1d_default_picture_release(Dav1dPicture *p, void *cookie);
+void dav1d_picture_unref_internal(Dav1dPicture *p);
 
 struct itut_t35_ctx_context {
     Dav1dITUTT35 *itut_t35;
@@ -107,8 +107,8 @@ struct itut_t35_ctx_context {
     Dav1dRef ref;
 };
 
-void vbdav1d_picture_free_itut_t35(const uint8_t *data, void *user_data);
-void vbdav1d_picture_copy_props(Dav1dPicture *p,
+void dav1d_picture_free_itut_t35(const uint8_t *data, void *user_data);
+void dav1d_picture_copy_props(Dav1dPicture *p,
                               Dav1dContentLightLevel *content_light, Dav1dRef *content_light_ref,
                               Dav1dMasteringDisplay *mastering_display, Dav1dRef *mastering_display_ref,
                               Dav1dITUTT35 *itut_t35, Dav1dRef *itut_t35_ref, size_t n_itut_t35,
@@ -117,6 +117,6 @@ void vbdav1d_picture_copy_props(Dav1dPicture *p,
 /**
  * Get event flags from picture flags.
  */
-enum Dav1dEventFlags vbdav1d_picture_get_event_flags(const Dav1dThreadPicture *p);
+enum Dav1dEventFlags dav1d_picture_get_event_flags(const Dav1dThreadPicture *p);
 
 #endif /* DAV1D_SRC_PICTURE_H */

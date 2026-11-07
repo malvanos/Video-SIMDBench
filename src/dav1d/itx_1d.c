@@ -1016,7 +1016,7 @@ static void inv_identity32_1d_c(int32_t *const c, const ptrdiff_t stride,
         c[stride * i] *= 4;
 }
 
-const itx_1d_fn vbdav1d_tx1d_fns[N_TX_SIZES][N_TX_1D_TYPES] = {
+const itx_1d_fn dav1d_tx1d_fns[N_TX_SIZES][N_TX_1D_TYPES] = {
     [TX_4X4] = {
         [DCT] = inv_dct4_1d_c,
         [ADST] = inv_adst4_1d_c,
@@ -1040,7 +1040,7 @@ const itx_1d_fn vbdav1d_tx1d_fns[N_TX_SIZES][N_TX_1D_TYPES] = {
     },
 };
 
-const uint8_t /* enum Tx1dType */ vbdav1d_tx1d_types[N_TX_TYPES][2] = {
+const uint8_t /* enum Tx1dType */ dav1d_tx1d_types[N_TX_TYPES][2] = {
     [DCT_DCT]           = { DCT, DCT },
     [ADST_DCT]          = { ADST, DCT },
     [DCT_ADST]          = { DCT, ADST },
@@ -1063,7 +1063,7 @@ const uint8_t /* enum Tx1dType */ vbdav1d_tx1d_types[N_TX_TYPES][2] = {
   ARCH_AARCH64 || \
   (ARCH_ARM && (defined(__ARM_NEON) || defined(__APPLE__) || defined(_WIN32))) \
 ))
-void vbdav1d_inv_wht4_1d_c(int32_t *const c, const ptrdiff_t stride) {
+void dav1d_inv_wht4_1d_c(int32_t *const c, const ptrdiff_t stride) {
     assert(stride > 0);
     const int in0 = c[0 * stride], in1 = c[1 * stride];
     const int in2 = c[2 * stride], in3 = c[3 * stride];

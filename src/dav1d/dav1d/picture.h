@@ -116,7 +116,7 @@ typedef struct Dav1dPicAllocator {
      * data[1] and data[2] must share the same stride[1].
      *
      * This function will be called on the main thread (the thread which calls
-     * vbdav1d_get_picture()).
+     * dav1d_get_picture()).
      *
      * @param  pic The picture to allocate the buffer for. The callback needs to
      *             fill the picture data[0], data[1], data[2], stride[0] and
@@ -135,7 +135,7 @@ typedef struct Dav1dPicAllocator {
      * Release the picture buffer.
      *
      * If frame threading is used, this function may be called by the main
-     * thread (the thread which calls vbdav1d_get_picture()) or any of the frame
+     * thread (the thread which calls dav1d_get_picture()) or any of the frame
      * threads and thus must be thread-safe. If frame threading is not used,
      * this function will only be called on the main thread.
      *
@@ -148,7 +148,7 @@ typedef struct Dav1dPicAllocator {
 /**
  * Release reference to a picture.
  */
-DAV1D_API void vbdav1d_picture_unref(Dav1dPicture *p);
+DAV1D_API void dav1d_picture_unref(Dav1dPicture *p);
 
 #ifdef __cplusplus
 } /* extern "C" */

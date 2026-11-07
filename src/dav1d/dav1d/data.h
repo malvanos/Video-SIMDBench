@@ -52,7 +52,7 @@ typedef struct Dav1dData {
  *
  * @return Pointer to the allocated buffer on success. NULL on error.
  */
-DAV1D_API uint8_t * vbdav1d_data_create(Dav1dData *data, size_t sz);
+DAV1D_API uint8_t * dav1d_data_create(Dav1dData *data, size_t sz);
 
 /**
  * Wrap an existing data array.
@@ -68,7 +68,7 @@ DAV1D_API uint8_t * vbdav1d_data_create(Dav1dData *data, size_t sz);
  *
  * @return 0 on success. A negative DAV1D_ERR value on error.
  */
-DAV1D_API int vbdav1d_data_wrap(Dav1dData *data, const uint8_t *buf, size_t sz,
+DAV1D_API int dav1d_data_wrap(Dav1dData *data, const uint8_t *buf, size_t sz,
                               void (*free_callback)(const uint8_t *buf, void *cookie),
                               void *cookie);
 
@@ -93,7 +93,7 @@ DAV1D_API int vbdav1d_data_wrap(Dav1dData *data, const uint8_t *buf, size_t sz,
  *
  * @return 0 on success. A negative DAV1D_ERR value on error.
  */
-DAV1D_API int vbdav1d_data_wrap_user_data(Dav1dData *data,
+DAV1D_API int dav1d_data_wrap_user_data(Dav1dData *data,
                                         const uint8_t *user_data,
                                         void (*free_callback)(const uint8_t *user_data,
                                                               void *cookie),
@@ -103,12 +103,12 @@ DAV1D_API int vbdav1d_data_wrap_user_data(Dav1dData *data,
  * Free the data reference.
  *
  * The reference count for data->m.user_data will be decremented (if it has been
- * initialized with vbdav1d_data_wrap_user_data). The $data object will be memset
+ * initialized with dav1d_data_wrap_user_data). The $data object will be memset
  * to 0.
  *
  * @param data Input context.
  */
-DAV1D_API void vbdav1d_data_unref(Dav1dData *data);
+DAV1D_API void dav1d_data_unref(Dav1dData *data);
 
 #ifdef __cplusplus
 } /* extern "C" */

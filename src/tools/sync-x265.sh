@@ -24,9 +24,11 @@
 #      headers cpu.h / threading.h which replace the upstream ones). Anything
 #      not in the copy lists is left untouched, and nothing is ever deleted.
 #
-# Copied source files get the same mechanical transform the port was created
+# Copied source files (COPY_FILES and every file inside COPY_DIRS, including
+# the asm dirs) get the same mechanical transform the port was created
 # with (see PORTING.md): x265 needs no symbol rename (it is C++, namespace
-# x265), only the include rewrite
+# x265 — the asm symbols are native x265_ via X265_NS), only the include
+# rewrite
 #     #include "common.h" -> #include "x265shim.h"
 # plus dropping the two upstream includes the shim replaces ("x265.h",
 # "slicetype.h" — LOWRES_COST_MASK is provided by x265shim.h).
@@ -67,19 +69,22 @@ COPY_FILES=(
     "COPYING|COPYING|raw"
 )
 
-# Upstream dir | dest dir relative to src/x265/ — copied verbatim (asm moves
-# together with the C++ above; upstream also has ppc/riscv64/vec dirs which
-# this port does not use — add them here if that changes).
+# Upstream dir | dest dir relative to src/x265/ — copied with the same
+# include-shim transform as COPY_FILES (asm moves together with the C++
+# above; upstream also has ppc/riscv64/vec dirs and 32-bit arm
+# (source/common/arm), which this port does not use — add them here if that
+# changes).
 COPY_DIRS=(
     "source/common/x86|x86"
     "source/common/aarch64|aarch64"
-    "source/common/arm|arm"
 )
 
 # Local-only files this script must never overwrite (or create). Anything under
 # src/x265/ that is not in COPY_FILES/COPY_DIRS is likewise never touched.
 # cpu.h and threading.h are deliberately local: they are minimal shims that
 # replace the upstream headers (upstream cpu.h / threading.h are NOT copied).
+# sao.h is a local minimal shim for upstream encoder/sao.h (only SAO_BO_BITS
+# is needed by aarch64/sao-prim.cpp).
 PROTECTED=(
     "bench_x265.cpp"
     "CMakeLists.txt"
@@ -87,6 +92,7 @@ PROTECTED=(
     "x265_shim.cpp"
     "cpu.h"
     "threading.h"
+    "sao.h"
 )
 
 usage() {
@@ -142,7 +148,7 @@ copy_file() { # <upstream-rel> <dest-rel> <mode>
     printf 'copied:   %-34s -> src/%s/%s\n' "$up_rel" "$CODEC" "$dst_rel"
 }
 
-copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (verbatim; never deletes)
+copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (transformed per file; never deletes)
     local up_rel=$1 dst_rel=$2
     local src=$UPSTREAM_DIR/$up_rel dst=$DEST_DIR/$dst_rel
     check_dst "$dst_rel"
@@ -154,9 +160,16 @@ copy_dir() { # <upstream-dir-rel> <dest-dir-rel>  (verbatim; never deletes)
         printf 'dry-run:  %-34s -> src/%s/%s/  (dir)\n' "$up_rel" "$CODEC" "$dst_rel"
         return 0
     fi
-    mkdir -p "$dst"
-    cp -a "$src/." "$dst/"
-    printf 'copied:   %-34s -> src/%s/%s/\n' "$up_rel" "$CODEC" "$dst_rel"
+    local f rel
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        rel=${f#"$src"/}
+        check_dst "$dst_rel/$rel"
+        mkdir -p "$dst/$(dirname "$rel")"
+        transform_file "$f" > "$dst/$rel.vbsync.$$"
+        mv "$dst/$rel.vbsync.$$" "$dst/$rel"
+    done < <(find "$src" -type f | sort)
+    printf 'copied:   %-34s -> src/%s/%s/  (dir)\n' "$up_rel" "$CODEC" "$dst_rel"
 }
 
 update_upstream() {

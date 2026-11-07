@@ -87,7 +87,7 @@ typedef struct Dav1dDataProps {
 /**
  * Release reference to a Dav1dDataProps.
  */
-DAV1D_API void vbdav1d_data_props_unref(Dav1dDataProps *props);
+DAV1D_API void dav1d_data_props_unref(Dav1dDataProps *props);
 
 #ifdef __cplusplus
 } /* extern "C" */

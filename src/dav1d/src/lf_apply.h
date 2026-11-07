@@ -35,14 +35,14 @@
 #include "src/internal.h"
 #include "src/levels.h"
 
-void bytefn(vbdav1d_loopfilter_sbrow_cols)(const Dav1dFrameContext *f,
+void bytefn(dav1d_loopfilter_sbrow_cols)(const Dav1dFrameContext *f,
                                          pixel *const p[3], Av1Filter *lflvl,
                                          int sby, int start_of_tile_row);
-void bytefn(vbdav1d_loopfilter_sbrow_rows)(const Dav1dFrameContext *f,
+void bytefn(dav1d_loopfilter_sbrow_rows)(const Dav1dFrameContext *f,
                                          pixel *const p[3], Av1Filter *lflvl,
                                          int sby);
 
-void bytefn(vbdav1d_copy_lpf)(Dav1dFrameContext *const f,
+void bytefn(dav1d_copy_lpf)(Dav1dFrameContext *const f,
                             /*const*/ pixel *const src[3], int sby);
 
 #endif /* DAV1D_SRC_LF_APPLY_H */

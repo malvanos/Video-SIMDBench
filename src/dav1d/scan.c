@@ -279,7 +279,7 @@ static const uint16_t ALIGN(scan_32x32[], 32) = {
      892,  861,  830,  799,  831,  862,  893,  924,  955,  986, 1017, 1018,  987,  956,  925,  894,  863,  895,  926,  957,  988, 1019, 1020,  989,  958,  927,  959,  990, 1021, 1022,  991, 1023,
 };
 
-const uint16_t *const vbdav1d_scans[N_RECT_TX_SIZES] = {
+const uint16_t *const dav1d_scans[N_RECT_TX_SIZES] = {
     [ TX_4X4  ] = scan_4x4,
     [ TX_8X8  ] = scan_8x8,
     [ TX_16X16] = scan_16x16,
@@ -347,12 +347,12 @@ static COLD void init_internal(void) {
     init_tbl(last_nonzero_col_from_eob_32x8,  scan_32x8,  32,  8);
 }
 
-COLD void vbdav1d_init_last_nonzero_col_from_eob_tables(void) {
+COLD void dav1d_init_last_nonzero_col_from_eob_tables(void) {
     static pthread_once_t initted = PTHREAD_ONCE_INIT;
     pthread_once(&initted, init_internal);
 }
 
-const uint8_t *const vbdav1d_last_nonzero_col_from_eob[N_RECT_TX_SIZES] = {
+const uint8_t *const dav1d_last_nonzero_col_from_eob[N_RECT_TX_SIZES] = {
     [ TX_4X4  ] = last_nonzero_col_from_eob_4x4,
     [ TX_8X8  ] = last_nonzero_col_from_eob_8x8,
     [ TX_16X16] = last_nonzero_col_from_eob_16x16,

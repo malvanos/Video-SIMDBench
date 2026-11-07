@@ -142,13 +142,13 @@ typedef struct CdfThreadContext {
     atomic_uint *progress;
 } CdfThreadContext;
 
-void vbdav1d_cdf_thread_init_static(CdfThreadContext *cdf, unsigned qidx);
-int vbdav1d_cdf_thread_alloc(Dav1dContext *c, CdfThreadContext *cdf,
+void dav1d_cdf_thread_init_static(CdfThreadContext *cdf, unsigned qidx);
+int dav1d_cdf_thread_alloc(Dav1dContext *c, CdfThreadContext *cdf,
                            const int have_frame_mt);
-void vbdav1d_cdf_thread_copy(CdfContext *dst, const CdfThreadContext *src);
-void vbdav1d_cdf_thread_ref(CdfThreadContext *dst, CdfThreadContext *src);
-void vbdav1d_cdf_thread_unref(CdfThreadContext *cdf);
-void vbdav1d_cdf_thread_update(const Dav1dFrameHeader *hdr, CdfContext *dst,
+void dav1d_cdf_thread_copy(CdfContext *dst, const CdfThreadContext *src);
+void dav1d_cdf_thread_ref(CdfThreadContext *dst, CdfThreadContext *src);
+void dav1d_cdf_thread_unref(CdfThreadContext *cdf);
+void dav1d_cdf_thread_update(const Dav1dFrameHeader *hdr, CdfContext *dst,
                              const CdfContext *src);
 
 #endif /* DAV1D_SRC_CDF_H */

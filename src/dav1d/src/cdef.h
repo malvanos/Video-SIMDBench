@@ -66,6 +66,6 @@ typedef struct Dav1dCdefDSPContext {
     cdef_fn fb[3 /* 444/luma, 422, 420 */];
 } Dav1dCdefDSPContext;
 
-bitfn_decls(void vbdav1d_cdef_dsp_init, Dav1dCdefDSPContext *c);
+bitfn_decls(void dav1d_cdef_dsp_init, Dav1dCdefDSPContext *c);
 
 #endif /* DAV1D_SRC_CDEF_H */

@@ -47,15 +47,15 @@
 #include "src/x86/cpu.h"
 #endif
 
-EXTERN unsigned vbdav1d_cpu_flags;
-EXTERN unsigned vbdav1d_cpu_flags_mask;
+EXTERN unsigned dav1d_cpu_flags;
+EXTERN unsigned dav1d_cpu_flags_mask;
 
-void vbdav1d_init_cpu(void);
-DAV1D_API void vbdav1d_set_cpu_flags_mask(unsigned mask);
-int vbdav1d_num_logical_processors(Dav1dContext *c);
-unsigned long vbdav1d_getauxval(unsigned long);
+void dav1d_init_cpu(void);
+DAV1D_API void dav1d_set_cpu_flags_mask(unsigned mask);
+int dav1d_num_logical_processors(Dav1dContext *c);
+unsigned long dav1d_getauxval(unsigned long);
 
-static ALWAYS_INLINE unsigned vbdav1d_get_default_cpu_flags(void) {
+static ALWAYS_INLINE unsigned dav1d_get_default_cpu_flags(void) {
     unsigned flags = 0;
 
 #if ARCH_AARCH64 || ARCH_ARM
@@ -121,13 +121,13 @@ static ALWAYS_INLINE unsigned vbdav1d_get_default_cpu_flags(void) {
     return flags;
 }
 
-static ALWAYS_INLINE unsigned vbdav1d_get_cpu_flags(void) {
-    unsigned flags = vbdav1d_cpu_flags & vbdav1d_cpu_flags_mask;
+static ALWAYS_INLINE unsigned dav1d_get_cpu_flags(void) {
+    unsigned flags = dav1d_cpu_flags & dav1d_cpu_flags_mask;
 
 #if TRIM_DSP_FUNCTIONS
 /* Since this function is inlined, unconditionally setting a flag here will
  * enable dead code elimination in the calling function. */
-    flags |= vbdav1d_get_default_cpu_flags();
+    flags |= dav1d_get_default_cpu_flags();
 #endif
 
     return flags;

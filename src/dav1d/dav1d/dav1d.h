@@ -101,7 +101,7 @@ typedef struct Dav1dSettings {
 /**
  * Get library version.
  */
-DAV1D_API const char *vbdav1d_version(void);
+DAV1D_API const char *dav1d_version(void);
 
 /**
  * Get library API version.
@@ -110,14 +110,14 @@ DAV1D_API const char *vbdav1d_version(void);
  *         YY the minor version, and ZZ the patch version.
  * @see DAV1D_API_MAJOR, DAV1D_API_MINOR, DAV1D_API_PATCH
  */
-DAV1D_API unsigned vbdav1d_version_api(void);
+DAV1D_API unsigned dav1d_version_api(void);
 
 /**
  * Initialize settings to default values.
  *
  * @param s Input settings context.
  */
-DAV1D_API void vbdav1d_default_settings(Dav1dSettings *s);
+DAV1D_API void dav1d_default_settings(Dav1dSettings *s);
 
 /**
  * Allocate and open a decoder instance.
@@ -126,12 +126,12 @@ DAV1D_API void vbdav1d_default_settings(Dav1dSettings *s);
  *              allocated context.
  * @param     s Input settings context.
  *
- * @note The context must be freed using vbdav1d_close() when decoding is
+ * @note The context must be freed using dav1d_close() when decoding is
  *       finished.
  *
  * @return 0 on success, or < 0 (a negative DAV1D_ERR code) on error.
  */
-DAV1D_API int vbdav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
+DAV1D_API int dav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
 
 /**
  * Parse a Sequence Header OBU from bitstream data.
@@ -151,7 +151,7 @@ DAV1D_API int vbdav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
  *       Sequence Header, as they will simply be ignored. If there is more than
  *       one Sequence Header OBU present, only the last will be returned.
  */
-DAV1D_API int vbdav1d_parse_sequence_header(Dav1dSequenceHeader *out,
+DAV1D_API int dav1d_parse_sequence_header(Dav1dSequenceHeader *out,
                                           const uint8_t *buf, const size_t sz);
 
 /**
@@ -164,14 +164,14 @@ DAV1D_API int vbdav1d_parse_sequence_header(Dav1dSequenceHeader *out,
  *
  * @return
  *         0: Success, and the data was consumed.
- *  DAV1D_ERR(EAGAIN): The data can't be consumed. vbdav1d_get_picture() should
+ *  DAV1D_ERR(EAGAIN): The data can't be consumed. dav1d_get_picture() should
  *                     be called to get one or more frames before the function
  *                     can consume new data.
  *  Other negative DAV1D_ERR codes: Error during decoding or because of invalid
  *                                  passed-in arguments. The reference remains
  *                                  owned by the caller.
  */
-DAV1D_API int vbdav1d_send_data(Dav1dContext *c, Dav1dData *in);
+DAV1D_API int dav1d_send_data(Dav1dContext *c, Dav1dData *in);
 
 /**
  * Return a decoded picture.
@@ -182,7 +182,7 @@ DAV1D_API int vbdav1d_send_data(Dav1dContext *c, Dav1dData *in);
  *
  * @return
  *         0: Success, and a frame is returned.
- *  DAV1D_ERR(EAGAIN): Not enough data to output a frame. vbdav1d_send_data()
+ *  DAV1D_ERR(EAGAIN): Not enough data to output a frame. dav1d_send_data()
  *                     should be called with new input.
  *  Other negative DAV1D_ERR codes: Error during decoding or because of invalid
  *                                  passed-in arguments.
@@ -197,13 +197,13 @@ DAV1D_API int vbdav1d_send_data(Dav1dContext *c, Dav1dData *in);
  *
  *  read_data(&data);
  *  do {
- *      res = vbdav1d_send_data(c, &data);
+ *      res = dav1d_send_data(c, &data);
  *      // Keep going even if the function can't consume the current data
  *         packet. It eventually will after one or more frames have been
  *         returned in this loop.
  *      if (res < 0 && res != DAV1D_ERR(EAGAIN))
  *          free_and_abort();
- *      res = vbdav1d_get_picture(c, &p);
+ *      res = dav1d_get_picture(c, &p);
  *      if (res < 0) {
  *          if (res != DAV1D_ERR(EAGAIN))
  *              free_and_abort();
@@ -214,7 +214,7 @@ DAV1D_API int vbdav1d_send_data(Dav1dContext *c, Dav1dData *in);
  *
  *  // Handle EOS by draining all buffered frames.
  *  do {
- *      res = vbdav1d_get_picture(c, &p);
+ *      res = dav1d_get_picture(c, &p);
  *      if (res < 0) {
  *          if (res != DAV1D_ERR(EAGAIN))
  *              free_and_abort();
@@ -223,7 +223,7 @@ DAV1D_API int vbdav1d_send_data(Dav1dContext *c, Dav1dData *in);
  *  } while (res == 0);
  * @endcode
  */
-DAV1D_API int vbdav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
+DAV1D_API int dav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
 
 /**
  * Apply film grain to a previously decoded picture. If the picture contains no
@@ -240,10 +240,10 @@ DAV1D_API int vbdav1d_get_picture(Dav1dContext *c, Dav1dPicture *out);
  *                                  invalid passed-in arguments.
  *
  * @note If `Dav1dSettings.apply_grain` is true, film grain was already applied
- *       by `vbdav1d_get_picture`, and so calling this function leads to double
+ *       by `dav1d_get_picture`, and so calling this function leads to double
  *       application of film grain. Users should only call this when needed.
  */
-DAV1D_API int vbdav1d_apply_grain(Dav1dContext *c, Dav1dPicture *out,
+DAV1D_API int dav1d_apply_grain(Dav1dContext *c, Dav1dPicture *out,
                                 const Dav1dPicture *in);
 
 /**
@@ -251,7 +251,7 @@ DAV1D_API int vbdav1d_apply_grain(Dav1dContext *c, Dav1dPicture *out,
  *
  * @param c_out The decoder instance to close. *c_out will be set to NULL.
  */
-DAV1D_API void vbdav1d_close(Dav1dContext **c_out);
+DAV1D_API void dav1d_close(Dav1dContext **c_out);
 
 /**
  * Flush all delayed frames in decoder and clear internal decoder state,
@@ -260,10 +260,10 @@ DAV1D_API void vbdav1d_close(Dav1dContext **c_out);
  * @param c Input decoder instance.
  *
  * @note Decoding will start only after a valid sequence header OBU is
- *       delivered to vbdav1d_send_data().
+ *       delivered to dav1d_send_data().
  *
  */
-DAV1D_API void vbdav1d_flush(Dav1dContext *c);
+DAV1D_API void dav1d_flush(Dav1dContext *c);
 
 enum Dav1dEventFlags {
     /**
@@ -292,12 +292,12 @@ enum Dav1dEventFlags {
  *       the decoder.
  *
  */
-DAV1D_API int vbdav1d_get_event_flags(Dav1dContext *c, enum Dav1dEventFlags *flags);
+DAV1D_API int dav1d_get_event_flags(Dav1dContext *c, enum Dav1dEventFlags *flags);
 
 /**
  * Retrieve the user-provided metadata associated with the input data packet
  * for the last decoding error reported to the user, i.e. a negative return
- * value (not EAGAIN) from vbdav1d_send_data() or vbdav1d_get_picture().
+ * value (not EAGAIN) from dav1d_send_data() or dav1d_get_picture().
  *
  * @param   c Input decoder instance.
  * @param out Output Dav1dDataProps. On success, the caller assumes ownership of
@@ -305,7 +305,7 @@ DAV1D_API int vbdav1d_get_event_flags(Dav1dContext *c, enum Dav1dEventFlags *fla
  *
  * @return 0 on success, or < 0 (a negative DAV1D_ERR code) on error.
  */
-DAV1D_API int vbdav1d_get_decode_error_data_props(Dav1dContext *c, Dav1dDataProps *out);
+DAV1D_API int dav1d_get_decode_error_data_props(Dav1dContext *c, Dav1dDataProps *out);
 
 /**
  * Get the decoder delay, which is the number of internally buffered frames, not
@@ -320,7 +320,7 @@ DAV1D_API int vbdav1d_get_decode_error_data_props(Dav1dContext *c, Dav1dDataProp
  * @note The returned delay is valid only for a Dav1dContext initialized with the
  *       provided Dav1dSettings.
  */
-DAV1D_API int vbdav1d_get_frame_delay(const Dav1dSettings *s);
+DAV1D_API int dav1d_get_frame_delay(const Dav1dSettings *s);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -37,7 +37,7 @@ extern "C" {
 
 /**
  * Extract version components from the value returned by
- * vbdav1d_version_int()
+ * dav1d_version_int()
  */
 #define DAV1D_API_MAJOR(v) (((v) >> 16) & 0xFF)
 #define DAV1D_API_MINOR(v) (((v) >>  8) & 0xFF)

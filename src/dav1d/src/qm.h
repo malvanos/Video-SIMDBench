@@ -30,8 +30,8 @@
 
 #include "src/levels.h"
 
-EXTERN const uint8_t *vbdav1d_qm_tbl[16][2][N_RECT_TX_SIZES];
+EXTERN const uint8_t *dav1d_qm_tbl[16][2][N_RECT_TX_SIZES];
 
-void vbdav1d_init_qm_tables(void);
+void dav1d_init_qm_tables(void);
 
 #endif /* DAV1D_SRC_QM_H */

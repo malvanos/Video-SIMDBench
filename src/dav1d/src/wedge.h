@@ -80,17 +80,17 @@ typedef struct {
 } Dav1dMasks;
 
 #define II_MASK(c, bs, b) \
-    ((const uint8_t*)((uintptr_t)&vbdav1d_masks + \
+    ((const uint8_t*)((uintptr_t)&dav1d_masks + \
     (size_t)((b)->interintra_type == INTER_INTRA_BLEND ? \
-    vbdav1d_masks.offsets[c][(bs)-BS_32x32].ii[(b)->interintra_mode] : \
-    vbdav1d_masks.offsets[c][(bs)-BS_32x32].wedge[0][(b)->wedge_idx]) * 8))
+    dav1d_masks.offsets[c][(bs)-BS_32x32].ii[(b)->interintra_mode] : \
+    dav1d_masks.offsets[c][(bs)-BS_32x32].wedge[0][(b)->wedge_idx]) * 8))
 
 #define WEDGE_MASK(c, bs, sign, idx) \
-    ((const uint8_t*)((uintptr_t)&vbdav1d_masks + \
-    (size_t)vbdav1d_masks.offsets[c][(bs)-BS_32x32].wedge[sign][idx] * 8))
+    ((const uint8_t*)((uintptr_t)&dav1d_masks + \
+    (size_t)dav1d_masks.offsets[c][(bs)-BS_32x32].wedge[sign][idx] * 8))
 
-EXTERN Dav1dMasks vbdav1d_masks;
+EXTERN Dav1dMasks dav1d_masks;
 
-void vbdav1d_init_ii_wedge_masks(void);
+void dav1d_init_ii_wedge_masks(void);
 
 #endif /* DAV1D_SRC_WEDGE_H */
